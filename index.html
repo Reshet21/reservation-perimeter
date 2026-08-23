@@ -485,7 +485,6 @@ const MATERIALS = {
 };
 /* лут с типов врагов: [материал, шанс%, кол-во макс] */
 const ENEMY_LOOT = {
-  rat:    [["leather",70,2]],
   bandit: [["scrap",65,2]],
   raider: [["scrap",70,2],["comp",30,1]],
   miner:  [["leather",50,1],["crystal",40,1]],
@@ -784,7 +783,6 @@ const CLASSES = {
     desc:"Живая стена, но подслеповат (зрение 5). Кирка наносит огромный урон."},
 };
 const ENEMY_TYPES = {
-  rat:    {name:"Крыса-мутант", emoji:"🐀", hp:40,  ap:12, acc:62, sight:5, weapon:"fangs", xp:25, armor:0, skl:15},
   bandit: {name:"Бандит",       emoji:"🥷", hp:60,  ap:11, acc:64, sight:6, weapon:"usp",   xp:35, armor:0, skl:20},
   raider: {name:"Рейдер",       emoji:"🏴‍☠️",hp:80, ap:11, acc:66, sight:6, weapon:"ak47",  xp:55, armor:3, skl:35},
   miner:  {name:"Мутант-шахтёр",emoji:"🧟", hp:120, ap:10, acc:62, sight:5, weapon:"pick",  xp:60, armor:2, skl:30},
@@ -793,11 +791,11 @@ const ENEMY_TYPES = {
 };
 const MISSIONS = [
   {id:"mine", name:"Шахта «Синий кристалл»", emoji:"💎", lvl:1, size:15, hangars:1,
-   desc:"Крысы-мутанты заполонили штольню. Зачисти — «Спектра» заплатит.",
-   enemies:["rat","rat","miner"], reward:120},
+   desc:"Бандиты засели в штольне и растащили оборудование. Зачисти — «Спектра» заплатит.",
+   enemies:["bandit","bandit","miner"], reward:120},
   {id:"outskirts", name:"Окраина Резервации", emoji:"🏚️", lvl:2, size:15, hangars:2,
    desc:"Бандиты грабят караваны новичков. Обыщи дома — там есть чем поживиться.",
-   enemies:["bandit","bandit","rat"], reward:160},
+   enemies:["bandit","bandit","bandit"], reward:160},
   {id:"roadblock", name:"Блокпост рейдеров", emoji:"🛑", lvl:3, size:17, hangars:2,
    desc:"Рейдеры перекрыли дорогу к шахтам. Штурмуй блокпост, вскрывай арсеналы.",
    enemies:["raider","raider","bandit","bandit"], reward:240},
@@ -3128,7 +3126,6 @@ const UNIFORM={
   gunner :{uni:"#514737",dark:"#3d352a",helm:"#4c4335",skin:"#c9a071"},
   stalker:{uni:"#45533c",dark:"#333f2c",hat:"#3b4833",skin:"#cdb083"},
   mutant :{body:"#7d8a58",dark:"#5c683f",skin:"#94a86c"},
-  rat    :{body:"#7e866f",dark:"#5d6450",belly:"#aab096"},
   dog    :{body:"#8a663a",dark:"#6a4c29",belly:"#a8845a"}
 };
 function drawSoldier(c,s,u,moving,ph,t){
@@ -3274,13 +3271,13 @@ function drawSoldier(c,s,u,moving,ph,t){
   if(handB){c.beginPath();c.arc(handB.x,handB.y,s*0.019,0,7);c.fill();}
   c.restore();
 }
-function drawBeast(c,s,u,moving,ph,t,isRat){
-  const U=isRat?UNIFORM.rat:UNIFORM.dog;
+function drawBeast(c,s,u,moving,ph,t){
+  const U=UNIFORM.dog;
   const bob=moving?Math.abs(Math.sin(ph))*s*0.02:Math.sin(t/500)*s*0.008;
   const by=-s*0.155+bob;
   /* хвост */
-  const wag=Math.sin(t/(isRat?260:170))*0.35;
-  c.strokeStyle=isRat?"#c9938a":U.dark;c.lineWidth=s*0.024;c.lineCap="round";
+  const wag=Math.sin(t/170)*0.35;
+  c.strokeStyle=U.dark;c.lineWidth=s*0.024;c.lineCap="round";
   c.beginPath();c.moveTo(-s*0.17,by-s*0.01);
   c.quadraticCurveTo(-s*0.26,by-s*0.05+wag*s*0.08,-s*0.30,by-s*0.10+wag*s*0.12);c.stroke();
   /* лапы: галоп, 4 штуки в противофазе */
@@ -3314,20 +3311,12 @@ function drawBeast(c,s,u,moving,ph,t,isRat){
   /* глаз с бликом */
   c.fillStyle="#ffd27f";c.beginPath();c.arc(s*0.028,-s*0.018,s*0.013,0,7);c.fill();
   c.fillStyle="#000";c.beginPath();c.arc(s*0.031,-s*0.018,s*0.006,0,7);c.fill();
-  if(isRat){
-    /* круглые уши крысы */
-    c.fillStyle=U.belly;
-    c.beginPath();c.arc(-s*0.028,-s*0.062,s*0.034,0,7);c.fill();
-    c.beginPath();c.arc(s*0.022,-s*0.068,s*0.030,0,7);c.fill();
-  }else{
-    /* стоячие уши пса + ошейник */
-    c.fillStyle=U.dark;
-    c.beginPath();c.moveTo(-s*0.045,-s*0.03);c.lineTo(-s*0.030,-s*0.105);c.lineTo(s*0.002,-s*0.045);c.closePath();c.fill();
-    c.beginPath();c.moveTo(s*0.012,-s*0.045);c.lineTo(s*0.040,-s*0.100);c.lineTo(s*0.055,-s*0.030);c.closePath();c.fill();
-  }
+  /* стоячие уши + ошейник игрока-пса */
+  c.fillStyle=U.dark;
+  c.beginPath();c.moveTo(-s*0.045,-s*0.03);c.lineTo(-s*0.030,-s*0.105);c.lineTo(s*0.002,-s*0.045);c.closePath();c.fill();
+  c.beginPath();c.moveTo(s*0.012,-s*0.045);c.lineTo(s*0.040,-s*0.100);c.lineTo(s*0.055,-s*0.030);c.closePath();c.fill();
   c.restore();
-  /* ошейник игрока-пса */
-  if(!isRat&&u.side==="p"){
+  if(u.side==="p"){
     c.strokeStyle="#c0392b";c.lineWidth=s*0.020;
     c.beginPath();c.moveTo(s*0.115,by-s*0.075);c.lineTo(s*0.108,by-s*0.010);c.stroke();
   }
@@ -3415,11 +3404,11 @@ function drawUnit(u,t){
   u._lt=t;
   /* процедурный спрайт: человек / зверь / мутант */
   u.vk=u.side==="p"?u.cls:u.etype;
-  const isRat=u.vk==="rat",isDog=u.vk==="dog",isMut=u.vk==="mutant";
+  const isDog=u.vk==="dog",isMut=u.vk==="mutant";
   ctx.save();
   ctx.translate(cx,cy+s*0.02);ctx.scale(u.dir||1,1);
   ctx.lineJoin="round";
-  if(isDog||isRat)drawBeast(ctx,s,u,P.moving,u.walkP||0,t,isRat);
+  if(isDog)drawBeast(ctx,s,u,P.moving,u.walkP||0,t);
   else if(isMut)drawMutant(ctx,s,u,P.moving,u.walkP||0,t);
   else drawSoldier(ctx,s,u,P.moving,u.walkP||0,t);
   ctx.restore();
