@@ -45,32 +45,38 @@ contract TIOProfiles {
         gosh.cnvrtshellq(value);
     }
 
-    /// Создать/обновить профиль игрока (вызывается внешним подписанным сообщением)
-    function upsertProfile(string nick, uint32 rating) public onlySigned {
+    /// Создать профиль (первый раз — рейтинг 1000) или переименовать себя.
+    /// Рейтинг НИКОГДА не принимается от клиента — только внутренняя математика.
+    function createProfile(string nick) public onlySigned {
         uint256 pk = msg.pubkey();
         Profile p = profiles[pk];
         if (!p.exists) {
             p.exists = true;
+            p.rating = 1000;
             totalPlayers++;
         }
         p.nick = nick;
-        p.rating = rating;
         p.updatedAt = block.timestamp;
         profiles[pk] = p;
     }
 
-    /// Записать результат боя
+    /// Записать результат боя. Рейтинг считает КОНТРАКТ: +25 победа / −15 поражение.
+    /// Анти-реплей: тот же battleHash повторно принять нельзя.
     function reportBattle(
         bool win,
-        uint32 newRating,
         uint64 battleHash
     ) public onlySigned {
         uint256 pk = msg.pubkey();
         Profile p = profiles[pk];
         require(p.exists, 102);
-        if (win) { p.wins++; } else { p.losses++; }
+        require(battleHash != 0, 103);
+        require(battleHash != p.lastBattleHash, 104); // анти-переигрывание
+        if (win) { p.wins++; p.rating += 25; }
+        else {
+            p.losses++;
+            p.rating = p.rating > 15 ? p.rating - 15 : 0;
+        }
         p.battles++;
-        p.rating = newRating;
         p.lastBattleHash = battleHash;
         p.updatedAt = block.timestamp;
         profiles[pk] = p;

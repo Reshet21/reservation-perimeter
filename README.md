@@ -81,12 +81,14 @@ tvm-cli -u shellnet.ackinacki.org deploy TIOProfiles.tvc '{"value":1000000000}' 
 cd chain
 npm i @tvmsdk/core @tvmsdk/lib-node     # официальный SDK Acki Nacki
 node sync.mjs init                       # ключи игрока (твой он-чейн ID)
-node sync.mjs profile "Хмурый" 1000      # создать профиль он-чейн
-node sync.mjs battle win 1025 0x1a2b3c4d # записать бой
+node sync.mjs profile "Хмурый"           # создать профиль он-чейн (рейтинг 1000)
+node sync.mjs battle win 0x1a2b3c4d      # записать бой — рейтинг считает контракт (+25/−15)
 node sync.mjs read                       # прочитать профиль (бесплатный get-метод)
 ```
 
-Чтение состояния контракта из самой игры идёт напрямую через GraphQL Shellnet — без ключей и без затрат.
+Честность он-чейн слоя: рейтинг и цены NPC считает сам контракт (клиент не может накрутить),
+повтор одного и того же hash боя запрещён, у PvP-комнаты есть дедлайн 1 час —
+если вторая сторона молчит, ставки возвращаются обоим (`room-timeout`).
 
 ### Почему это 0 ₽
 

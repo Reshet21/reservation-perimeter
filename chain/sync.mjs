@@ -6,8 +6,8 @@
  *
  * Профиль (контракт TIOProfiles):
  *   node sync.mjs init                # сгенерировать ключи игрока (keys.json)
- *   node sync.mjs profile "Ник" 1000  # создать/обновить профиль
- *   node sync.mjs battle win 1025 0x1a2b3c4d   # записать результат боя
+ *   node sync.mjs profile "Ник"       # создать профиль (рейтинг 1000) / переименоваться
+ *   node sync.mjs battle win 0x1a2b3c4d        # записать результат (рейтинг считает контракт)
  *   node sync.mjs read                # прочитать свой профиль (бесплатно)
  *
  * Предметы и рынок (контракт TIOItems, адрес в TIO_ITEMS):
@@ -22,6 +22,7 @@
  *   node sync.mjs room-create 1 100 false  # комната 1x1, ставка 100
  *   node sync.mjs room-join 5              # войти в комнату #5
  *   node sync.mjs room-result 5 <winnerPubkey> 0x1a2b  # подтвердить результат
+ *   node sync.mjs room-timeout 5           # возврат ставок после дедлайна (1 час)
  *   node sync.mjs rooms                    # статистика арены
  *
  * Адреса: TIO_CONTRACT (профили), TIO_ITEMS (предметы), TIO_ARENA (арена).
@@ -102,13 +103,12 @@ try {
     console.log("🔑 Ключи игрока сохранены в keys.json");
     console.log("Публичный ключ (это твой игровой ID):", kp.public);
   } else if (cmd === "profile") {
-    const [nick, rating] = args;
-    await call("upsertProfile", { nick: nick || "Stalker", rating: Number(rating || 1000) });
+    const [nick] = args;
+    await call("createProfile", { nick: nick || "Stalker" });
   } else if (cmd === "battle") {
-    const [res, rating, hash] = args;
+    const [res, hash] = args;
     await call("reportBattle", {
       win: res === "win",
-      newRating: Number(rating || 1000),
       battleHash: BigInt(hash || "0").toString(),
     });
   } else if (cmd === "read") {
@@ -154,13 +154,15 @@ try {
       { roomId: Number(roomId), winner: winner.startsWith("0x") ? winner : "0x" + winner,
         battleHash: BigInt(hash || "0").toString() },
       ARENA_ADDR, arenaAbi());
+  } else if (cmd === "room-timeout") {
+    await call("timeoutRoom", { roomId: Number(args[0]) }, ARENA_ADDR, arenaAbi());
   } else if (cmd === "rooms") {
     const out = await runGet("getArenaStats", {}, ARENA_ADDR, arenaAbi());
     console.log("🎮 Арена: всего комнат:", out.totalRooms, "· открытых:", out.open);
   } else {
-    console.log("Профиль:  init | profile <ник> <рейтинг> | battle <win|lose> <рейтинг> <hash> | read");
+    console.log("Профиль:  init | profile <ник> | battle <win|lose> <hash> | read");
     console.log("Предметы: items <code> | list <code> <кол-во> <цена> | unlist <lid> | buy <lid> <кол-во> | gift <pubkey> <code> <кол-во> | market");
-    console.log("Арена:    room-create <1|2|4> <ставка> <naked> | room-join <id> | room-result <id> <winner> <hash> | rooms");
+    console.log("Арена:    room-create <1|2|4> <ставка> <naked> | room-join <id> | room-result <id> <winner> <hash> | room-timeout <id> | rooms");
   }
 } catch (e) {
   console.error("❌ Ошибка:", e.message || e);

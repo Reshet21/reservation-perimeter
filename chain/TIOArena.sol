@@ -23,6 +23,7 @@ contract TIOArena {
     uint8 constant MODE_1X1 = 1;
     uint8 constant MODE_2X2 = 2;
     uint8 constant MODE_4X4 = 4;
+    uint32 constant ROOM_TIMEOUT = 3600; // 1 час на бой после входа гостя
 
     struct Room {
         uint256 host;
@@ -31,6 +32,7 @@ contract TIOArena {
         uint64  stake;
         bool    naked;       // «голый» бой без экипировки
         uint8   state;       // 0 нет, 1 открыта, 2 в бою, 3 закрыта
+        uint64  deadline;    // после него timeoutRoom() возвращает ставки
         // подтверждения результата
         uint256 hostClaimWinner;
         uint256 guestClaimWinner;
@@ -80,6 +82,7 @@ contract TIOArena {
         require(balance[pk] >= r.stake, 202);
         balance[pk] -= r.stake; // эскроу гостя
         r.guest = pk; r.state = 2;
+        r.deadline = block.timestamp + ROOM_TIMEOUT; // дедлайн на результат
         rooms[roomId] = r;
         openRooms--;
     }
@@ -92,6 +95,19 @@ contract TIOArena {
         r.state = 3;
         rooms[roomId] = r;
         openRooms--;
+    }
+
+    /// ТАЙМАУТ: если бой не завершён двумя подписями за отведённое время,
+    /// ставки возвращаются обоим. Чинит дедлок: молчание/спор второй стороны
+    /// больше не замораживает банк навсегда.
+    function timeoutRoom(uint64 roomId) public onlySigned {
+        Room r = rooms[roomId];
+        require(r.state == 2, 206);
+        require(block.timestamp > r.deadline, 210);
+        balance[r.host] += r.stake;   // возврат обоим — спор решается вне цепи
+        balance[r.guest] += r.stake;
+        r.state = 3;
+        rooms[roomId] = r;
     }
 
     /// Оба игрока отправляют результат; при совпадении — расчёт банка
@@ -121,10 +137,10 @@ contract TIOArena {
 
     function getRoom(uint64 roomId) public view returns (
         uint256 host, uint256 guest, uint8 mode, uint64 stake,
-        bool naked, uint8 state
+        bool naked, uint8 state, uint64 deadline
     ) {
         Room r = rooms[roomId];
-        return (r.host, r.guest, r.mode, r.stake, r.naked, r.state);
+        return (r.host, r.guest, r.mode, r.stake, r.naked, r.state, r.deadline);
     }
 
     function getArenaStats() public view returns (uint64 totalRooms, uint32 open) {

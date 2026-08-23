@@ -1781,8 +1781,7 @@ function saveNick(){
 }
 function chainPayload(){
   return {
-    game:"TIO_NACKI_V2", nick:S.nick, rating:S.rating,
-    wins:S.wins, losses:S.losses, battles:S.battles,
+    game:"TIO_NACKI_V2", nick:S.nick, // рейтинг/цены считает КОНТРАКТ — клиентом не передаются
     lastBattleHash:S.lastHash, ts: Math.floor(Date.now()/1000)
   };
 }
