@@ -771,15 +771,15 @@ const CONSUMABLES = {
 /* sight — радиус зрения (как в TIO: врага не видно, пока не подойдёшь).
    У пса зрение на 1 больше человеческого (7 против 6) и больше ОД. */
 const CLASSES = {
-  assault:{name:"Штурмовик", emoji:"🪖", hp:85,  ap:12, acc:68, sight:6, hire:250, weapon:"usp",
+  assault:{name:"Штурмовик", emoji:"🪖", hp:80,  ap:15, acc:68, sight:6, hire:250, weapon:"usp",
     desc:"Универсал: лёгкое, автоматы, дробовики, винтовки."},
-  sniper: {name:"Снайпер",   emoji:"🎯", hp:65,  ap:10, acc:82, sight:6, hire:350, weapon:"usp",
+  sniper: {name:"Снайпер",   emoji:"🎯", hp:75,  ap:15, acc:82, sight:6, hire:350, weapon:"usp",
     desc:"Высокая точность, дальний бой, Barrett M82."},
-  heavy:  {name:"Тяжёлый",   emoji:"💪", hp:115, ap:10, acc:60, sight:6, hire:400, weapon:"usp",
+  heavy:  {name:"Тяжёлый",   emoji:"💪", hp:110, ap:15, acc:60, sight:6, hire:400, weapon:"usp",
     desc:"Много HP. M60, миниган, базука, кувалда."},
-  dog:    {name:"Боевой пёс",emoji:"🐕", hp:70,  ap:15, acc:75, sight:7, hire:200, weapon:"dogfangs",
-    desc:"Разведчик: зрение 7, быстрый, мощный укус. Только ближний бой."},
-  mutant: {name:"Мутант-шахтёр", emoji:"🧟", hp:145, ap:10, acc:64, sight:5, hire:450, weapon:"pick",
+  dog:    {name:"Боевой пёс",emoji:"🐕", hp:75,  ap:17, acc:75, sight:7, hire:200, weapon:"dogfangs",
+    desc:"Разведчик: зрение 7, быстрый (17 ОД), мощный укус. Только ближний бой."},
+  mutant: {name:"Мутант-шахтёр", emoji:"🧟", hp:150, ap:14, acc:64, sight:5, hire:450, weapon:"pick",
     desc:"Живая стена, но подслеповат (зрение 5). Кирка наносит огромный урон."},
 };
 const ENEMY_TYPES = {
@@ -790,19 +790,19 @@ const ENEMY_TYPES = {
   stalker:{name:"Сталкер «Спектры»", emoji:"🕵️", hp:90, ap:11, acc:74, sight:7, weapon:"svd", xp:90, armor:6, skl:55},
 };
 const MISSIONS = [
-  {id:"mine", name:"Шахта «Синий кристалл»", emoji:"💎", lvl:1, size:15, hangars:1,
+  {id:"mine", name:"Шахта «Синий кристалл»", emoji:"💎", lvl:1, size:17, hangars:2,
    desc:"Бандиты засели в штольне и растащили оборудование. Зачисти — «Спектра» заплатит.",
    enemies:["bandit","bandit","miner"], reward:120},
-  {id:"outskirts", name:"Окраина Резервации", emoji:"🏚️", lvl:2, size:15, hangars:2,
+  {id:"outskirts", name:"Окраина Резервации", emoji:"🏚️", lvl:2, size:19, hangars:3,
    desc:"Бандиты грабят караваны новичков. Обыщи дома — там есть чем поживиться.",
    enemies:["bandit","bandit","bandit"], reward:160},
-  {id:"roadblock", name:"Блокпост рейдеров", emoji:"🛑", lvl:3, size:17, hangars:2,
+  {id:"roadblock", name:"Блокпост рейдеров", emoji:"🛑", lvl:3, size:21, hangars:3,
    desc:"Рейдеры перекрыли дорогу к шахтам. Штурмуй блокпост, вскрывай арсеналы.",
    enemies:["raider","raider","bandit","bandit"], reward:240},
-  {id:"depths", name:"Глубины шахты", emoji:"🕳️", lvl:4, size:19, hangars:3,
+  {id:"depths", name:"Глубины шахты", emoji:"🕳️", lvl:4, size:23, hangars:4,
    desc:"На нижних горизонтах видели сталкера «Спектры». Опасно. Дорого.",
    enemies:["miner","miner","stalker","raider"], reward:340},
-  {id:"convoy", name:"Конвой «Спектры»", emoji:"🚚", lvl:5, size:21, hangars:4,
+  {id:"convoy", name:"Конвой «Спектры»", emoji:"🚚", lvl:5, size:25, hangars:5,
    desc:"Пулемётчики охраняют склады с грузом. Огромная territория, полно ангаров.",
    enemies:["gunner","raider","stalker","gunner","bandit"], reward:520},
 ];
@@ -1380,8 +1380,8 @@ function deployPvp(){
 }
 function startPvpBattle(){
   const {stake,naked,hostName,rating,units:n}=pvpCtx;
-  /* размер арены растёт с режимом: 1x1 — 15, 2x2 — 17, 4x4 — 21 */
-  const sz=n===1?15:n===2?17:21;
+  /* размер арены растёт с режимом: 1x1 — 17, 2x2 — 19, 4x4 — 23 */
+  const sz=n===1?17:n===2?19:23;
   const map=genMap(sz, n===1?1:n===2?2:3);
   const units=[];
   const squad=S.roster.filter(m=>squadSel.includes(m.id));
@@ -2815,6 +2815,21 @@ function draw(){
   }
   /* объекты и юниты по глубине; враги в тумане НЕ рисуются.
      5 (пол) и 6 (дверь) — плоские, в пререндере, тут не нужны */
+  /* РЕНТГЕН как в TIO: объекты, загораживающие своих бойцов, — прозрачные */
+  const xray=new Set();
+  B.units.forEach(u=>{
+    if(!u.alive||u.side!=="p")return;
+    const ux=isoX(u.x,u.y),uy=isoY(u.x,u.y)+cam.th/2;
+    for(let y=0;y<GRID;y++)for(let x=0;x<GRID;x++){
+      const cell=B.map[y][x];
+      if(!cell||cell===5||cell===6)continue;
+      if(x+y<u.x+u.y)continue;                       // объект позади бойца — не мешает
+      const ox=isoX(x,y),oy=isoY(x,y)+cam.th/2;
+      if(Math.abs(ox-ux)>=cam.tw*0.55)continue;
+      const top=oy-(cell===4?cam.tw*0.66:cam.tw*0.40);
+      if(uy>top-cam.th*0.6&&uy<oy+cam.th*0.5)xray.add(x+","+y);
+    }
+  });
   const drawables=[];
   for(let y=0;y<GRID;y++)for(let x=0;x<GRID;x++){
     const cell=B.map[y][x];
@@ -2827,7 +2842,17 @@ function draw(){
   });
   drawables.sort((a,b)=>a.d-b.d);
   drawables.forEach(it=>{
-    if(it.t==="o")drawObstacle(it.x,it.y,it.kind,t);
+    if(it.t==="o"){
+      if(xray.has(it.x+","+it.y)){
+        ctx.globalAlpha=0.34;
+        drawObstacle(it.x,it.y,it.kind,t);
+        ctx.globalAlpha=1;
+        /* лёгкий контур, чтобы читалось как «стекло» */
+        diamondPath(ctx,it.x,it.y,1);
+        ctx.strokeStyle="rgba(160,210,255,0.35)";ctx.lineWidth=1;
+        ctx.stroke();
+      }else drawObstacle(it.x,it.y,it.kind,t);
+    }
     else drawUnit(it.u,t);
   });
   /* туман войны поверх: непросмотренное — почти чёрное, разведанное — полутень */
