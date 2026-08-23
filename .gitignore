@@ -1,0 +1,13 @@
+# СЕКРЕТЫ — никогда не коммитить!
+chain/keys.json
+chain/*.keys.json
+chain/deploy.keys.json
+*.keys.json
+
+# зависимости
+node_modules/
+
+# мусор редакторов/системы
+.DS_Store
+.directory
+*~
