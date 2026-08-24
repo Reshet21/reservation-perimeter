@@ -1427,7 +1427,7 @@ function startPvpBattle(){
       x:eSpawns[i].x,y:eSpawns[i].y,hp,maxhp:hp,
       ap:c.ap+Math.floor((r.lvl-1)/2),maxap:c.ap+Math.floor((r.lvl-1)/2),
       acc:c.acc+(r.lvl-1)*2,armor:r.armor,weapon:r.weapon,
-      sight:c.sight,alive:true,xp:40+r.lvl*15,skl:r.skl,lastSeen:null});
+      sight:c.sight,alive:true,xp:40+r.lvl*15,skl:r.skl,belt:{medkit:r.lvl>=3?1:0,grenade:r.cls==="human"?1:0},lastSeen:null});
   });
   B={mission:{name:`${pvpCtx.mode} против ${hostName}`,reward:0},units,turn:1,phase:"p",
      sel:null,reach:null,mode:"normal",log:[],over:false,kills:0,aiTimer:null,map,
@@ -1899,6 +1899,7 @@ function startBattle(mission, squadIds){
       hp:Math.round(e.hp*k), maxhp:Math.round(e.hp*k),
       ap:e.ap, maxap:e.ap, acc:Math.round(e.acc+(avgL-1)), armor:e.armor,
       weapon:e.weapon, sight:e.sight||6, alive:true, xp:e.xp, skl:e.skl||0,
+      belt:{medkit:(ek==="stalker"||ek==="gunner")?1:0,grenade:(ek==="gunner"||ek==="raider")?1:0},
       lastSeen:null});
   });
   B = { mission, units, turn:1, phase:"p", sel:null, reach:null, mode:"normal",
@@ -2164,6 +2165,7 @@ function doAttack(att,def){
   }
   const nd=Math.sign((def.x-def.y)-(att.x-att.y));
   if(nd)att.dir=nd; // развернуться к цели
+  if(def.side==="p")B.hotspot={x:def.x,y:def.y}; // боты идут на звук выстрелов
   addEffect({type:"line",x1:att.x,y1:att.y,x2:def.x,y2:def.y,t:now(),melee:!!w.melee,rocket:!!w.splash});
   if(!w.melee)addEffect({type:"flash",x:att.x,y:att.y,t:now()});
   /* прокачка навыка: +1 за использование, +1 за попадание */
@@ -2376,33 +2378,127 @@ function surrender(){
   if(confirm("Сдаться и покинуть бой?"))finishBattle(false);
 }
 
-/* --- ИИ --- */
-function aiMoveTowards(e,tx,ty){
-  const dirs=[[1,0,2],[-1,0,2],[0,1,2],[0,-1,2],[1,1,3],[1,-1,3],[-1,1,3],[-1,-1,3]];
-  const cur=Math.max(Math.abs(e.x-tx),Math.abs(e.y-ty));
-  let bm=null,bd=cur;
-  for(const[dx,dy,dc]of dirs){
-    const nx=e.x+dx,ny=e.y+dy;
-    if(e.ap<dc||blocked(nx,ny))continue;
-    const d=Math.max(Math.abs(nx-tx),Math.abs(ny-ty));
-    if(d<bd){bd=d;bm={x:nx,y:ny,c:dc};}
+/* --- ИИ v2: BFS-поиск пути, фокус-огонь, гранаты/аптечки, обход укрытий --- */
+const AI_DIRS=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+function aiDirCost(dx,dy){return(dx&&dy)?3:2;}
+/* первый шаг кратчайшего пути к (tx,ty); если клетка занята — идём к свободному соседу */
+function aiPathNear(e,tx,ty){
+  let gx=tx,gy=ty;
+  if(blocked(gx,gy)){
+    let bd=1e9;
+    AI_DIRS.forEach(([dx,dy])=>{
+      const nx=tx+dx,ny=ty+dy;
+      if(!blocked(nx,ny)){const d=Math.max(Math.abs(nx-e.x),Math.abs(ny-e.y));if(d<bd){bd=d;gx=nx;gy=ny;}}
+    });
+    if(gx===tx&&gy===ty)return null;
   }
-  if(bm){const fx=e.x,fy=e.y;e.x=bm.x;e.y=bm.y;e.ap-=bm.c;startMove(e,fx,fy);return true;}
-  return false;
+  if(e.x===gx&&e.y===gy)return null;
+  const K=(x,y)=>y*GRID+x;
+  const prev=new Map();prev.set(K(e.x,e.y),null);
+  let q=[[e.x,e.y]];
+  while(q.length){
+    const nq=[];
+    for(const[cx,cy]of q){
+      for(const[dx,dy]of AI_DIRS){
+        const nx=cx+dx,ny=cy+dy;
+        if(blocked(nx,ny))continue;
+        if(dx&&dy&&(blocked(cx+dx,cy)||blocked(cx,cy+dy)))continue; // без срезания углов
+        const k=K(nx,ny);
+        if(prev.has(k))continue;
+        prev.set(k,[cx,cy]);
+        if(nx===gx&&ny===gy){
+          let px=nx,py=ny;
+          for(;;){
+            const par=prev.get(K(px,py));
+            if(!par||(par[0]===e.x&&par[1]===e.y))break;
+            px=par[0];py=par[1];
+          }
+          return{x:px,y:py};
+        }
+        nq.push([nx,ny]);
+      }
+    }
+    q=nq;
+    if(q.length>1200)return null;
+  }
+  return null;
 }
-/* отступление: шаг, максимально УВЕЛИЧИВАЮЩИЙ дистанцию до цели */
-function aiMoveAway(e,tx,ty){
-  const dirs=[[1,0,2],[-1,0,2],[0,1,2],[0,-1,2],[1,1,3],[1,-1,3],[-1,1,3],[-1,-1,3]];
+function aiStepTo(e,st){
+  if(!st)return false;
+  const dc=aiDirCost(st.x-e.x,st.y-e.y);
+  if(e.ap<dc)return false;
+  const fx=e.x,fy=e.y;
+  e.x=st.x;e.y=st.y;e.ap-=dc;
+  startMove(e,fx,fy);
+  return true;
+}
+function aiMoveTowards(e,tx,ty){
+  if(aiStepTo(e,aiPathNear(e,tx,ty)))return true;
+  /* жадный запасной шаг */
   const cur=Math.max(Math.abs(e.x-tx),Math.abs(e.y-ty));
   let bm=null,bd=cur;
-  for(const[dx,dy,dc]of dirs){
-    const nx=e.x+dx,ny=e.y+dy;
+  for(const[dx,dy]of AI_DIRS){
+    const nx=e.x+dx,ny=e.y+dy,dc=aiDirCost(dx,dy);
     if(e.ap<dc||blocked(nx,ny))continue;
     const d=Math.max(Math.abs(nx-tx),Math.abs(ny-ty));
-    if(d>bd){bd=d;bm={x:nx,y:ny,c:dc};}
+    if(d<bd){bd=d;bm={x:nx,y:ny};}
   }
-  if(bm){const fx=e.x,fy=e.y;e.x=bm.x;e.y=bm.y;e.ap-=bm.c;startMove(e,fx,fy);return true;}
-  return false;
+  return aiStepTo(e,bm);
+}
+/* отступление: шаг, максимально увеличивающий дистанцию */
+function aiMoveAway(e,tx,ty){
+  const cur=Math.max(Math.abs(e.x-tx),Math.abs(e.y-ty));
+  let bm=null,bd=cur;
+  for(const[dx,dy]of AI_DIRS){
+    const nx=e.x+dx,ny=e.y+dy,dc=aiDirCost(dx,dy);
+    if(e.ap<dc||blocked(nx,ny))continue;
+    const d=Math.max(Math.abs(nx-tx),Math.abs(ny-ty));
+    if(d>bd){bd=d;bm={x:nx,y:ny};}
+  }
+  return aiStepTo(e,bm);
+}
+/* боковой манёвр: найти соседнюю клетку с линией огня на цель */
+function aiStrafe(e,tgt){
+  const w=WEAPONS[e.weapon],mx=w.max||9;
+  const opts=AI_DIRS.map(([dx,dy])=>({nx:e.x+dx,ny:e.y+dy,dx,dy}))
+    .filter(o=>!blocked(o.nx,o.ny)&&los(o.nx,o.ny,tgt.x,tgt.y)
+      &&dist({x:o.nx,y:o.ny},tgt)<=mx&&dist({x:o.nx,y:o.ny},tgt)>=(w.min||1))
+    .sort((a,b)=>dist({x:a.nx,y:a.ny},tgt)-dist({x:b.nx,y:b.ny},tgt));
+  return opts.length&&aiStepTo(e,{x:opts[0].nx,y:opts[0].ny});
+}
+function aiGrenade(e,visible,players){
+  if(totalBelt(e,"grenade")<=0||e.ap<5)return false;
+  let bc=null,bs=24; /* порог: минимум 2 цели рядом или добивание */
+  visible.forEach(p=>{
+    let cnt=0;
+    players.forEach(q=>{if(Math.abs(q.x-p.x)<=1&&Math.abs(q.y-p.y)<=1)cnt++;});
+    let s=cnt*20+(p.hp<=35?14:0);
+    if(dist(e,p)<=7&&los(e.x,e.y,p.x,p.y)&&s>bs){bs=s;bc=p;}
+  });
+  if(!bc)return false;
+  spendBelt(e,"grenade");e.ap-=5;
+  addEffect({type:"boom",x:bc.x,y:bc.y,t:now()});
+  doShake(8,400);
+  blog(`💣 ${e.name} бросает гранату!`);
+  B.units.forEach(u=>{
+    if(!u.alive)return;
+    if(Math.abs(u.x-bc.x)<=1&&Math.abs(u.y-bc.y)<=1){
+      let sd=rnd(25,40)-(u.armor||0);if(sd<1)sd=1;
+      applyDamage(u,sd,e.name);
+    }
+  });
+  checkEnd();
+  return true;
+}
+function aiHeal(e,nearDist){
+  if(totalBelt(e,"medkit")<=0||e.ap<4)return false;
+  if(e.hp>=e.maxhp*0.42||nearDist<6)return false;
+  spendBelt(e,"medkit");e.ap-=4;
+  e.hp=Math.min(e.maxhp,e.hp+40);
+  addEffect({type:"text",x:e.x,y:e.y,str:"+40",color:"#4ade80",t:now()});
+  spawnSparks(e.x,e.y,"#4ade80",8);
+  blog(`💉 ${e.name} лечится`);
+  return true;
 }
 function aiStep(){
   if(!B||B.over)return;
@@ -2411,6 +2507,8 @@ function aiStep(){
     B.phase="p";B.turn++;
     B.units.forEach(u=>{if(u.side==="p"&&u.alive)u.ap=u.maxap;});
     blog(`— Ход ${B.turn}. Твоя очередь —`);
+    addEffect({type:"banner",str:"ХОД "+B.turn,t:now()});
+    B.aiFocus=null;
     if(B.sel&&B.sel.alive)B.reach=reachable(B.sel);
     else selectUnit(B.units.find(u=>u.side==="p"&&u.alive));
     updateHud();
@@ -2419,50 +2517,58 @@ function aiStep(){
   const players=B.units.filter(u=>u.side==="p"&&u.alive);
   if(!players.length)return;
   const w=WEAPONS[e.weapon];
-  /* честный ИИ: враг работает только по тем, кого реально видит */
+  /* честный ИИ: работает только по тем, кого реально видит */
   const visible=players.filter(p=>aiSees(e,p));
   if(visible.length){
-    e.lastSeen={x:visible[0].x,y:visible[0].y}; // запоминает, где видел
+    e.lastSeen={x:visible[0].x,y:visible[0].y};
+    B.hotspot={x:visible[0].x,y:visible[0].y};
+    /* выбор цели: ожидаемый урон × бонус за добивание / дистанция, фокус ×1.35 */
     let best=null,bestScore=-1;
     visible.forEach(p=>{
-      if(canAttack(e,p)){
-        const sc=hitChance(e,p)*(w.dmg[0]+w.dmg[1])/2/Math.max(1,p.hp/30);
-        if(sc>bestScore){bestScore=sc;best=p;}
-      }
+      if(!canAttack(e,p))return;
+      const avg=(w.dmg[0]+w.dmg[1])/2,hc=hitChance(e,p);
+      let sc=hc/100*avg*(w.shots||1);
+      if(avg*(w.shots||1)>=p.hp)sc*=2.4;      /* добивание */
+      sc/=1+dist(e,p)*0.05;
+      if(B.aiFocus===p.name)sc*=1.35;
+      if(sc>bestScore){bestScore=sc;best=p;}
     });
-    if(best&&hitChance(e,best)>=20){
+    if(best&&(hitChance(e,best)>=(w.melee?12:22)||hitChance(e,best)>=15&&w.melee)){
+      B.aiFocus=best.name;
       doAttack(e,best);
       if(!B.over)B.aiTimer=setTimeout(aiStep,420);
       return;
     }
-    let near=visible[0],nd=1e9;
-    visible.forEach(p=>{const d=dist(e,p);if(d<nd){nd=d;near=p;}});
-    /* враг в мёртвой зоне (пёс прижал снайпера) — ОТСТУПАЕТ, чтобы открыть огонь */
-    if(!w.melee&&(w.min||1)>1&&nd<(w.min||1)){
-      if(!aiMoveAway(e,near.x,near.y)) e.ap=0;
+    const near=visible.reduce((a,b)=>dist(e,a)<dist(e,b)?a:b);
+    if(aiGrenade(e,visible,players)){if(!B.over)B.aiTimer=setTimeout(aiStep,520);return;}
+    if(aiHeal(e,dist(e,near))){if(!B.over)B.aiTimer=setTimeout(aiStep,420);return;}
+    if(w.melee){
+      if(dist(e,near)<=1){e.ap=0;}              /* упёрся — дальше бежать некуда */
+      else if(!aiMoveTowards(e,near.x,near.y))e.ap=Math.max(0,e.ap-2);
     }else{
-      /* видит, но не достаёт — сближается */
-      if(!aiMoveTowards(e,near.x,near.y)) e.ap=0;
+      const mn=w.min||1,opt=w.opt||w.max||9,mx=w.max||opt;
+      const d=dist(e,near);
+      if(d<mn){ if(!aiMoveAway(e,near.x,near.y))e.ap=0; }
+      else if(d>mx||(d>opt&&!canAttack(e,near))){ if(!aiMoveTowards(e,near.x,near.y))e.ap=0; }
+      else if(!canAttack(e,near)){ if(!aiStrafe(e,near))e.ap=0; } /* укрытие — обходим */
+      else e.ap=0; /* достаёт, но шанс мал — ждём лучшей позиции на след. ход */
     }
   }else if(e.lastSeen){
-    /* идёт к последней известной позиции */
-    if(e.x===e.lastSeen.x&&e.y===e.lastSeen.y){ e.lastSeen=null; e.ap=0; }
-    else if(!aiMoveTowards(e,e.lastSeen.x,e.lastSeen.y)){ e.lastSeen=null; e.ap=0; }
+    /* идёт к последней известной позиции игрока */
+    if(e.x===e.lastSeen.x&&e.y===e.lastSeen.y){e.lastSeen=null;e.ap=0;}
+    else if(!aiMoveTowards(e,e.lastSeen.x,e.lastSeen.y)){e.lastSeen=null;e.ap=0;}
   }else{
-    /* патруль/роуминг: боты живут своей жизнью — идут к случайной точке интереса */
-    if(!e.wp||(e.x===e.wp.x&&e.y===e.wp.y)){
-      e.wp={x:2+rnd(0,GRID-5),y:2+rnd(0,GRID-5)};
+    /* роуминг: стягиваются к «горячей точке» (где видели/слышали игрока) */
+    const hs=B.hotspot||{x:Math.floor(GRID/2),y:Math.floor(GRID/2)};
+    if(!e.wp||(e.x===e.wp.x&&e.y===e.wp.y)||e.wpT!==B.turn){
+      e.wpT=B.turn;
+      e.wp={x:Math.max(1,Math.min(GRID-2,hs.x+rnd(-6,6))),
+            y:Math.max(1,Math.min(GRID-2,hs.y+rnd(-6,6)))};
     }
     if(!aiMoveTowards(e,e.wp.x,e.wp.y)){
-      /* упёрся в препятствие — обходной шаг */
-      const dirs=[[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dy])=>e.ap>=2&&!blocked(e.x+dx,e.y+dy));
-      if(dirs.length){
-        const[dx,dy]=pick(dirs);
-        const fx=e.x,fy=e.y;
-        e.x+=dx;e.y+=dy;e.ap-=2;
-        startMove(e,fx,fy);
-      }else{e.wp=null;e.ap=0;}
-    }
+      e.stuck=(e.stuck||0)+1;
+      if(e.stuck>2){e.wp=null;e.stuck=0;e.ap=0;}
+    }else e.stuck=0;
   }
   recomputeFog(); // враг мог войти в зону зрения отряда
   if(!B.over)B.aiTimer=setTimeout(aiStep,420);
@@ -2774,6 +2880,17 @@ function prerenderGround(){
       g.strokeStyle="rgba(0,0,0,0.30)";
       g.beginPath();g.moveTo(cx+cam.tw/2,cy);g.lineTo(cx,cy+cam.th/2);g.lineTo(cx-cam.tw/2,cy);g.stroke();
     }
+  }
+  /* ambient occlusion: мягкая тень у подошвы стен и ящиков */
+  for(let y=0;y<GRID;y++)for(let x=0;x<GRID;x++){
+    const cell=map?map[y][x]:0;
+    if(!BLOCK_SIGHT.has(cell))continue;
+    const cx=lx(x,y),cy=ly(x,y)+cam.th/2;
+    const sg=g.createRadialGradient(cx,cy+cam.th*0.16,1,cx,cy+cam.th*0.16,cam.tw*0.72);
+    sg.addColorStop(0,"rgba(0,0,0,0.36)");
+    sg.addColorStop(1,"rgba(0,0,0,0)");
+    g.fillStyle=sg;
+    g.beginPath();g.ellipse(cx,cy+cam.th*0.14,cam.tw*0.70,cam.th*0.48,0,0,7);g.fill();
   }
 }
 
@@ -3705,9 +3822,25 @@ function drawUnit(u,t){
   ctx.translate(cx,cy+s*0.02+dy);
   if((u.dir||1)<0)ctx.scale(-1,1);
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";
-  ctx.drawImage(sp.cv,-s*U_PADL*UNIT_SCALE,-s*U_TOP*UNIT_SCALE,
+    ctx.drawImage(sp.cv,-s*U_PADL*UNIT_SCALE,-s*U_TOP*UNIT_SCALE,
     s*(U_PADL+U_PADR)*UNIT_SCALE,s*(U_TOP+U_BOT)*UNIT_SCALE);
   ctx.restore();
+  /* парящий шеврон над выбранным бойцом */
+  if(B.sel===u&&u.side==="p"){
+    const ay=cy-s*1.16-Math.sin(t/280)*s*0.032;
+    ctx.save();
+    ctx.translate(cx,ay);
+    ctx.shadowColor="rgba(255,150,50,.75)";ctx.shadowBlur=7;
+    ctx.fillStyle="#ffb03a";
+    ctx.beginPath();
+    ctx.moveTo(-s*0.095,-s*0.08);ctx.lineTo(s*0.095,-s*0.08);ctx.lineTo(0,s*0.02);
+    ctx.closePath();ctx.fill();
+    ctx.fillStyle="rgba(255,255,255,.55)";
+    ctx.beginPath();
+    ctx.moveTo(-s*0.055,-s*0.062);ctx.lineTo(0,-s*0.062);ctx.lineTo(-s*0.008,-s*0.028);
+    ctx.closePath();ctx.fill();
+    ctx.restore();
+  }
   /* красная вспышка при получении урона */
   if(u.hurtT&&t-u.hurtT<190){
     const hurt=1-(t-u.hurtT)/190;
@@ -3775,6 +3908,25 @@ function rr(c,x,y,w,h,r){
 function drawEffects(t){
   effects=effects.filter(e=>{
     const age=t-e.t;
+    if(e.type==="banner"){
+      if(age>1150)return false;
+      const k=age<160?age/160:age>860?Math.max(0,1-(age-860)/290):1;
+      ctx.save();
+      ctx.globalAlpha=k*0.96;
+      ctx.font=`800 ${Math.round(cam.tw*0.58)}px -apple-system,BlinkMacSystemFont,sans-serif`;
+      ctx.textAlign="center";ctx.textBaseline="middle";
+      const bx=cv.clientWidth/2,by=cv.clientHeight*0.28;
+      ctx.fillStyle="rgba(0,0,0,.5)";
+      ctx.fillText(e.str,bx+2,by+3);
+      const bg2=ctx.createLinearGradient(bx-100,by-24,bx+100,by+24);
+      bg2.addColorStop(0,"#ffb03a");bg2.addColorStop(1,"#ff4438");
+      ctx.fillStyle=bg2;
+      ctx.fillText(e.str,bx,by);
+      ctx.globalAlpha=k*0.25;
+      ctx.fillText(e.str,bx,by);
+      ctx.restore();
+      return true;
+    }
     if(e.type==="line"){
       if(age>260)return false;
       const k=age/260,a=1-k;
