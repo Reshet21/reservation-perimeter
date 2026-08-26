@@ -21,9 +21,20 @@
   html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--sand);
     font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
     user-select:none;-webkit-user-select:none;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  /* живой фон: два медленно дрейфующих зарева + зерно плёнки */
+  body::before{content:"";position:fixed;inset:-22%;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(42% 34% at 24% 16%,rgba(255,106,46,.11),transparent 70%),
+      radial-gradient(40% 32% at 80% 80%,rgba(56,120,220,.08),transparent 70%),
+      radial-gradient(30% 26% at 70% 24%,rgba(255,196,107,.05),transparent 72%);
+    animation:bgDrift 26s ease-in-out infinite alternate;}
+  @keyframes bgDrift{from{transform:translate3d(-2.4%,-1.6%,0) scale(1)}
+                     to{transform:translate3d(2.2%,2%,0) scale(1.07)}}
   body::after{content:"";position:fixed;inset:0;z-index:999;pointer-events:none;
-    background:radial-gradient(ellipse at 50% 34%,transparent 56%,rgba(0,0,0,.42) 100%);}
-  .screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden;}
+    background:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.045'/></svg>"),
+      radial-gradient(ellipse at 50% 34%,transparent 56%,rgba(0,0,0,.42) 100%);}
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden;z-index:1;}
   .screen.active{display:flex;animation:screenIn .3s cubic-bezier(.2,.8,.3,1);}
   @keyframes screenIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
   @keyframes modalIn{from{opacity:0;transform:scale(.94) translateY(16px)}to{opacity:1;transform:none}}
@@ -34,7 +45,8 @@
   /* --- шапка: лёгкая, без тяжёлых градиентов --- */
   header.topbar{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;flex-shrink:0;}
   header.topbar h1{font-size:19px;font-weight:800;letter-spacing:.2px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  header.topbar h1 .ttl{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  header.topbar h1 .ttl{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 2px 10px rgba(255,110,40,.35));}
   .chip{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:999px;
     padding:6px 13px;font-size:13px;white-space:nowrap;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
   .chip b{color:var(--amber);font-variant-numeric:tabular-nums;}
@@ -65,27 +77,50 @@
   .row{display:flex;align-items:center;gap:8px;}
   .row .grow{flex:1;}
   /* --- хаб: hero + сетка плиток --- */
-  .hero{position:relative;border-radius:24px;padding:18px;margin-bottom:12px;overflow:hidden;cursor:pointer;
+  .hero{position:relative;border-radius:24px;padding:18px;margin-bottom:14px;overflow:hidden;cursor:pointer;
     background:radial-gradient(120% 150% at 88% -12%,#43180a 0%,#1c0f09 46%,#0e1119 100%);
     border:1px solid rgba(255,138,61,.30);
     box-shadow:0 14px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,190,130,.16);
     transition:transform .1s ease;}
   .hero:active{transform:scale(.98);}
+  /* радарный разворот луча из правого верхнего угла */
+  .hero::before{content:"";position:absolute;inset:-60%;pointer-events:none;
+    background:conic-gradient(from 0deg at 71% 41%,rgba(255,150,60,.15),transparent 88deg);
+    transform-origin:71% 41%;
+    animation:sweep 7.5s linear infinite;}
+  @keyframes sweep{to{transform:rotate(360deg)}}
   .hero::after{content:"";position:absolute;top:-40%;right:-18%;width:62%;height:185%;
     background:radial-gradient(circle,rgba(255,122,40,.24),transparent 64%);pointer-events:none;}
-  .hero .kick{letter-spacing:2.5px;font-size:10.5px;color:var(--dim);margin-bottom:5px;}
+  /* уголки-скобки как у прицела */
+  .hero .brackets i{position:absolute;width:16px;height:16px;border:2px solid rgba(255,160,80,.5);pointer-events:none;}
+  .hero .brackets i:nth-child(1){top:9px;left:9px;border-right:none;border-bottom:none;border-radius:6px 0 0 0;}
+  .hero .brackets i:nth-child(2){top:9px;right:9px;border-left:none;border-bottom:none;border-radius:0 6px 0 0;}
+  .hero .brackets i:nth-child(3){bottom:9px;left:9px;border-right:none;border-top:none;border-radius:0 0 0 6px;}
+  .hero .brackets i:nth-child(4){bottom:9px;right:9px;border-left:none;border-top:none;border-radius:0 0 6px 0;}
+  .hero .kick{letter-spacing:2.5px;font-size:10.5px;color:var(--dim);margin-bottom:5px;position:relative;}
   .hero h2{font-size:24px;font-weight:800;letter-spacing:.3px;background:var(--grad);
-    -webkit-background-clip:text;background-clip:text;color:transparent;}
-  .hero div.muted{margin-top:5px;}
+    -webkit-background-clip:text;background-clip:text;color:transparent;position:relative;
+    filter:drop-shadow(0 3px 12px rgba(255,110,40,.35));}
+  .hero div.muted{margin-top:5px;position:relative;}
+  .hero .go{position:absolute;right:14px;bottom:13px;font-size:11px;font-weight:800;letter-spacing:1.4px;
+    color:#ffd9ae;background:rgba(255,122,40,.14);border:1px solid rgba(255,138,61,.4);
+    padding:7px 13px;border-radius:999px;animation:pulseGlow 2.8s ease-in-out infinite;}
   .hubgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .tile{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.024));
     border:1px solid var(--line);border-radius:18px;padding:13px;cursor:pointer;overflow:hidden;
     transition:transform .1s ease,border-color .15s ease;
-    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 8px 22px rgba(0,0,0,.3);}
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 8px 22px rgba(0,0,0,.3);
+    animation:tileIn .5s cubic-bezier(.2,.8,.3,1) backwards;}
+  .hubgrid .tile:nth-child(1){animation-delay:.04s}.hubgrid .tile:nth-child(2){animation-delay:.09s}
+  .hubgrid .tile:nth-child(3){animation-delay:.14s}.hubgrid .tile:nth-child(4){animation-delay:.19s}
+  .hubgrid .tile:nth-child(5){animation-delay:.24s}.hubgrid .tile:nth-child(6){animation-delay:.29s}
+  .hubgrid .tile:nth-child(7){animation-delay:.34s}
+  @keyframes tileIn{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1}}
   .tile:active{transform:scale(.96);border-color:var(--line2);}
   .tile .ico{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;
     font-size:22px;margin-bottom:9px;background:linear-gradient(145deg,rgba(255,138,61,.20),rgba(255,81,54,.06));
-    border:1px solid rgba(255,138,61,.22);}
+    border:1px solid rgba(255,138,61,.22);
+    text-shadow:0 2px 8px rgba(255,140,60,.35);}
   .tile b{display:block;font-size:13.5px;font-weight:700;letter-spacing:.4px;margin-bottom:3px;}
   .tile div{font-size:11px;color:var(--dim);line-height:1.35;}
   /* старые menu-card совместимы с новым стилем */
@@ -242,10 +277,13 @@
       <div class="statline" id="hubStats"></div>
     </div>
     <div class="hero" onclick="openMissions()">
-      <div class="kick">КАМПАНИЯ · PvE</div>
+      <div class="brackets"><i></i><i></i><i></i><i></i></div>
+      <div class="kick">КАМПАНИЯ · PvE · 5 ОПЕРАЦИЙ</div>
       <h2>В БОЙ ⚔️</h2>
-      <div class="muted">5 операций на зачистку Зоны · лут · крафт</div>
+      <div class="muted">Пустошь, пустыня, лес и промзона · лут · крафт</div>
+      <span class="go">ВЫБРАТЬ ОПЕРАЦИЮ ›</span>
     </div>
+    <h2 class="sub" style="margin-top:4px">Отряд и снаряжение</h2>
     <div class="hubgrid">
       <div class="tile" onclick="openRooms()"><div class="ico">🎮</div><b>АРЕНА</b><div>PvP 1×1 · 2×2 · 4×4 со ставками</div></div>
       <div class="tile" onclick="openBarracks()"><div class="ico">🪖</div><b>ОТРЯД</b><div>Бойцы, навыки, снаряжение</div></div>
@@ -380,6 +418,7 @@
       <div class="btn" id="btnSwap" onclick="swapWeapon()">🔁</div>
       <div class="btn" onclick="nextUnit()">👤</div>
       <div class="btn primary" onclick="endPlayerTurn()">⏭ Ход</div>
+      <div class="btn" style="flex:0 0 42px" id="btnSnd" onclick="toggleSnd()">🔊</div>
       <div class="btn danger" style="flex:0 0 40px" onclick="surrender()">🏳</div>
     </div>
   </div>
@@ -804,22 +843,45 @@ const ENEMY_TYPES = {
   gunner: {name:"Пулемётчик",   emoji:"🧨", hp:95,  ap:10, acc:62, sight:6, weapon:"m60",   xp:75, armor:4, skl:45},
   stalker:{name:"Сталкер «Спектры»", emoji:"🕵️", hp:90, ap:11, acc:74, sight:7, weapon:"svd", xp:90, armor:6, skl:55},
 };
+/* ---------- БИОМЫ КАРТ: у каждой своя земля, декор, препятствия и цвет неба ---------- */
+const BIOMES = {
+  waste:{ name:"Пустошь", emoji:"🌫️",
+    skyA:"#0e0b07", skyB:"#262017",
+    lo:[56,45,29], hi:[88,73,49],
+    dust:"226,214,182", grassCol:"155,135,70",
+    obst:[1,1,2,2,3], trees:"dead" },
+  desert:{ name:"Пустыня", emoji:"🏜️",
+    skyA:"#150e06", skyB:"#3a2812",
+    lo:[158,126,80], hi:[206,175,120],
+    dust:"240,222,178", grassCol:"180,150,90",
+    obst:[2,2,3,9], trees:"dead" },
+  forest:{ name:"Лес", emoji:"🌲",
+    skyA:"#050a04", skyB:"#17240f",
+    lo:[42,62,30], hi:[74,98,52],
+    dust:"212,228,186", grassCol:"110,160,80",
+    obst:[9,9,9,1,2], trees:"green" },
+  industrial:{ name:"Промзона", emoji:"🏭",
+    skyA:"#090b0f", skyB:"#20242e",
+    lo:[50,52,57], hi:[82,84,90],
+    dust:"205,210,218", grassCol:"120,124,110",
+    obst:[3,3,1,1,2], trees:"dead" },
+};
 const MISSIONS = [
-  {id:"mine", name:"Шахта «Синий кристалл»", emoji:"💎", lvl:1, size:17, hangars:2,
+  {id:"mine", name:"Шахта «Синий кристалл»", emoji:"💎", lvl:1, size:24, hangars:3, biome:"waste",
    desc:"Бандиты засели в штольне и растащили оборудование. Зачисти — «Спектра» заплатит.",
-   enemies:["bandit","bandit","miner"], reward:120},
-  {id:"outskirts", name:"Окраина Резервации", emoji:"🏚️", lvl:2, size:19, hangars:3,
-   desc:"Бандиты грабят караваны новичков. Обыщи дома — там есть чем поживиться.",
-   enemies:["bandit","bandit","bandit"], reward:160},
-  {id:"roadblock", name:"Блокпост рейдеров", emoji:"🛑", lvl:3, size:21, hangars:3,
-   desc:"Рейдеры перекрыли дорогу к шахтам. Штурмуй блокпост, вскрывай арсеналы.",
-   enemies:["raider","raider","bandit","bandit"], reward:240},
-  {id:"depths", name:"Глубины шахты", emoji:"🕳️", lvl:4, size:23, hangars:4,
-   desc:"На нижних горизонтах видели сталкера «Спектры». Опасно. Дорого.",
-   enemies:["miner","miner","stalker","raider"], reward:340},
-  {id:"convoy", name:"Конвой «Спектры»", emoji:"🚚", lvl:5, size:25, hangars:5,
-   desc:"Пулемётчики охраняют склады с грузом. Огромная territория, полно ангаров.",
-   enemies:["gunner","raider","stalker","gunner","bandit"], reward:520},
+   enemies:["bandit","bandit","miner","bandit"], reward:120},
+  {id:"outskirts", name:"Окраина Резервации", emoji:"🏚️", lvl:2, size:27, hangars:4, biome:"forest",
+   desc:"Бандиты грабят караваны новичков в лесу у покосившихся домиков. Обыщи их — есть чем поживиться.",
+   enemies:["bandit","bandit","bandit","raider"], reward:160},
+  {id:"roadblock", name:"Блокпост рейдеров", emoji:"🛑", lvl:3, size:30, hangars:4, biome:"industrial",
+   desc:"Рейдеры перекрыли промзону на подступах к шахтам. Штурмуй блокпост, вскрывай арсеналы.",
+   enemies:["raider","raider","bandit","bandit","gunner"], reward:240},
+  {id:"dunes", name:"Солончаки Дикого поля", emoji:"🏜️", lvl:4, size:33, hangars:4, biome:"desert",
+   desc:"Через пустыню идут караваны «Спектры». Рейдеры бьют из сухих перелесков. Жарко. Опасно.",
+   enemies:["raider","stalker","bandit","bandit","raider"], reward:340},
+  {id:"convoy", name:"Конвой «Спектры»", emoji:"🚚", lvl:5, size:36, hangars:6, biome:"waste",
+   desc:"Пулемётчики охраняют склады с грузом. Огромная территория, полно ангаров и укрытий.",
+   enemies:["gunner","raider","stalker","gunner","bandit","raider","gunner"], reward:520},
 ];
 const NAMES = ["Хмурый","Гвоздь","Ворон","Сайга","Штырь","Кобра","Тихая","Барс","Клещ","Удав","Ржавый","Метла","Шрам","Гюрза","Феникс","Сухой"];
 const DOGNAMES = ["Рекс","Пуля","Шайтан","Гром","Зола"];
@@ -875,6 +937,7 @@ function migrate(s){ // совместимость со старыми сейв�
   if(!s.inv)s.inv={weapons:{},armors:{},implants:{},medkit:1,grenade:1};
   if(!s.market)s.market={listed:[], synced:false};            // v4: он-чейн торговля
   if(!s.mats)s.mats={scrap:3,leather:2,comp:0,crystal:0};     // v5: материалы крафта
+  if(s.snd===undefined)s.snd=true;                            // v7: звук
   return s;
 }
 function load(){
@@ -962,13 +1025,15 @@ function renderHub(){
 let chosenMission=null, squadSel=[];
 function openMissions(){
   const el=document.getElementById("missionList");
-  el.innerHTML = MISSIONS.map(ms=>`
-    <div class="card">
+  el.innerHTML = MISSIONS.map((ms,ix)=>`
+    <div class="card" style="animation:tileIn .45s cubic-bezier(.2,.8,.3,1) backwards;animation-delay:${(0.05+ix*0.06).toFixed(2)}s">
       <div class="row"><div style="font-size:28px">${ms.emoji}</div>
         <div class="grow"><h3>${ms.name}</h3>
         <div class="muted">${ms.desc}</div></div></div>
       <div class="statline">
         <span class="tag">Сложность: <b>${"★".repeat(ms.lvl)}</b></span>
+        <span class="tag">${(BIOMES[ms.biome]||BIOMES.waste).emoji} ${(BIOMES[ms.biome]||BIOMES.waste).name}</span>
+        <span class="tag">Карта: <b>${ms.size}×${ms.size}</b></span>
         <span class="tag">Враги: <b>${ms.enemies.length}</b></span>
         <span class="tag">Награда: <b>💰${ms.reward}</b></span>
       </div>
@@ -1401,9 +1466,10 @@ function deployPvp(){
 }
 function startPvpBattle(){
   const {stake,naked,hostName,rating,units:n}=pvpCtx;
-  /* размер арены растёт с режимом: 1x1 — 17, 2x2 — 19, 4x4 — 23 */
-  const sz=n===1?17:n===2?19:23;
-  const map=genMap(sz, n===1?1:n===2?2:3);
+  /* размер арены растёт с режимом: 1x1 — 24, 2x2 — 27, 4x4 — 31; биом случайный */
+  const sz=n===1?24:n===2?27:31;
+  const bio=pick(["waste","desert","forest","industrial"]);
+  const map=genMap(sz, n===1?2:n===2?3:4, bio);
   const units=[];
   const squad=S.roster.filter(m=>squadSel.includes(m.id));
   const pSpawns=freeCellsNear(map,1,GRID-2,squad.length);
@@ -1438,6 +1504,7 @@ function startPvpBattle(){
   selectUnit(B.units.find(u=>u.side==="p"));
   show("scr-battle");
   resize();
+  document.getElementById("btnSnd").textContent=S.snd===false?"🔇":"🔊";
 }
 
 /* =========================================================
@@ -1856,9 +1923,10 @@ async function chainSync(){
    4 стена ангара · 5 пол ангара · 6 дверной проём ·
    7 лут-ящик (✨ можно вскрыть) · 8 вскрытый лут-ящик
    ========================================================= */
-let GRID = 11; // размер текущей карты (15–21, как в TIO)
-const BLOCK_MOVE = new Set([1,2,3,4,7,8]);   // непроходимые
-const BLOCK_SIGHT = new Set([1,2,3,4,7]);    // заслоняют обзор (вскрытый ящик — низкий)
+let GRID = 11; // размер текущей карты (24–36, поле выросло вдвое)
+let B_BIOME = "waste"; // текущий биом карты
+const BLOCK_MOVE = new Set([1,2,3,4,7,8,9]);  // непроходимые (9 — дерево)
+const BLOCK_SIGHT = new Set([1,2,3,4,7,9]);   // заслоняют обзор (вскрытый ящик — низкий)
 const cv = document.getElementById("cv");
 const ctx = cv.getContext("2d");
 let B = null;
@@ -1868,6 +1936,8 @@ let shake = {mag:0, t:0};
 let groundCv = null;
 let gradeCv = null;      // кэш цветокоррекции/виньетки
 let whiteFlash = 0;      // экранная вспышка от взрывов
+let redFlash = 0;        // красная кайма боли, когда ранят своих
+let punch = {t:0,mag:0}; // зум-панч при убийстве
 let logLines = [];
 
 function blog(msg){
@@ -1877,7 +1947,7 @@ function blog(msg){
 }
 
 function startBattle(mission, squadIds){
-  const map = genMap(mission.size||15, mission.hangars);
+  const map = genMap(mission.size||24, mission.hangars, mission.biome);
   const units = [];
   const squad = S.roster.filter(m=>squadIds.includes(m.id));
   const pSpawns = freeCellsNear(map, 1, GRID-2, squad.length);
@@ -1911,6 +1981,7 @@ function startBattle(mission, squadIds){
   selectUnit(B.units.find(u=>u.side==="p"));
   show("scr-battle");
   resize();
+  document.getElementById("btnSnd").textContent=S.snd===false?"🔇":"🔊";
   if(!S.seenTut){ S.seenTut=true; save();
     genericModal(`<h2>Как играть</h2><div class="muted" style="font-size:13.5px;line-height:1.6">
       • Тапни по <b>своему бойцу</b> — выбрать.<br>
@@ -1935,19 +2006,23 @@ function startBattle(mission, squadIds){
   }
 }
 
-/* ---------- ГЕНЕРАТОР БОЛЬШИХ КАРТ С АНГАРАМИ (как в TIO) ---------- */
-function genMap(size, hangars){
-  GRID = size || 15;
+/* ---------- ГЕНЕРАТОР БОЛЬШИХ КАРТ С АНГАРАМИ (как в TIO) ----------
+   biome: waste | desert | forest | industrial — меняет землю, декор,
+   набор препятствий и облик построек (в лесу — деревянные домики). */
+function genMap(size, hangars, biome){
+  GRID = size || 24;
+  B_BIOME = BIOMES[biome] ? biome : "waste";
+  const bio = BIOMES[B_BIOME];
   const nh = hangars!==undefined ? hangars : 1+Math.floor(GRID/8);
   const m=[];
   for(let y=0;y<GRID;y++){m[y]=[];for(let x=0;x<GRID;x++)m[y][x]=0;}
-  const inSpawn=(x,y)=>(x<4&&y>GRID-5)||(x>GRID-5&&y<4);
-  /* --- ангары: прямоугольник стен, пол, дверь, лут-ящики внутри --- */
-  let placedH=0, guardH=80;
+  /* спавны по углам — дальше друг от друга на больших картах */
+  const inSpawn=(x,y)=>(x<5&&y>GRID-6)||(x>GRID-6&&y<5);
+  /* --- постройки: ангары / домики --- */
+  let placedH=0, guardH=120;
   while(placedH<nh && guardH-->0){
-    const w=rnd(4,6), h=rnd(4,5);
+    const w=rnd(4,7), h=rnd(4,6);
     const x0=rnd(1,GRID-w-2), y0=rnd(1,GRID-h-2);
-    /* не на спавнах и не внахлёст (с зазором 1 клетка) */
     let ok=true;
     for(let y=y0-1;y<=y0+h&&ok;y++)for(let x=x0-1;x<=x0+w&&ok;x++){
       if(x<0||y<0||x>=GRID||y>=GRID)continue;
@@ -1958,7 +2033,6 @@ function genMap(size, hangars){
       const edge=(y===y0||y===y0+h-1||x===x0||x===x0+w-1);
       m[y][x]=edge?4:5;
     }
-    /* 1-2 двери в стенах (не в углах) */
     const doors=rnd(1,2);
     for(let d=0;d<doors;d++){
       const side=rnd(0,3);
@@ -1967,21 +2041,20 @@ function genMap(size, hangars){
       else if(side===2)m[y0+rnd(1,h-2)][x0]=6;
       else m[y0+rnd(1,h-2)][x0+w-1]=6;
     }
-    /* лут-ящики внутри: 1-2 на ангар */
-    const nl=rnd(1,2);
-    let placedL=0, guardL=20;
+    const nl=1+Math.floor((w*h)/14);
+    let placedL=0, guardL=30;
     while(placedL<nl&&guardL-->0){
       const lx=x0+rnd(1,w-2), ly=y0+rnd(1,h-2);
       if(m[ly][lx]===5){m[ly][lx]=7;placedL++;}
     }
     placedH++;
   }
-  /* --- наружные укрытия --- */
-  let placed=0, want=Math.round(GRID*GRID*0.10), guard=900;
+  /* --- наружные укрытия: набор зависит от биома --- */
+  let placed=0, want=Math.round(GRID*GRID*0.085), guard=1600;
   while(placed<want&&guard-->0){
     const x=rnd(0,GRID-1),y=rnd(0,GRID-1);
     if(inSpawn(x,y)||m[y][x]!==0)continue;
-    m[y][x]=pick([1,1,2,2,3]);
+    m[y][x]=pick(bio.obst);
     placed++;
   }
   return m;
@@ -2136,14 +2209,31 @@ function whyCantAttack(att,def){
   if(!los(att.x,att.y,def.x,def.y))return "Нет линии огня";
   return "";
 }
-function applyDamage(def, dmg, srcName){
+function applyDamage(def, dmg, srcName, info){
+  info=info||{};
   def.hp-=dmg; def.hurtT=now();
-  addEffect({type:"text",x:def.x,y:def.y,str:"-"+dmg,color:"#ff8a6a",t:now()});
-  spawnSparks(def.x,def.y,"#ff7a4a",6);
+  const crit=!!info.crit;
+  addEffect({type:"text",x:def.x,y:def.y,str:"-"+dmg,
+    color:def.side==="p"?"#ff8a72":(crit?"#ffd24d":"#ffb08a"),
+    t:now(),big:crit||dmg>=26,crit});
+  /* кровь брызгает от стрелеляющего конусом; взрыв/граната — веером */
+  spawnBlood(def.x,def.y,info.ax,info.ay,Math.min(16,5+Math.floor(dmg/3)),crit);
+  if(info.armored){
+    spawnSparks(def.x,def.y,"#ffd76b",4);
+    addEffect({type:"text",x:def.x,y:def.y-0.45,str:"броня",color:"#c9cdd6",t:now()+140});
+  }
+  sfx("hit");
+  if(def.side==="p")redFlash=Math.min(0.42,redFlash+0.15+(crit?0.12:0));
+  doShake(crit?4:2,180);
   if(def.hp<=0){
     def.alive=false;
+    def.deadT=now();
+    deathDecal(def,info); // лужа крови + тело остаются на земле до конца боя
     addEffect({type:"text",x:def.x,y:def.y,str:"☠",color:"#ffd27f",t:now()});
     spawnSparks(def.x,def.y,"#d94f3d",14);
+    doShake(6,320);
+    punch={t:now()+210,mag:1};
+    sfx("death");
     blog(`☠ ${def.emoji}${def.name} погибает!`);
     B.log.push(`kill:${def.name}`);
     if(def.side==="e")B.kills++;
@@ -2154,25 +2244,42 @@ function doAttack(att,def){
   const w=WEAPONS[att.weapon];
   att.ap-=weaponAp(att);
   const ch=hitChance(att,def);
-  let total=0,hits=0;
+  let total=0,hits=0,crit=false,armoredAny=false;
   const shots=w.shots||1;
+  const pellets=[];
   for(let i=0;i<shots;i++){
     if(rnd(1,100)<=ch){
-      let dmg=rnd(w.dmg[0],w.dmg[1])-(def.armor||0);
-      if(dmg<1)dmg=1;
+      const raw=rnd(w.dmg[0],w.dmg[1]);
+      let dmg=raw-(def.armor||0), armored=false;
+      if(dmg<1){armored=true;armoredAny=true;dmg=1;}
+      if(raw>=w.dmg[1]&&w.dmg[1]>=16)crit=true;
       total+=dmg;hits++;
+      pellets.push({hit:true,jx:(Math.random()-0.5)*0.14,jy:(Math.random()-0.5)*0.10,delay:i*60});
+    }else{
+      pellets.push({hit:false,jx:(Math.random()-0.5)*0.34,jy:-0.10-Math.random()*0.24,delay:i*60});
     }
   }
   const nd=Math.sign((def.x-def.y)-(att.x-att.y));
   if(nd)att.dir=nd; // развернуться к цели
   if(def.side==="p")B.hotspot={x:def.x,y:def.y}; // боты идут на звук выстрелов
-  addEffect({type:"line",x1:att.x,y1:att.y,x2:def.x,y2:def.y,t:now(),melee:!!w.melee,rocket:!!w.splash});
-  if(!w.melee)addEffect({type:"flash",x:att.x,y:att.y,t:now()});
+  /* стиль трассера по классу оружия */
+  const style=!w.melee?(w.splash?"rocket":w.skill==="sniper"?"sniper":
+              w.skill==="heavy"?"heavy":(shots>=3?"auto":"light")):null;
+  addEffect({type:"line",x1:att.x,y1:att.y,x2:def.x,y2:def.y,t:now(),
+    melee:!!w.melee,style,pellets});
+  if(!w.melee){
+    addEffect({type:"flash",x:att.x,y:att.y,t:now(),big:!!(w.splash||w.skill==="heavy")});
+    /* гильза вылетает в сторону стрелка */
+    addEffect({type:"casing",x:att.x,y:att.y,t:now()+90,
+      vx:(att.dir||1)*(0.9+Math.random()*0.9),vy:-(2.2+Math.random()*1.4),
+      rot:Math.random()*6,vr:(Math.random()<0.5?-1:1)*(0.25+Math.random()*0.3)});
+    sfx(w.splash?"rocket":w.skill==="sniper"?"snipe":shots>=3?"auto":w.skill==="heavy"?"heavy":"shot");
+  }else sfx("swing");
   /* прокачка навыка: +1 за использование, +1 за попадание */
   gainSkill(att, 1 + (hits>0?1:0));
   if(total>0){
-    applyDamage(def,total,att.name);
-    blog(`${att.emoji}${att.name} → ${def.emoji}${def.name}: ${hits}/${shots} попал, <b>${total}</b> урона`);
+    applyDamage(def,total,att.name,{ax:att.x,ay:att.y,crit,armored:armoredAny&&hits===shots});
+    blog(`${att.emoji}${att.name} → ${def.emoji}${def.name}: ${hits}/${shots} попал, <b>${total}</b> урона${crit?" <b>КРИТ!</b>":""}`);
     B.log.push(`${att.name}>${def.name}:${total}`);
     if(!def.alive)gainSkill(att,2); // бонус за добивание
     /* взрыв ракеты по площади */
@@ -2183,7 +2290,7 @@ function doAttack(att,def){
         if(!u.alive||u===def)return;
         if(Math.abs(u.x-def.x)<=1&&Math.abs(u.y-def.y)<=1){
           let sd=rnd(w.splash[0],w.splash[1])-(u.armor||0);if(sd<1)sd=1;
-          applyDamage(u,sd,"взрыв");
+          applyDamage(u,sd,"взрыв",{ax:def.x,ay:def.y});
         }
       });
     }
@@ -2191,6 +2298,7 @@ function doAttack(att,def){
     addEffect({type:"text",x:def.x,y:def.y,str:"мимо",color:"#9ab",t:now()});
     blog(`${att.emoji}${att.name} промахнулся по ${def.name}`);
     B.log.push(`${att.name}>${def.name}:miss`);
+    if(!w.melee)spawnGroundPuff(def.x,def.y); // фонтанчик у клетки цели
     if(w.splash){ // ракета мимо — взрыв в случайной соседней клетке
       const bx=def.x+rnd(-1,1), by=def.y+rnd(-1,1);
       addEffect({type:"boom",x:bx,y:by,t:now()});
@@ -2279,6 +2387,7 @@ function openCrate(u,x,y){
   B.map[y][x]=8; // вскрыт
   const loot=rollCrate();
   spawnSparks(x,y,"#ffd27f",10);
+  sfx("crate");
   addEffect({type:"text",x,y,str:"📦!",color:"#ffd27f",t:now()});
   if(!u.lootBelt)u.lootBelt={medkit:0,grenade:0};
   if(loot.type==="medkit"){
@@ -2691,6 +2800,79 @@ function updateHud(){
 }
 
 /* =========================================================
+   ЗВУК v2 — весь синтезируется WebAudio на лету, файлов нет
+   ========================================================= */
+let _ac=null,_noiseBuf=null;
+function ac(){
+  if(_ac&&_ac.state==="suspended"){_ac.resume();return _ac;}
+  if(!_ac){try{_ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}}
+  return _ac;
+}
+function noiseSrc(a){
+  if(!_noiseBuf){
+    _noiseBuf=a.createBuffer(1,Math.floor(a.sampleRate*0.5),a.sampleRate);
+    const d=_noiseBuf.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+  }
+  const s=a.createBufferSource();s.buffer=_noiseBuf;return s;
+}
+function sBurst(a,o){ // шумовой удар через фильтр
+  const t0=a.currentTime,dur=o.dur||0.1;
+  const src=noiseSrc(a),f=a.createBiquadFilter(),g=a.createGain();
+  f.type=o.type||"bandpass";f.frequency.setValueAtTime(o.freq||1200,t0);
+  if(o.slide)f.frequency.exponentialRampToValueAtTime(o.slide,t0+dur);
+  f.Q.value=o.q||1;
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(o.peak||0.2,t0+0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  src.connect(f);f.connect(g);g.connect(a.destination);
+  src.start(t0);src.stop(t0+dur+0.05);
+}
+function sTone(a,o){ // тон с падением частоты
+  const t0=a.currentTime+(o.delay||0),dur=o.dur||0.12;
+  const osc=a.createOscillator(),g=a.createGain();
+  osc.type=o.type||"sine";osc.frequency.setValueAtTime(o.f0,t0);
+  if(o.f1)osc.frequency.exponentialRampToValueAtTime(o.f1,t0+dur);
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(o.peak||0.15,t0+0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  osc.connect(g);g.connect(a.destination);
+  osc.start(t0);osc.stop(t0+dur+0.05);
+}
+function sfx(kind){
+  if(S&&S.snd===false)return;
+  const a=ac();if(!a)return;
+  try{
+    switch(kind){
+      case"shot":  sBurst(a,{dur:0.09,peak:0.20,freq:1500,q:0.8,slide:500});
+                   sTone(a,{f0:900,f1:220,dur:0.06,peak:0.09,type:"triangle"});break;
+      case"auto":  for(let i=0;i<3;i++){
+                     setTimeout(()=>{const b=ac();if(b)sBurst(b,{dur:0.07,peak:0.16,freq:1350,q:0.9,slide:500});},i*62);
+                   }break;
+      case"snipe": sBurst(a,{dur:0.17,peak:0.22,freq:2300,q:1.3,slide:280});
+                   sTone(a,{f0:1300,f1:170,dur:0.15,peak:0.07,type:"sawtooth"});break;
+      case"rocket":sBurst(a,{dur:0.38,peak:0.14,type:"lowpass",freq:650,slide:170});break;
+      case"heavy": sBurst(a,{dur:0.13,peak:0.24,freq:900,q:0.7,slide:260});
+                   sTone(a,{f0:300,f1:90,dur:0.11,peak:0.12});break;
+      case"swing": sBurst(a,{dur:0.12,peak:0.09,freq:720,q:2,slide:240});break;
+      case"hit":   sTone(a,{f0:190,f1:64,dur:0.09,peak:0.20});
+                   sBurst(a,{dur:0.05,peak:0.10,freq:900,q:1});break;
+      case"death": sTone(a,{f0:270,f1:52,dur:0.30,peak:0.14,type:"sawtooth"});
+                   sTone(a,{f0:120,f1:48,dur:0.22,peak:0.16,delay:0.05});break;
+      case"boom":  sTone(a,{f0:95,f1:26,dur:0.5,peak:0.40});
+                   sBurst(a,{dur:0.46,peak:0.28,type:"lowpass",freq:420,slide:85});break;
+      case"crate": sTone(a,{f0:620,dur:0.07,peak:0.11,type:"square"});
+                   sTone(a,{f0:880,dur:0.09,peak:0.09,type:"square",delay:0.08});break;
+    }
+  }catch(e){}
+}
+function toggleSnd(){
+  S.snd=S.snd===false?true:false;save();
+  document.getElementById("btnSnd").textContent=S.snd===false?"🔇":"🔊";
+  toast(S.snd===false?"Звук выключен":"Звук включён");
+}
+
+/* =========================================================
    РЕНДЕР v2 — текстуры, свет, частицы
    ========================================================= */
 function now(){return performance.now();}
@@ -2710,6 +2892,75 @@ function spawnSmoke(px,py,s){
       vx:(Math.random()-0.5)*1.1,vy:-0.35-Math.random()*0.8,g:-0.006,
       life:0.85,decay:0.007+Math.random()*0.006,color:"smoke",size:s*(0.10+Math.random()*0.14)});
   }
+}
+/* кровь: конус брызг от стрелеляющего + тяжёлые капли */
+function spawnBlood(cx,cy,ax,ay,n,crit){
+  const px=isoX(cx,cy), py=isoY(cx,cy)+cam.th/2-cam.tw*0.28;
+  let dx=0,dy=-1;
+  if(ax!==undefined&&ax!==null){
+    const sx2=isoX(ax,ay),sy2=isoY(ax,ay)+cam.th/2-cam.tw*0.28;
+    const L=Math.hypot(px-sx2,py-sy2)||1;
+    dx=(px-sx2)/L; dy=(py-sy2)/L-0.35; // чуть вверх — дуга брызг
+  }
+  const cols=["#a3121b","#c21c22","#7d0e14","#e03434"];
+  for(let i=0;i<n;i++){
+    const spread=(Math.random()-0.5)*1.5;
+    const sp2=1.6+Math.random()*(crit?3.6:2.6);
+    particles.push({x:px,y:py,
+      vx:dx*sp2+dy*spread*0.5+(Math.random()-0.5)*0.8,
+      vy:dy*sp2-dx*spread*0.5-Math.random()*1.6,
+      g:0.16,life:1,decay:0.024+Math.random()*0.02,
+      color:cols[i%cols.length],size:1+Math.random()*2.2,blood:true});
+  }
+}
+/* фонтанчик земли при промахе */
+function spawnGroundPuff(cx,cy){
+  const px=isoX(cx,cy)+(Math.random()-0.5)*cam.tw*0.2,
+        py=isoY(cx,cy)+cam.th/2+(Math.random()-0.5)*cam.th*0.2;
+  for(let i=0;i<7;i++){
+    particles.push({x:px,y:py,vx:(Math.random()-0.5)*2.4,vy:-1.4-Math.random()*2.2,
+      g:0.14,life:0.9,decay:0.030+Math.random()*0.02,color:"puff",
+      size:1.5+Math.random()*2.5});
+  }
+  particles.push({x:px,y:py,vx:0,vy:-0.25,g:0,life:0.7,decay:0.02,
+    color:"smoke",size:cam.tw*0.10});
+}
+/* смерть: лужа крови и тело врастают в землю (декали на groundCv) */
+function deathDecal(u,info){
+  if(!groundCv)return;
+  const g=groundCv.getContext("2d");
+  const dpr=Math.min(window.devicePixelRatio||1,1.5);
+  g.save();
+  g.setTransform(dpr,0,0,dpr,0,0);
+  const ox=groundCv._w/2, oy=40;
+  const cx=ox+(u.x-u.y)*cam.tw/2, cy=oy+(u.x+u.y)*cam.th/2+cam.th/2;
+  /* лужа: неровное пятно + брызги по направлению выстрела */
+  g.fillStyle="rgba(96,10,14,0.62)";
+  g.beginPath();g.ellipse(cx,cy+2,cam.tw*0.26,cam.th*0.20,hash2(u.x,u.y)*3,0,7);g.fill();
+  g.fillStyle="rgba(70,6,10,0.55)";
+  for(let i=0;i<5;i++){
+    const a=hash2(u.x*7+i,u.y*11+i)*6.28, r=cam.tw*(0.16+hash2(i,u.x+u.y)*0.20);
+    g.beginPath();g.ellipse(cx+Math.cos(a)*r,cy+Math.sin(a)*r*0.55,cam.tw*0.05,cam.th*0.04,a,0,7);g.fill();
+  }
+  if(info&&info.ax!==undefined){
+    const dx=Math.sign((u.x-u.y)-(info.ax-info.ay))||1;
+    g.strokeStyle="rgba(96,10,14,0.5)";g.lineWidth=2.2;g.lineCap="round";
+    g.beginPath();g.moveTo(cx+dx*4,cy);g.lineTo(cx+dx*cam.tw*0.24,cy+cam.th*0.06);g.stroke();
+  }
+  /* тело: лежащая фигура в цвете формы */
+  const ang=(hash2(u.x+3,u.y+9)-0.5)*0.8+(u.dir||1)*0.28;
+  g.translate(cx,cy);g.rotate(ang);
+  const body=u.side==="p"?"#4a5138":"#5a4034";
+  g.fillStyle="rgba(0,0,0,0.30)";
+  g.beginPath();g.ellipse(0,3,cam.tw*0.24,cam.th*0.15,0,0,7);g.fill();
+  g.fillStyle=body;
+  rr(g,-cam.tw*0.17,-3,cam.tw*0.30,cam.th*0.18,cam.th*0.09);g.fill();
+  g.fillStyle=u.side==="p"?"#5c6444":"#6b4c3c"; // голова
+  g.beginPath();g.arc(cam.tw*0.19,-1,cam.tw*0.062,0,7);g.fill();
+  /* оружие валяется рядом */
+  g.strokeStyle="#20201c";g.lineWidth=2.4;
+  g.beginPath();g.moveTo(-cam.tw*0.10,cam.th*0.10);g.lineTo(-cam.tw*0.26,cam.th*0.16);g.stroke();
+  g.restore();
 }
 function initDust(){
   dust=[];
@@ -2781,7 +3032,8 @@ function diamondPath(c,x,y,inset){
    В draw() блиттится целиком — panx/pany уже в isoX/isoY. */
 let groundOrigin={x:0,y:0};
 function prerenderGround(){
-  const dpr=window.devicePixelRatio||1;
+  /* большие карты: ограничиваем DPR слоя земли, иначе канвас съест сотни мегабайт */
+  const dpr=Math.min(window.devicePixelRatio||1,1.5);
   const worldW=GRID*cam.tw+80, worldH=GRID*cam.th+cam.tw*2+80;
   if(worldW<=0)return;
   groundCv=document.createElement("canvas");
@@ -2799,9 +3051,10 @@ function prerenderGround(){
     const hw=cam.tw/2-(inset||0),hh=cam.th/2-(inset||0)/2;
     g.beginPath();g.moveTo(cx,cy-hh);g.lineTo(cx+hw,cy);g.lineTo(cx,cy+hh);g.lineTo(cx-hw,cy);g.closePath();
   };
-  /* фон-пустошь */
+  /* фон за пределами карты — цвет неба текущего биома */
+  const bio=BIOMES[B_BIOME]||BIOMES.waste;
   const bgGrad=g.createRadialGradient(worldW/2,worldH*0.3,60,worldW/2,worldH*0.5,Math.max(worldW,worldH)*0.75);
-  bgGrad.addColorStop(0,"#262017");bgGrad.addColorStop(1,"#0e0b07");
+  bgGrad.addColorStop(0,bio.skyB);bgGrad.addColorStop(1,bio.skyA);
   g.fillStyle=bgGrad;g.fillRect(0,0,worldW,worldH);
   const map=B?B.map:null;
   for(let y=0;y<GRID;y++)for(let x=0;x<GRID;x++){
@@ -2842,29 +3095,87 @@ function prerenderGround(){
         g.restore();
       }
     }else{
-      /* земля пустоши */
-      const base=[60+n*16, 49+n*12, 32+n*9];
+      /* земля биома: интерполяция тёмного→светлого тона по шуму */
+      const r=Math.round(bio.lo[0]+(bio.hi[0]-bio.lo[0])*n);
+      const gg=Math.round(bio.lo[1]+(bio.hi[1]-bio.lo[1])*n);
+      const b2=Math.round(bio.lo[2]+(bio.hi[2]-bio.lo[2])*n);
       dia(x,y,0.5);
       const tg=g.createLinearGradient(cx,cy-cam.th/2,cx,cy+cam.th/2);
-      tg.addColorStop(0,`rgb(${base[0]+10},${base[1]+8},${base[2]+5})`);
-      tg.addColorStop(1,`rgb(${base[0]-8},${base[1]-7},${base[2]-5})`);
+      tg.addColorStop(0,`rgb(${r+10},${gg+8},${b2+5})`);
+      tg.addColorStop(1,`rgb(${r-10},${gg-9},${b2-7})`);
       g.fillStyle=tg;g.fill();
       g.save();g.clip();
       const spots=4+Math.floor(n*5);
       for(let i=0;i<spots;i++){
         const r1=hash2(x*31+i,y*17+i), r2=hash2(x*7+i*3,y*41+i);
         const sx=cx+(r1-0.5)*cam.tw*0.8, sy=cy+(r2-0.5)*cam.th*0.8;
-        g.fillStyle=r1>0.5?"rgba(255,235,200,0.05)":"rgba(0,0,0,0.10)";
-        g.beginPath();g.arc(sx,sy,0.8+r2*1.8,0,7);g.fill();
+        if(B_BIOME==="forest"&&r1>0.62){
+          /* цветущие точки и мох */
+          g.fillStyle=r1>0.86?(r2>0.5?"rgba(240,200,90,0.75)":"rgba(235,235,245,0.7)"):"rgba(30,60,20,0.25)";
+          g.beginPath();g.arc(sx,sy,r1>0.62&&r1<0.86?0.8+r2*1.6:2+r2*3,0,7);g.fill();
+        }else{
+          g.fillStyle=r1>0.5?"rgba(255,235,200,0.05)":"rgba(0,0,0,0.10)";
+          g.beginPath();g.arc(sx,sy,0.8+r2*1.8,0,7);g.fill();
+        }
       }
-      /* пучки сухой травы */
-      if(n>0.55&&n<0.72){
-        g.strokeStyle="rgba(155,135,70,0.5)";g.lineWidth=1;
-        const gx=cx+(n-0.6)*22, gy=cy+cam.th*0.12;
-        for(let b=0;b<4;b++){
-          g.beginPath();g.moveTo(gx+b*2-3,gy);
-          g.quadraticCurveTo(gx+b*2-3+(b-1.5)*2, gy-5-hash2(x+b,y)*5, gx+b*2-3+(b-1.5)*3.4, gy-7-hash2(x,y+b)*5);
+      if(B_BIOME==="desert"){
+        /* рябь дюн — светлые дуги по направлению ветра */
+        g.strokeStyle="rgba(255,240,205,0.10)";g.lineWidth=1;
+        for(let d=0;d<2;d++){
+          const yy=cy-cam.th*0.18+d*cam.th*0.24+(n-0.5)*4;
+          g.beginPath();
+          g.moveTo(cx-cam.tw*0.34,yy);
+          g.quadraticCurveTo(cx,yy-3.5,cx+cam.tw*0.34,yy);
           g.stroke();
+        }
+        if(n>0.87){ /* кости / череп — редкая находка */
+          g.fillStyle="rgba(232,222,196,0.66)";
+          g.beginPath();g.ellipse(cx+cam.tw*0.06,cy+cam.th*0.05,cam.tw*0.055,cam.th*0.075,0.4,0,7);g.fill();
+          g.fillStyle="rgba(40,32,20,0.8)";
+          g.beginPath();g.arc(cx+cam.tw*0.04,cy+cam.th*0.02,0.9,0,7);g.fill();
+          g.beginPath();g.arc(cx+cam.tw*0.085,cy+cam.th*0.03,0.9,0,7);g.fill();
+        }
+      }
+      if(B_BIOME==="industrial"){
+        /* асфальт: люк/решётка, разметка, лужа с отблеском */
+        if(n>0.84){
+          g.fillStyle="rgba(28,30,36,0.85)";
+          g.beginPath();g.ellipse(cx,cy,cam.tw*0.16,cam.th*0.16,0,0,7);g.fill();
+          g.strokeStyle="rgba(150,155,165,0.35)";g.lineWidth=1;
+          g.beginPath();g.ellipse(cx,cy,cam.tw*0.16,cam.th*0.16,0,0,7);g.stroke();
+          for(let b=-2;b<3;b++){
+            g.beginPath();g.moveTo(cx+b*3,cy-cam.th*0.1);g.lineTo(cx+b*3,cy+cam.th*0.1);g.stroke();
+          }
+        }else if(n<0.06){
+          g.strokeStyle="rgba(230,225,160,0.22)";g.lineWidth=2.4;
+          g.setLineDash([7,6]);
+          g.beginPath();g.moveTo(cx-cam.tw*0.42,cy+cam.th*0.14);g.lineTo(cx+cam.tw*0.42,cy-cam.th*0.14);g.stroke();
+          g.setLineDash([]);
+        }else if(n>0.68&&n<0.74){
+          g.fillStyle="rgba(12,16,22,0.55)";
+          g.beginPath();g.ellipse(cx+4,cy+2,cam.tw*0.2,cam.th*0.13,0,0,7);g.fill();
+          g.fillStyle="rgba(180,200,220,0.10)";
+          g.beginPath();g.ellipse(cx-2,cy-1,cam.tw*0.12,cam.th*0.07,-0.3,0,7);g.fill();
+        }
+      }
+      /* сухая трава / хвоя: у леса гуще и зеленее */
+      const tuft=(B_BIOME==="forest")?(n>0.30&&n<0.78):(n>0.55&&n<0.72);
+      if(tuft){
+        const tc=B_BIOME==="forest"?`rgba(${bio.grassCol},0.65)`:`rgba(${bio.grassCol},0.5)`;
+        g.strokeStyle=tc;g.lineWidth=1;
+        const gx=cx+(n-0.6)*22, gy=cy+cam.th*0.12;
+        const blades=B_BIOME==="forest"?6:4;
+        for(let b2=0;b2<blades;b2++){
+          g.beginPath();g.moveTo(gx+b2*2-blades,gy);
+          g.quadraticCurveTo(gx+b2*2-blades+(b2-1.5)*2, gy-5-hash2(x+b2,y)*5, gx+b2*2-blades+(b2-1.5)*3.4, gy-7-hash2(x,y+b2)*5);
+          g.stroke();
+        }
+        if(B_BIOME==="forest"&&n>0.70){ /* гриб у корней */
+          g.fillStyle="rgba(200,120,80,0.8)";
+          g.fillRect(gx+8,gy-3,1.6,3);
+          g.beginPath();g.arc(gx+8.8,gy-3,2.2,Math.PI,0);g.fill();
+          g.fillStyle="rgba(255,230,210,0.5)";
+          g.beginPath();g.arc(gx+8,gy-3.6,0.7,0,7);g.fill();
         }
       }
       /* трещина */
@@ -2905,8 +3216,13 @@ function draw(){
     const k=(shake.t-t)/350*shake.mag;
     ctx.translate((Math.random()-0.5)*k,(Math.random()-0.5)*k);
   }
-  /* фон-пустошь за пределами карты */
-  ctx.fillStyle="#0e0b07";ctx.fillRect(0,0,w,h);
+  /* зум-панч при убийстве: короткий «удар» камеры */
+  if(t<punch.t){
+    const k=(punch.t-t)/210*punch.mag;
+    ctx.translate(w/2,h/2);ctx.scale(1+k*0.031,1+k*0.031);ctx.translate(-w/2,-h/2);
+  }
+  /* фон за пределами карты — небо текущего биома */
+  ctx.fillStyle=(BIOMES[B_BIOME]||BIOMES.waste).skyA;ctx.fillRect(0,0,w,h);
   /* земля (пререндер мира) — блит со смещением камеры */
   if(groundCv){
     const bx=cam.ox+cam.panx-groundCv._w/2;
@@ -2973,7 +3289,8 @@ function draw(){
     if(cell&&cell!==5&&cell!==6)drawables.push({d:x+y,t:"o",x,y,kind:cell});
   }
   B.units.forEach(u=>{
-    if(!u.alive)return;
+    /* погибшие ещё миг падают, потом остаются декалью на земле */
+    if(!u.alive){ if(u.deadT&&t-u.deadT<620)drawables.push({d:u.x+u.y,t:"u",u}); return; }
     if(u.side==="e"&&!enemyVisible(u))return; // скрыт туманом войны
     drawables.push({d:u.x+u.y,t:"u",u});
   });
@@ -3021,6 +3338,14 @@ function draw(){
     ctx.fillRect(0,0,w,h);
     whiteFlash=Math.max(0,whiteFlash-0.045);
   }
+  /* красная кайма боли — когда ранят бойцов игрока */
+  if(redFlash>0){
+    const rg=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*0.30,w/2,h/2,Math.max(w,h)*0.70);
+    rg.addColorStop(0,"rgba(180,20,12,0)");
+    rg.addColorStop(1,`rgba(200,24,14,${redFlash.toFixed(3)})`);
+    ctx.fillStyle=rg;ctx.fillRect(0,0,w,h);
+    redFlash=Math.max(0,redFlash-0.007);
+  }
   drawDust(w,h);
 }
 
@@ -3028,7 +3353,8 @@ function draw(){
 const obsCache=new Map();
 function obsSprite(kind,x,y){
   const v=Math.floor(hash2(x,y)*3); // 3 варианта фактуры на вид
-  const key=kind+"|"+cam.tw+"|"+v;
+  const bioKey=(kind===4||kind===9)?B_BIOME:"";
+  const key=kind+"|"+cam.tw+"|"+v+"|"+bioKey;
   let sp=obsCache.get(key);
   if(sp)return sp;
   const s=cam.tw,pad=Math.ceil(s*0.62);
@@ -3042,8 +3368,9 @@ function obsSprite(kind,x,y){
   sp._bx=bx; sp._by=by;
   /* мягкая тень основания у всех объектов */
   g.fillStyle="rgba(0,0,0,0.38)";
-  g.beginPath();g.ellipse(bx,by+s*0.03,s*0.34,s*0.16,0,0,7);g.fill();
+  g.beginPath();g.ellipse(bx,by+s*0.03,s*(kind===9?0.26:0.34),s*(kind===9?0.12:0.16),0,0,7);g.fill();
   if(kind===4)paintWall(g,bx,by,s,v);
+  else if(kind===9)paintTree(g,sp,bx,by,s,v);
   else if(kind===7||kind===8)paintCrateLoot(g,bx,by,s,kind===7);
   else if(kind===1)paintCrate(g,bx,by,s,v);
   else if(kind===2)paintRock(g,bx,by,s,v);
@@ -3052,6 +3379,8 @@ function obsSprite(kind,x,y){
   return sp;
 }
 function paintWall(g,bx,by,s,v){
+  if(B_BIOME==="forest"){paintCabin(g,bx,by,s,v);return;}
+  if(B_BIOME==="industrial"){paintConcreteHangar(g,bx,by,s,v);return;}
   const wallH=s*0.62,hw=s/2,hh=cam.th/2;
   /* левая грань */
   let gr=g.createLinearGradient(bx-hw,by,bx,by+hh);
@@ -3126,6 +3455,201 @@ function paintWall(g,bx,by,s,v){
   if(v===0){g.fillRect(bx-hw*0.55,by-wallH*0.72,2.2,wallH*0.52);g.fillRect(bx+hw*0.28,by-wallH*0.5+hh*0.42,1.8,wallH*0.36);}
   else if(v===1){g.fillRect(bx+hw*0.12,by-wallH*0.66,2.0,wallH*0.46);g.fillRect(bx-hw*0.2,by-wallH*0.4+hh*0.3,1.6,wallH*0.3);}
   else{g.fillRect(bx-hw*0.75,by-wallH*0.6,2.0,wallH*0.44);}
+}
+/* --- лесной домик: бревенчатые стены, двускатная крыша, тёплое окно --- */
+function paintCabin(g,bx,by,s,v){
+  const wallH=s*0.60,hw=s/2,hh=cam.th/2;
+  /* левая грань */
+  let gr=g.createLinearGradient(bx-hw,by,bx,by+hh);
+  gr.addColorStop(0,"#7a5a38");gr.addColorStop(1,"#4a3420");
+  g.fillStyle=gr;
+  g.beginPath();g.moveTo(bx-hw,by);g.lineTo(bx,by+hh);g.lineTo(bx,by+hh-wallH);g.lineTo(bx-hw,by-wallH);g.closePath();g.fill();
+  /* правая грань */
+  gr=g.createLinearGradient(bx,by+hh,bx+hw,by);
+  gr.addColorStop(0,"#684c2e");gr.addColorStop(1,"#3d2b18");
+  g.fillStyle=gr;
+  g.beginPath();g.moveTo(bx,by+hh);g.lineTo(bx+hw,by);g.lineTo(bx+hw,by-wallH);g.lineTo(bx,by+hh-wallH);g.closePath();g.fill();
+  /* горизонтальные брёвна: шов + светлый верх бревна */
+  for(let i=1;i<6;i++){
+    const wy=wallH*i/6;
+    g.strokeStyle="rgba(30,20,10,0.55)";g.lineWidth=1;
+    g.beginPath();g.moveTo(bx-hw,by-wy);g.lineTo(bx,by+hh-wy);g.lineTo(bx+hw,by-wy);g.stroke();
+    g.strokeStyle="rgba(255,222,170,0.09)";
+    g.beginPath();g.moveTo(bx-hw,by-wy-1.2);g.lineTo(bx,by+hh-wy-1.2);g.lineTo(bx+hw,by-wy-1.2);g.stroke();
+  }
+  /* торцы брёвен по углам */
+  g.fillStyle="#8a683f";
+  [[-hw,0],[hw,0]].forEach(c=>{
+    g.beginPath();g.arc(bx+c[0],by+c[1]-wallH+2.5,2.4,0,7);g.fill();
+    g.strokeStyle="rgba(40,26,12,0.7)";g.lineWidth=0.8;g.stroke();
+  });
+  /* тёплое окно на правой грани (варианты 0 и 1) */
+  if(v!==2){
+    const wx=bx+hw*0.45,wy=by-wallH*0.52;
+    g.fillStyle="rgba(255,196,90,0.92)";
+    g.beginPath();g.moveTo(wx-3.2,wy-1);g.lineTo(wx+3.2,wy-4);g.lineTo(wx+3.2,wy-11);g.lineTo(wx-3.2,wy-8);g.closePath();g.fill();
+    g.strokeStyle="#2a1a0c";g.lineWidth=1;g.stroke();
+    g.strokeStyle="rgba(255,220,150,0.35)";g.lineWidth=2.5;
+    g.beginPath();g.moveTo(wx-4.4,wy-4);g.lineTo(wx+4.4,wy-8.4);g.stroke();
+  }
+  /* двускатная крыша со свесом — тёмные доски + мох */
+  const ov=3;
+  gr=g.createLinearGradient(bx-hw,by-wallH,bx+hw,by-wallH);
+  gr.addColorStop(0,"#4e4436");gr.addColorStop(0.5,"#5d5240");gr.addColorStop(1,"#463d31");
+  g.fillStyle=gr;
+  g.beginPath();
+  g.moveTo(bx,by-hh-wallH-ov-s*0.06);g.lineTo(bx+hw+ov,by-wallH);g.lineTo(bx,by+hh+ov-wallH);g.lineTo(bx-hw-ov,by-wallH);
+  g.closePath();g.fill();
+  g.strokeStyle="rgba(0,0,0,0.45)";g.lineWidth=1;g.stroke();
+  /* доски крыши вдоль скатов */
+  g.strokeStyle="rgba(0,0,0,0.16)";
+  const T={x:bx,y:by-hh-wallH-ov-s*0.06},Bt={x:bx,y:by+hh+ov-wallH},
+        L={x:bx-hw-ov,y:by-wallH},R={x:bx+hw+ov,y:by-wallH};
+  for(let i=1;i<5;i++){
+    const tt=i/5;
+    g.beginPath();g.moveTo(L.x+(T.x-L.x)*tt,L.y+(T.y-L.y)*tt);g.lineTo(T.x+(R.x-T.x)*tt,T.y+(R.y-T.y)*tt);g.stroke();
+    g.beginPath();g.moveTo(L.x+(Bt.x-L.x)*tt,L.y+(Bt.y-L.y)*tt);g.lineTo(Bt.x+(R.x-Bt.x)*tt,Bt.y+(R.y-Bt.y)*tt);g.stroke();
+  }
+  /* мох и прогнившие доски */
+  g.fillStyle="rgba(70,110,50,0.5)";
+  if(v===0){g.beginPath();g.ellipse(bx-hw*0.5,by-wallH-hh*0.22,s*0.09,s*0.035,-0.4,0,7);g.fill();}
+  else if(v===1){g.beginPath();g.ellipse(bx+hw*0.4,by-wallH+hh*0.18,s*0.08,s*0.03,0.4,0,7);g.fill();}
+  /* конёк */
+  g.strokeStyle="rgba(235,225,190,0.25)";g.lineWidth=1.3;
+  g.beginPath();g.moveTo(bx-hw-ov+1,by-wallH);g.lineTo(bx,by-hh-wallH-ov-s*0.06+1);g.lineTo(bx+hw+ov-1,by-wallH);g.stroke();
+  /* труба с дымом-намёком на некоторых крышах */
+  if(v===1){
+    g.fillStyle="#3a332b";
+    g.fillRect(bx+s*0.10,by-wallH-s*0.24,s*0.05,s*0.16);
+    g.fillStyle="rgba(255,235,190,0.14)";g.fillRect(bx+s*0.10,by-wallH-s*0.24,s*0.05,1.4);
+  }
+}
+/* --- промзона: бетонные панели, ржавая крыша, вытяжная труба --- */
+function paintConcreteHangar(g,bx,by,s,v){
+  const wallH=s*0.64,hw=s/2,hh=cam.th/2;
+  let gr=g.createLinearGradient(bx-hw,by,bx,by+hh);
+  gr.addColorStop(0,"#8d9199");gr.addColorStop(1,"#565a62");
+  g.fillStyle=gr;
+  g.beginPath();g.moveTo(bx-hw,by);g.lineTo(bx,by+hh);g.lineTo(bx,by+hh-wallH);g.lineTo(bx-hw,by-wallH);g.closePath();g.fill();
+  gr=g.createLinearGradient(bx,by+hh,bx+hw,by);
+  gr.addColorStop(0,"#75797f");gr.addColorStop(1,"#43464c");
+  g.fillStyle=gr;
+  g.beginPath();g.moveTo(bx,by+hh);g.lineTo(bx+hw,by);g.lineTo(bx+hw,by-wallH);g.lineTo(bx,by+hh-wallH);g.closePath();g.fill();
+  /* панельные швы */
+  g.strokeStyle="rgba(20,22,26,0.5)";g.lineWidth=1;
+  for(let i=1;i<3;i++){
+    const wy=wallH*i/3;
+    g.beginPath();g.moveTo(bx-hw,by-wy);g.lineTo(bx,by+hh-wy);g.lineTo(bx+hw,by-wy);g.stroke();
+  }
+  g.beginPath();g.moveTo(bx-hw/2,by-hh/4);g.lineTo(bx-hw/2,by-hh/4-wallH);g.stroke();
+  g.beginPath();g.moveTo(bx+hw/2,by+hh/4);g.lineTo(bx+hw/2,by+hh/4-wallH);g.stroke();
+  /* потёки ржавчины */
+  g.fillStyle="rgba(140,80,36,0.32)";
+  if(v===0)g.fillRect(bx-hw*0.5,by-wallH*0.85,2.4,wallH*0.55);
+  else if(v===1)g.fillRect(bx+hw*0.3,by-wallH*0.7+hh*0.3,2.0,wallH*0.5);
+  else{g.fillRect(bx-hw*0.2,by-wallH*0.9,2.2,wallH*0.6);g.fillRect(bx+hw*0.55,by-wallH*0.4,1.6,wallH*0.3);}
+  /* металлическая крыша */
+  const ov=3;
+  gr=g.createLinearGradient(bx-hw,by-wallH,bx+hw,by-wallH);
+  gr.addColorStop(0,"#6a6156");gr.addColorStop(0.5,"#7d7364");gr.addColorStop(1,"#584f43");
+  g.fillStyle=gr;
+  g.beginPath();
+  g.moveTo(bx,by-hh-wallH-ov);g.lineTo(bx+hw+ov,by-wallH);g.lineTo(bx,by+hh+ov-wallH);g.lineTo(bx-hw-ov,by-wallH);
+  g.closePath();g.fill();
+  g.strokeStyle="rgba(0,0,0,0.4)";g.lineWidth=1;g.stroke();
+  g.strokeStyle="rgba(0,0,0,0.13)";
+  const T={x:bx,y:by-hh-wallH-ov},Bt={x:bx,y:by+hh+ov-wallH},
+        L={x:bx-hw-ov,y:by-wallH},R={x:bx+hw+ov,y:by-wallH};
+  for(let i=1;i<4;i++){
+    const tt=i/4;
+    g.beginPath();g.moveTo(L.x+(T.x-L.x)*tt,L.y+(T.y-L.y)*tt);g.lineTo(Bt.x+(R.x-Bt.x)*tt,Bt.y+(R.y-Bt.y)*tt);g.stroke();
+  }
+  g.strokeStyle="rgba(255,240,200,0.22)";g.lineWidth=1.3;
+  g.beginPath();g.moveTo(bx-hw-ov+1,by-wallH);g.lineTo(bx,by-hh-wallH-ov+1);g.lineTo(bx+hw+ov-1,by-wallH);g.stroke();
+  /* вытяжная труба / вентиляция */
+  if(v!==2){
+    g.fillStyle="#33383f";g.fillRect(bx+s*0.04,by-wallH-s*0.34,s*0.075,s*0.26);
+    g.fillStyle="#22262c";g.fillRect(bx+s*0.02,by-wallH-s*0.36,s*0.115,s*0.045);
+    g.fillStyle="rgba(255,235,190,0.10)";g.fillRect(bx+s*0.04,by-wallH-s*0.34,s*0.02,s*0.26);
+  }
+}
+/* --- дерево: ствол в спрайте + крона отдельным слоем (покачивается) --- */
+function paintTree(g,sp,bx,by,s,v){
+  const green=(BIOMES[B_BIOME]||BIOMES.waste).trees!=="dead";
+  const dpr=Math.min(window.devicePixelRatio||1,1.5);
+  const th=s*(green?0.52:0.62); // высота ствола
+  /* ствол с изгибом и корнями */
+  const tg=g.createLinearGradient(bx-s*0.06,0,bx+s*0.06,0);
+  if(green){tg.addColorStop(0,"#5d4630");tg.addColorStop(0.55,"#4a3624");tg.addColorStop(1,"#332416");}
+  else{tg.addColorStop(0,"#6b6055");tg.addColorStop(0.55,"#54493d");tg.addColorStop(1,"#39302a");}
+  g.fillStyle=tg;
+  g.beginPath();
+  g.moveTo(bx-s*0.055,by);
+  g.quadraticCurveTo(bx-s*0.075,by-th*0.55,bx-s*0.032,by-th);
+  g.lineTo(bx+s*0.032,by-th);
+  g.quadraticCurveTo(bx+s*0.062,by-th*0.5,bx+s*0.055,by);
+  g.closePath();g.fill();
+  /* корни */
+  g.strokeStyle="rgba(40,28,16,0.8)";g.lineWidth=1.6;g.lineCap="round";
+  g.beginPath();g.moveTo(bx-s*0.05,by-1);g.lineTo(bx-s*0.11,by-s*0.02);g.stroke();
+  g.beginPath();g.moveTo(bx+s*0.05,by-1);g.lineTo(bx+s*0.115,by-s*0.015);g.stroke();
+  g.beginPath();g.moveTo(bx,by);g.lineTo(bx+s*0.01,by-s*0.03);g.stroke();
+  /* кора — вертикальные штрихи */
+  g.strokeStyle="rgba(0,0,0,0.28)";g.lineWidth=0.8;
+  for(let i=0;i<3;i++){
+    const k=0.3+i*0.22;
+    g.beginPath();g.moveTo(bx-s*0.02+i*s*0.02,by-th*k);g.lineTo(bx-s*0.005+i*s*0.02,by-th*(k+0.14));g.stroke();
+  }
+  if(!green){
+    /* сухое дерево: голые ветки */
+    g.strokeStyle="#57493a";g.lineWidth=2;g.lineCap="round";
+    g.beginPath();g.moveTo(bx-s*0.02,by-th*0.86);g.quadraticCurveTo(bx-s*0.16,by-th*1.15,bx-s*0.24,by-th*1.3);g.stroke();
+    g.beginPath();g.moveTo(bx+s*0.02,by-th*0.78);g.quadraticCurveTo(bx+s*0.17,by-th*1.02,bx+s*0.27,by-th*1.22);g.stroke();
+    g.beginPath();g.moveTo(bx,by-th);g.lineTo(bx+s*0.015,by-th*1.34);g.stroke();
+    g.lineWidth=1;
+    g.beginPath();g.moveTo(bx-s*0.17,by-th*1.16);g.lineTo(bx-s*0.23,by-th*1.02);g.stroke();
+    g.beginPath();g.moveTo(bx+s*0.18,by-th*1.05);g.lineTo(bx+s*0.26,by-th*0.94);g.stroke();
+    sp._canopy=null;
+    return;
+  }
+  /* зелёная крона отдельным канвасом для покачивания */
+  const cw=Math.ceil(s*1.5),chh=Math.ceil(s*1.2);
+  const cn=document.createElement("canvas");
+  cn.width=cw*dpr;cn.height=chh*dpr;
+  const c=cn.getContext("2d");
+  c.setTransform(dpr,0,0,dpr,0,0);
+  const ccx=cw/2, ccy=chh*0.56;
+  const blobs=v===0?[[0,0,0.34],[-0.20,-0.10,0.26],[0.21,-0.08,0.25],[0.02,-0.24,0.24]]
+             :v===1?[[0,-0.02,0.32],[-0.24,0.02,0.23],[0.24,0.0,0.22],[-0.08,-0.22,0.22],[0.14,-0.20,0.20]]
+                   :[[0,-0.06,0.30],[-0.22,-0.14,0.22],[0.22,-0.12,0.23]];
+  /* тёмная подложка кроны */
+  c.fillStyle="rgba(16,28,10,0.85)";
+  blobs.forEach(b=>{c.beginPath();c.arc(ccx+b[0]*s,ccy+b[1]*s+s*0.02,b[2]*s*1.06,0,7);c.fill();});
+  /* основные массы листвы */
+  blobs.forEach((b,i)=>{
+    const rg=c.createRadialGradient(ccx+b[0]*s-b[2]*s*0.3,ccy+b[1]*s-b[2]*s*0.35,b[2]*s*0.15,ccx+b[0]*s,ccy+b[1]*s,b[2]*s);
+    if(i%2){rg.addColorStop(0,"#4f7a34");rg.addColorStop(0.65,"#3a5c26");rg.addColorStop(1,"#26401a");}
+    else{rg.addColorStop(0,"#5c8c3c");rg.addColorStop(0.65,"#44682c");rg.addColorStop(1,"#2b481d");}
+    c.fillStyle=rg;
+    c.beginPath();c.arc(ccx+b[0]*s,ccy+b[1]*s,b[2]*s,0,7);c.fill();
+  });
+  /* солнечный блик сверху-слева */
+  const hl=c.createRadialGradient(ccx-s*0.14,ccy-s*0.22,1,ccx-s*0.10,ccy-s*0.18,s*0.34);
+  hl.addColorStop(0,"rgba(210,240,150,0.5)");
+  hl.addColorStop(0.5,"rgba(160,200,100,0.16)");
+  hl.addColorStop(1,"rgba(160,200,100,0)");
+  c.fillStyle=hl;
+  c.beginPath();c.arc(ccx-s*0.08,ccy-s*0.16,s*0.36,0,7);c.fill();
+  /* пятна листвы-текстура */
+  for(let i=0;i<14;i++){
+    const r1=hash2(v*77+i,i*31),r2=hash2(i*13,v*17+i);
+    c.fillStyle=r1>0.5?"rgba(220,245,160,0.20)":"rgba(10,24,6,0.25)";
+    c.beginPath();c.arc(ccx+(r1-0.5)*s*0.66,ccy+(r2-0.5)*s*0.5,0.8+r2*1.6,0,7);c.fill();
+  }
+  sp._canopy=cn;
+  sp._canW=cw; sp._canH=chh;
+  sp._canX=-cw/2;                 // смещение кроны от bx спрайта
+  sp._canY=-th-ccy;               // от основания ствола вверх до центра кроны
 }
 function paintCrateLoot(g,bx,by,s,closed){
   const hw=s*0.24,ht=s*0.22;
@@ -3230,6 +3754,12 @@ function drawObstacle(x,y,kind,t){
   const cx=isoX(x,y),cy=isoY(x,y)+cam.th/2;
   const sp=obsSprite(kind,x,y);
   ctx.drawImage(sp,cx-sp._bx,cy-sp._by,sp._w,sp._h);
+  /* крона дерева — отдельный слой, тихо покачивается на ветру */
+  if(kind===9&&sp._canopy){
+    const sway=Math.sin(t/1500+(x*1.7+y*2.3))*cam.tw*0.016
+              +Math.sin(t/430+x)*cam.tw*0.004;
+    ctx.drawImage(sp._canopy,cx+sp._canX+sway,cy+sp._canY,sp._canW,sp._canH);
+  }
   const s=cam.tw;
   /* динамическое свечение поверх статичного спрайта */
   if(kind===7){
@@ -3781,20 +4311,26 @@ function drawUnit(u,t){
   const P=unitPos(u,t);
   const cx=isoX(P.gx,P.gy),cy=isoY(P.gx,P.gy)+cam.th/2;
   const s=cam.tw;
+  /* падение после смерти: 620 мс оседания с поворотом */
+  const fall=(!u.alive&&u.deadT)?Math.min(1,(t-u.deadT)/620):0;
+  const fallEase=fall*fall*(3-2*fall); // smoothstep
   /* контактная тень: мягкое ядро + ореол */
   ctx.fillStyle="rgba(0,0,0,0.22)";
-  ctx.beginPath();ctx.ellipse(cx,cy+s*0.03,s*0.34,s*0.15,0,0,7);ctx.fill();
+  ctx.beginPath();ctx.ellipse(cx,cy+s*0.03,s*(0.34+fallEase*0.10),s*(0.15+fallEase*0.05),0,0,7);ctx.fill();
   ctx.fillStyle="rgba(0,0,0,0.42)";
-  ctx.beginPath();ctx.ellipse(cx,cy+s*0.02,s*0.26,s*0.115,0,0,7);ctx.fill();
-  /* кольцо стороны */
+  ctx.beginPath();ctx.ellipse(cx,cy+s*0.02,s*(0.26+fallEase*0.08),s*(0.115+fallEase*0.04),0,0,7);ctx.fill();
+  if(fall>=1)return; // дальше говорит декаль на земле
+  /* кольцо стороны — только у живых */
   const ring=u.side==="p"?["rgba(150,225,105,0.75)","rgba(70,140,50,0.12)"]
                           :["rgba(250,110,75,0.75)","rgba(150,40,30,0.12)"];
   const rg=ctx.createRadialGradient(cx,cy,s*0.08,cx,cy,s*0.33);
   rg.addColorStop(0,ring[1]);rg.addColorStop(0.78,ring[1]);rg.addColorStop(1,ring[0]);
   ctx.fillStyle=rg;
+  ctx.globalAlpha=1-fallEase*0.8;
   ctx.beginPath();ctx.ellipse(cx,cy,s*0.31,s*0.155,0,0,7);ctx.fill();
   ctx.strokeStyle=ring[0];ctx.lineWidth=1.3;
   ctx.beginPath();ctx.ellipse(cx,cy,s*0.30,s*0.15,0,0,7);ctx.stroke();
+  ctx.globalAlpha=1;
   /* выбранного маркирует вращающееся пунктирное кольцо */
   if(B.sel===u&&u.side==="p"){
     ctx.save();
@@ -3819,12 +4355,33 @@ function drawUnit(u,t){
   const sp=getUnitSprite(u.vk,u.look,u.weapon,u.side,!!P.moving,f);
   const dy=P.moving?0:Math.sin(t/650)*s*0.008; /* дыхание в покое */
   ctx.save();
+  ctx.globalAlpha=1-fallEase*0.45;
+  /* оседание: приседание + заваливание в сторону */
   ctx.translate(cx,cy+s*0.02+dy);
+  if(fallEase>0){
+    const fd=(u.dir||1);
+    ctx.rotate(fd*fallEase*1.15);
+    ctx.translate(0,fallEase*s*0.10);
+    ctx.scale(1+fallEase*0.12,1-fallEase*0.62);
+  }
   if((u.dir||1)<0)ctx.scale(-1,1);
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";
     ctx.drawImage(sp.cv,-s*U_PADL*UNIT_SCALE,-s*U_TOP*UNIT_SCALE,
     s*(U_PADL+U_PADR)*UNIT_SCALE,s*(U_TOP+U_BOT)*UNIT_SCALE);
   ctx.restore();
+  if(fallEase>0){ // умирающему — только вспышка урона, без интерфейсных слоёв
+    if(u.hurtT&&t-u.hurtT<190){
+      const hurt=1-(t-u.hurtT)/190;
+      ctx.save();ctx.globalCompositeOperation="lighter";
+      const hg=ctx.createRadialGradient(cx,cy-s*0.42,0,cx,cy-s*0.42,s*0.62);
+      hg.addColorStop(0,`rgba(255,120,85,${(0.6*hurt).toFixed(3)})`);
+      hg.addColorStop(1,"rgba(255,60,40,0)");
+      ctx.fillStyle=hg;
+      ctx.beginPath();ctx.arc(cx,cy-s*0.42,s*0.62,0,7);ctx.fill();
+      ctx.restore();
+    }
+    return;
+  }
   /* парящий шеврон над выбранным бойцом */
   if(B.sel===u&&u.side==="p"){
     const ay=cy-s*1.16-Math.sin(t/280)*s*0.032;
@@ -3928,81 +4485,137 @@ function drawEffects(t){
       return true;
     }
     if(e.type==="line"){
-      if(age>260)return false;
-      const k=age/260,a=1-k;
+      if(age>(e.pellets?e.pellets[e.pellets.length-1].delay+300:260))return false;
       const x1=isoX(e.x1,e.y1),y1=isoY(e.x1,e.y1)+cam.th/2-cam.tw*0.3;
-      const x2=isoX(e.x2,e.y2),y2=isoY(e.x2,e.y2)+cam.th/2-cam.tw*0.3;
+      const tx=isoX(e.x2,e.y2),ty=isoY(e.x2,e.y2)+cam.th/2-cam.tw*0.3;
       ctx.save();
       ctx.globalCompositeOperation="lighter";
+      ctx.lineCap="round";
+      /* палитры трассеров: у каждой ветки оружия свой почерк */
+      const ST={
+        light: {col:"255,215,110",w:1.4,glow:3.5,len:0.14},
+        auto:  {col:"255,200,90", w:1.7,glow:4,  len:0.20},
+        heavy: {col:"255,160,60", w:2.6,glow:6,  len:0.24},
+        sniper:{col:"210,235,255",w:1.2,glow:7,  len:0.05},
+        rocket:{col:"255,150,50", w:3.0,glow:8,  len:0.16},
+      };
+      const drawTracer=(x2,y2,kk,st)=>{
+        const a=Math.max(0,1-kk);
+        /* внешнее свечение */
+        ctx.strokeStyle=`rgba(${st.col},${(a*0.22).toFixed(3)})`;
+        ctx.lineWidth=(st.w+2.4);
+        ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1+(x2-x1)*Math.min(1,kk+st.len),y1+(y2-y1)*Math.min(1,kk+st.len));ctx.stroke();
+        /* яркое ядро */
+        ctx.strokeStyle=`rgba(${st.col},${a.toFixed(3)})`;
+        ctx.lineWidth=st.w;
+        ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1+(x2-x1)*Math.min(1,kk+st.len*0.5),y1+(y2-y1)*Math.min(1,kk+st.len*0.5));ctx.stroke();
+        /* голова снаряда */
+        const hx=x1+(x2-x1)*Math.min(1,kk*1.25),hy=y1+(y2-y1)*Math.min(1,kk*1.25);
+        const hg=ctx.createRadialGradient(hx,hy,0,hx,hy,cam.tw*(st===ST.sniper?0.10:0.13));
+        hg.addColorStop(0,`rgba(255,255,235,${a})`);
+        hg.addColorStop(0.5,`rgba(${st.col},${a*0.55})`);
+        hg.addColorStop(1,`rgba(${st.col},0)`);
+        ctx.fillStyle=hg;
+        ctx.beginPath();ctx.arc(hx,hy,cam.tw*(st===ST.sniper?0.10:0.13),0,7);ctx.fill();
+        /* дымный след ракеты */
+        if(e.style==="rocket"&&Math.random()<0.5){
+          particles.push({x:hx,y:hy,vx:(Math.random()-0.5)*0.5,vy:-0.2,g:-0.004,
+            life:0.55,decay:0.02,color:"smoke",size:cam.tw*0.07});
+        }
+      };
+      const impactPuff=(x2,y2)=>{
+        for(let i=0;i<4;i++){
+          particles.push({x:x2,y:y2,vx:(Math.random()-0.5)*2,vy:-1-Math.random()*1.6,
+            g:0.12,life:0.8,decay:0.04,color:"puff",size:1+Math.random()*1.8});
+        }
+      };
       if(e.melee){
-        /* световая дуга удара */
-        const mx=(x1+x2)/2,my=(y1+y2)/2;
+        /* световая дуга удара + искра на цели */
+        const mx=(x1+tx)/2,my=(y1+ty)/2,a=1-age/260;
         ctx.strokeStyle=`rgba(255,255,255,${a*0.9})`;
-        ctx.lineWidth=2.4;ctx.lineCap="round";
+        ctx.lineWidth=2.4;
         ctx.beginPath();
         ctx.moveTo(x1,y1);
-        ctx.quadraticCurveTo(mx,my-cam.tw*(0.10+0.22*a),x2,y2);
+        ctx.quadraticCurveTo(mx,my-cam.tw*(0.10+0.22*a),tx,ty);
         ctx.stroke();
         ctx.strokeStyle=`rgba(255,240,200,${a*0.35})`;
         ctx.lineWidth=5;
         ctx.stroke();
       }else{
-        /* трассер: внешнее свечение + яркое ядро + голова снаряда */
-        const col=e.rocket?"255,150,50":"255,215,110";
-        ctx.lineCap="round";
-        ctx.strokeStyle=`rgba(${col},${a*0.22})`;
-        ctx.lineWidth=e.rocket?6:4;
-        ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2-(x2-x1)*k*0.12,y2-(y2-y1)*k*0.12);ctx.stroke();
-        ctx.strokeStyle=`rgba(${col},${a})`;
-        ctx.lineWidth=e.rocket?2.4:1.4;
-        ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
-        const hx=x1+(x2-x1)*Math.min(1,k*1.6),hy=y1+(y2-y1)*Math.min(1,k*1.6);
-        const hg=ctx.createRadialGradient(hx,hy,0,hx,hy,cam.tw*0.13);
-        hg.addColorStop(0,`rgba(255,255,235,${a})`);
-        hg.addColorStop(0.5,`rgba(${col}, ${a*0.55})`);
-        hg.addColorStop(1,`rgba(${col},0)`);
-        ctx.fillStyle=hg;
-        ctx.beginPath();ctx.arc(hx,hy,cam.tw*0.13,0,7);ctx.fill();
+        const st=ST[e.style]||ST.light;
+        (e.pellets||[{}]).forEach(p=>{
+          const kk=(age-p.delay)/260;
+          if(kk<0)return;
+          const x2=tx+p.jx*cam.tw, y2=ty+p.jy*cam.tw;
+          if(kk<=1.05&&!p._puffed&&!p.hit){p._puffed=1;impactPuff(x2,y2);}
+          if(kk<=1.15)drawTracer(x2,y2,Math.max(0,kk),st);
+        });
       }
       ctx.restore();
       return true;
     }
+    if(e.type==="casing"){
+      /* гильза: латунная чечётка с гравитацией */
+      if(age>620)return false;
+      e.px=e.px===undefined?(isoX(e.x,e.y)-cam.tw*0.08):e.px;
+      e.py=e.py===undefined?(isoY(e.x,e.y)+cam.th/2-cam.tw*0.30):e.py;
+      if(age>=0){
+        e.px+=e.vx;e.py+=e.vy;e.vy+=0.17;e.rot+=e.vr;
+        if(e.py>isoY(e.x,e.y)+cam.th/2-1){e.py=isoY(e.x,e.y)+cam.th/2-1;e.vy*=-0.35;e.vx*=0.6;e.vr*=0.5;}
+      }
+      ctx.save();
+      ctx.translate(e.px,e.py);ctx.rotate(e.rot);
+      ctx.globalAlpha=Math.min(1,(620-age)/220);
+      ctx.fillStyle="#c9a53c";
+      rr(ctx,-2.6,-1.1,5.2,2.2,1);ctx.fill();
+      ctx.fillStyle="rgba(255,240,190,0.75)";
+      ctx.fillRect(-2.6,-1.1,1.4,2.2);
+      ctx.restore();
+      return true;
+    }
     if(e.type==="flash"){
-      if(age>120)return false;
-      const k=1-age/120;
+      if(age>130)return false;
+      const k=1-age/130;
       const x=isoX(e.x,e.y),y=isoY(e.x,e.y)+cam.th/2-cam.tw*0.3;
       ctx.save();ctx.globalCompositeOperation="lighter";
-      const r=cam.tw*0.20*k+2;
+      const base=e.big?0.30:0.20;
+      const r=cam.tw*base*k+2;
       const fg=ctx.createRadialGradient(x,y,0,x,y,r*1.7);
       fg.addColorStop(0,"rgba(255,246,195,0.95)");
       fg.addColorStop(0.35,"rgba(255,175,70,0.55)");
       fg.addColorStop(1,"rgba(255,120,40,0)");
       ctx.fillStyle=fg;
       ctx.beginPath();ctx.arc(x,y,r*1.7,0,7);ctx.fill();
-      /* лучи-звезда */
+      /* лучи-звезда: у тяжёлого — длиннее и их больше */
+      const rays=e.big?6:4,reach=e.big?2.0:1.6;
       ctx.strokeStyle=`rgba(255,236,175,${0.85*k})`;
       ctx.lineWidth=1.6;ctx.lineCap="round";
-      for(let i=0;i<4;i++){
-        const an=i*Math.PI/2+0.45;
+      for(let i=0;i<rays;i++){
+        const an=i*Math.PI/rays+0.45;
         ctx.beginPath();
         ctx.moveTo(x-Math.cos(an)*r*0.6,y-Math.sin(an)*r*0.6);
-        ctx.lineTo(x+Math.cos(an)*r*1.6,y+Math.sin(an)*r*1.6);
+        ctx.lineTo(x+Math.cos(an)*r*reach,y+Math.sin(an)*r*reach);
         ctx.stroke();
       }
       ctx.restore();
       return true;
     }
     if(e.type==="text"){
-      if(age>950)return false;
-      const pop=age<140?1+0.55*(1-age/140)*(1-age/140):1;
-      ctx.font=`bold ${Math.round(cam.tw*0.26*pop)}px sans-serif`;
+      if(age<0)return true;
+      if(age>1050)return false;
+      /* выскакивает с перелётом и повисает */
+      const popK=age<230?1+0.65*Math.sin(Math.min(1,age/230)*Math.PI)*(1-age/400):1;
+      const bigK=e.big?1.45:1;
+      ctx.font=`bold ${Math.round(cam.tw*0.26*popK*bigK)}px sans-serif`;
       ctx.textAlign="center";ctx.textBaseline="middle";
-      ctx.globalAlpha=1-Math.max(0,(age-500)/450);
-      const yy=isoY(e.x,e.y)+cam.th/2-cam.tw*0.72-age*0.03;
+      ctx.globalAlpha=1-Math.max(0,(age-600)/450);
+      const yy=isoY(e.x,e.y)+cam.th/2-cam.tw*(e.big?0.86:0.72)-age*0.03;
       ctx.strokeStyle="rgba(0,0,0,.85)";ctx.lineWidth=3.5;ctx.lineJoin="round";
       ctx.strokeText(e.str,isoX(e.x,e.y),yy);
       ctx.fillStyle=e.color;
+      if(e.crit){ctx.shadowColor="rgba(255,190,60,.8)";ctx.shadowBlur=9;}
       ctx.fillText(e.str,isoX(e.x,e.y),yy);
+      ctx.shadowBlur=0;
       ctx.globalAlpha=1;
       return true;
     }
@@ -4011,8 +4624,8 @@ function drawEffects(t){
       const x=isoX(e.x,e.y),y=isoY(e.x,e.y)+cam.th/2;
       const pr=age/650;
       const r=cam.tw*(0.34+pr*1.45);
-      /* разовые события: вспышка экрана + дым */
-      if(!e.flashed){e.flashed=1;whiteFlash=Math.min(0.22,whiteFlash+0.15);spawnSmoke(x,y,cam.tw);}
+      /* разовые события: вспышка экрана + дым + звук */
+      if(!e.flashed){e.flashed=1;whiteFlash=Math.min(0.22,whiteFlash+0.15);spawnSmoke(x,y,cam.tw);sfx("boom");}
       /* ударная волна */
       if(pr<0.72){
         ctx.save();ctx.globalCompositeOperation="lighter";
@@ -4050,6 +4663,18 @@ function drawParticles(){
       sm.addColorStop(1,"rgba(50,44,36,0)");
       ctx.fillStyle=sm;
       ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,7);ctx.fill();
+    }else if(p.color==="puff"){
+      /* земляная пыль */
+      ctx.globalCompositeOperation="source-over";
+      ctx.globalAlpha=p.life*0.55;
+      ctx.fillStyle="#8a7a5c";
+      ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life+0.5,0,7);ctx.fill();
+    }else if(p.blood){
+      /* кровь — плотные тёмные капли без свечения */
+      ctx.globalCompositeOperation="source-over";
+      ctx.globalAlpha=Math.min(1,p.life*1.4);
+      ctx.fillStyle=p.color;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.size*0.8,0,7);ctx.fill();
     }else{
       /* искры и огонь — аддитивное свечение */
       ctx.globalCompositeOperation="lighter";
@@ -4064,12 +4689,13 @@ function drawParticles(){
   ctx.restore();
 }
 function drawDust(w,h){
+  const dc=(BIOMES[B_BIOME]||BIOMES.waste).dust;
   dust.forEach(d=>{
     d.x+=d.vx;d.y+=d.vy;
     if(d.y<0)d.y=1;
     if(d.x<0)d.x=1;if(d.x>1)d.x=0;
     ctx.globalAlpha=d.a;
-    ctx.fillStyle="#e9dcbe";
+    ctx.fillStyle=`rgb(${dc})`;
     ctx.fillRect(d.x*w,d.y*h,d.s,d.s);
     ctx.globalAlpha=1;
   });
