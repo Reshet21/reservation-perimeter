@@ -4,7 +4,7 @@ pragma AbiHeader expire;
 pragma AbiHeader pubkey;
 
 /**
- * TIOProfiles — он-чейн реестр профилей игры TIO:Nacki
+ * PerimeterProfiles — он-чейн реестр профилей игры Reservation: Perimeter
  * для блокчейна Acki Nacki (тестовая сеть Shellnet).
  *
  * Лёгкая он-чейн модель:
@@ -14,7 +14,7 @@ pragma AbiHeader pubkey;
  *
  * Деплой создаёт новый Dapp ID (контракт = корень дапа).
  */
-contract TIOProfiles {
+contract PerimeterProfiles {
 
     struct Profile {
         string  nick;

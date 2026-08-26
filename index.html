@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#07090e">
-<title>TIO: Nacki — Total Influence на Acki Nacki</title>
+<title>RESERVATION: PERIMETER — пошаговая тактика в Зоне</title>
 <link rel="manifest" href="manifest.json">
 <style>
   :root{
@@ -265,14 +265,14 @@
 <!-- ===================== HUB ===================== -->
 <div class="screen active" id="scr-hub">
   <header class="topbar">
-    <h1><span class="ttl">☢ TIO:NACKI</span></h1>
+    <h1><span class="ttl">☢ RESERVATION<span style="font-size:.55em;display:block;letter-spacing:.35em;color:#9fb4d8">PERIMETER</span></span></h1>
     <span class="chip">💰 <b id="hubCr">0</b></span>
     <span class="chip">🏆 <b id="hubRt">1000</b></span>
   </header>
   <div class="scroll">
     <div class="card">
       <div class="row"><div class="grow"><h3 id="hubNick">Сталкер</h3>
-      <div class="muted">Зона добычи синего кристалла. Корпорация «Спектра» платит за зачистку.</div></div>
+      <div class="muted">Зона добычи азурита. Корпорация «Вектор» платит за зачистку.</div></div>
       <div style="font-size:36px">🧿</div></div>
       <div class="statline" id="hubStats"></div>
     </div>
@@ -317,7 +317,7 @@
 
 <!-- ===================== SHOP ===================== -->
 <div class="screen" id="scr-shop">
-  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1>МАГАЗИН «СПЕКТРА»</h1>
+  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1>МАГАЗИН «СХРОН»</h1>
     <span class="chip">💰 <b class="crview">0</b></span></header>
   <div class="scroll" id="shopList"></div>
 </div>
@@ -449,13 +449,13 @@
 <script>
 "use strict";
 /* =========================================================
-   TIO:NACKI v2 — пошаговая тактика в духе Total Influence Online
-   + навыки оружия (растут от использования, как в TIO)
+   RESERVATION: PERIMETER — пошаговая тактика в Зоне
+   + навыки оружия (растут от использования, как в жанровой классике)
    + расширенный арсенал (16 стволов в 5 ветках)
    + улучшенная графика (текстуры, свет, частицы, тряска)
    ========================================================= */
 
-/* ---------- ВЕТКИ НАВЫКОВ (как в TIO) ---------- */
+/* ---------- ВЕТКИ НАВЫКОВ (как в жанровой классике) ---------- */
 const SKILLS = {
   light: {name:"Лёгкое оружие",   emoji:"🔫"},
   auto:  {name:"Автоматическое",  emoji:"🔥"},
@@ -472,7 +472,7 @@ function skillApDiscount(v){ return v>=50 ? 1 : 0; }       // -1 ОД с 50
 /* dmg[min,max], ap — базовая цена выстрела, opt/max — дистанции,
    acc — модификатор точности, shots — пуль за атаку, skill — ветка,
    splash — урон по площади (ракеты), natural — нельзя снять */
-/* ---------- ОРУЖИЕ (баланс как в TIO) ----------
+/* ---------- ОРУЖИЕ (баланс как в жанровой классике) ----------
    dmg[min,max] · ap — цена выстрела · shots — пуль за атаку
    ДИСТАНЦИИ: min — мёртвая зона (ближе стрелять НЕЛЬЗЯ),
    opt — оптимал (без штрафа), max — предел дальности.
@@ -517,26 +517,70 @@ const WEAPONS = {
   svd:  {name:"СВД",          emoji:"🔫", dmg:[24,40], ap:6, min:3, opt:10, max:15, acc:15, shots:1, skill:"sniper", price:900,  classes:["human"]},
   barrett:{name:"Barrett M82",emoji:"🔫", dmg:[38,60], ap:8, min:4, opt:11, max:17, acc:12, shots:1, skill:"sniper", price:2400, classes:["human"]},
 };
-const ARMORS = {
-  none: {name:"Без брони", red:0, price:0, tier:0},
-  vest1:{name:"Лёгкий бронежилет", red:3, price:150, tier:1},
-  vest2:{name:"Тактическая броня", red:6, price:400, tier:2},
-  vest3:{name:"Броня «Спектра»",   red:10,price:900, tier:3},
-  /* крафтовая броня (в магазине не продаётся) */
-  scrapvest:{name:"Самодельный жилет", red:4, price:260, tier:1, craft:1},
-  compvest: {name:"Композитная броня", red:8, price:700, tier:2, craft:1},
-  crystvest:{name:"Кристаллический панцирь", red:13, price:1600, tier:4, craft:1},
-  /* собачья броня — носит только пёс! */
-  dogvest1:{name:"Кожаная попона", red:2, price:120, tier:1, dog:1, craft:1},
-  dogvest2:{name:"Кевларовая попона", red:5, price:420, tier:2, dog:1, craft:1},
-  dogvest3:{name:"Попона «Цербер»", red:8, price:1100, tier:4, dog:1, craft:1},
+/* слоты брони, как в жанровой классике: голова / тело / ноги, либо комбез — один предмет на всё тело */
+const SLOTS = {
+  head:{name:"Голова", emoji:"🪖"},
+  body:{name:"Тело",   emoji:"🦺"},
+  legs:{name:"Ноги",   emoji:"🥾"},
+  all: {name:"Всё тело", emoji:"🧵"},
 };
-/* ---------- МАТЕРИАЛЫ ДЛЯ КРАФТА (падают с врагов, как лут в TIO) ---------- */
+const ARMORS = {
+  /* --- ГОЛОВА --- */
+  bandana:  {name:"Бандана «Пыль»",       slot:"head", red:1,  price:60,  tier:1},
+  kaska:    {name:"Каска «Черепаха»",     slot:"head", red:2,  price:150, tier:1},
+  rusthelm: {name:"Шлем из крышки бака",  slot:"head", red:3,  price:280, tier:2, craft:1},
+  titan:    {name:"Шлем «Титан»",         slot:"head", red:4,  price:480, tier:2},
+  crysthelm:{name:"Азуритовый шлем",     slot:"head", red:6,  price:900, tier:3, craft:1},
+  /* --- ТЕЛО --- */
+  vest1:    {name:"Стёганая куртка",          slot:"body", red:2,  price:150, tier:1},
+  vest2:    {name:"Разгрузка с плитами",      slot:"body", red:5,  price:420, tier:2},
+  vest3:    {name:"Бронекостюм «Норд»",       slot:"body", red:8,  price:950, tier:3},
+  scrapvest:{name:"Жилет из металлолома",     slot:"body", red:3,  price:260, tier:1, craft:1},
+  compvest: {name:"Кевларовый нагрудник",     slot:"body", red:6,  price:700, tier:2, craft:1},
+  crystvest:{name:"Азуритовый панцирь", slot:"body", red:11, price:1700,tier:4, craft:1},
+  /* --- НОГИ --- */
+  jeans:      {name:"Армированные штаны", slot:"legs", red:1, price:90,  tier:1},
+  pads:       {name:"Штурмовые щитки",    slot:"legs", red:2, price:240, tier:1},
+  leatherlegs:{name:"Поножи из шкур",     slot:"legs", red:3, price:320, tier:2, craft:1},
+  greaves:    {name:"Тяжёлые поножи",     slot:"legs", red:4, price:580, tier:2},
+  crystlegs:  {name:"Азуритовые щитки",  slot:"legs", red:7, price:1100,tier:3, craft:1},
+  /* --- КОМБЕЗЫ: один предмет закрывает голову+тело+ноги --- */
+  overall:  {name:"Рабочий комбинезон",       slot:"all", red:3,  price:260,  tier:1},
+  stalker:  {name:"Костюм сталкера",          slot:"all", red:5,  price:520,  tier:2, craft:1},
+  stormkmbz:{name:"Штурмовой комбез «Гром»",  slot:"all", red:7,  price:820,  tier:2},
+  exokmbes: {name:"Экзо-комбез «Хребет»",     slot:"all", red:11, price:1950, tier:3},
+  /* собачья броня — носит только пёс! */
+  dogvest1:{name:"Кожаная попона",    slot:"body", red:2, price:120, tier:1, dog:1, craft:1},
+  dogvest2:{name:"Кевларовая попона", slot:"body", red:5, price:430, tier:2, dog:1, craft:1},
+  dogvest3:{name:"Попона «Цербер»",   slot:"body", red:8, price:1150,tier:4, dog:1, craft:1},
+};
+/* суммарная защита бойца: комбез считается один раз */
+function gearArmor(m){
+  let red=0; const seen=new Set();
+  ["head","body","legs"].forEach(s=>{
+    const id=m.gear&&m.gear[s];
+    if(id&&ARMORS[id]&&!seen.has(id)){seen.add(id);red+=ARMORS[id].red;}
+  });
+  return red;
+}
+function gearList(m){
+  const out=[], seen=new Set();
+  ["head","body","legs"].forEach(s=>{
+    const id=m.gear&&m.gear[s];
+    if(id&&ARMORS[id]&&!seen.has(id)){seen.add(id);out.push(ARMORS[id]);}
+  });
+  return out;
+}
+function gearStr(m){
+  const l=gearList(m);
+  return l.length?l.map(a=>a.name).join(" + "):"без брони";
+}
+/* ---------- МАТЕРИАЛЫ ДЛЯ КРАФТА (падают с врагов, как лут в жанровой классике) ---------- */
 const MATERIALS = {
   scrap:  {name:"Металлолом",    tier:1},
   leather:{name:"Шкура мутанта", tier:1},
   comp:   {name:"Композит",      tier:2},
-  crystal:{name:"Синий кристалл",tier:3},
+  crystal:{name:"Азурит",tier:3},
 };
 /* лут с типов врагов: [материал, шанс%, кол-во макс] */
 const ENEMY_LOOT = {
@@ -554,6 +598,16 @@ const RECIPES = [
    mats:{scrap:3, comp:3}},
   {id:"crystvest", type:"armor", out:"crystvest", cost:600,
    mats:{comp:4, crystal:3}},
+  {id:"rusthelm",  type:"armor", out:"rusthelm",  cost:60,
+   mats:{scrap:3}},
+  {id:"crysthelm", type:"armor", out:"crysthelm", cost:350,
+   mats:{comp:3, crystal:2}},
+  {id:"leatherlegs",type:"armor",out:"leatherlegs",cost:70,
+   mats:{leather:3}},
+  {id:"crystlegs", type:"armor", out:"crystlegs", cost:400,
+   mats:{comp:3, crystal:2}},
+  {id:"stalker",   type:"armor", out:"stalker",   cost:200,
+   mats:{scrap:2, leather:3, comp:2}},
   {id:"dogvest1",  type:"armor", out:"dogvest1",  cost:50,
    mats:{leather:3}},
   {id:"dogvest2",  type:"armor", out:"dogvest2",  cost:200,
@@ -748,6 +802,48 @@ function svgIcon(kind, id){
         ${id==="dogvest3"?'<circle cx="24" cy="23" r="3.2" fill="#9fd8ff"/>':""}
         <circle cx="24" cy="17" r="1.5" fill="#ffd27f"/>`);
     }
+    /* голова: бандана / каски / шлемы */
+    if(a.slot==="head"){
+      if(id==="bandana")
+        return wrap(`<path d="M11 20 q13 -8 26 0 l-2 7 q-11 -5 -22 0 z" fill="#7a4a3a" stroke="#241512" stroke-width="1.5"/>
+          <path d="M34 23 l7 2 -1.4 4.6 -6.4 -2.4 z" fill="#7a4a3a" stroke="#241512" stroke-width="1.3"/>
+          <path d="M14 21 q10 -5 20 0" stroke="rgba(255,240,200,.35)" stroke-width="1.8" fill="none"/>
+          <circle cx="18" cy="24" r="1.2" fill="#e8d9b0"/><circle cx="30" cy="24" r="1.2" fill="#e8d9b0"/>`);
+      const col=id==="crysthelm"?"url(#gcryst)":id==="titan"?"#5a3f73":id==="rusthelm"?"#6b4a2e":"#55604a";
+      return wrap(`<path d="M12 27 q0 -15 12 -15 q12 0 12 15 l0 3 -24 0 z" fill="${col}" stroke="#181210" stroke-width="1.6"/>
+        <rect x="10.5" y="28" width="27" height="4.5" rx="2" fill="${G}"/>
+        <path d="M17 17 q7 -5 14 0" stroke="rgba(255,240,200,.4)" stroke-width="2" fill="none"/>
+        ${id==="rusthelm"?'<path d="M16 24 l4 0 M26 21 l4 0 M20 27 l5 0" stroke="rgba(0,0,0,.35)" stroke-width="1.4"/>':""}
+        ${id==="titan"?'<rect x="19" y="19.5" width="10" height="4" rx="2" fill="#9fd8ff"/>':
+          id==="crysthelm"?'<path d="M21 18 l3 -3.4 3 3.4 -3 4.4 z" fill="#cfeaff"/>':
+          '<circle cx="24" cy="21.5" r="1.6" fill="#ffd27f"/>'}`);
+    }
+    /* ноги: штаны / щитки / поножи */
+    if(a.slot==="legs"){
+      const col=id==="crystlegs"?"url(#gcryst)":id==="greaves"?"#3e4a5a":
+                id==="leatherlegs"?"url(#gwood)":id==="pads"?"#4d5a3a":"#3a4050";
+      const knee=(x)=>`<rect x="${x}" y="24" width="9" height="7" rx="2.4" fill="${id==="jeans"||id==="leatherlegs"?col:"#55555e"}" stroke="#181210" stroke-width="1.3"/>
+        <path d="M${x+2} 25.6 l5 0 M${x+2} 27.6 l5 0" stroke="rgba(255,255,255,.22)" stroke-width="1.1"/>`;
+      return wrap(`<path d="M15 8 l18 0 1.6 14 -2.4 17 -6.4 0 -0.8 -13 -0.8 13 -6.4 0 -2.4 -17 z"
+          fill="${col}" stroke="#181210" stroke-width="1.6"/>
+        <rect x="15.5" y="8.5" width="17" height="4" rx="1.5" fill="rgba(0,0,0,.3)"/>
+        ${knee(11.5)}${knee(27.5)}
+        ${id==="crystlegs"?'<path d="M21 14 l3 -2.6 3 2.6 -3 4 z" fill="#cfeaff"/>':""}`);
+    }
+    /* комбез: куртка+штаны одним силуэтом */
+    if(a.slot==="all"){
+      const col=id==="exokmbes"?"#5a3f73":id==="stormkmbz"?"#3e4a5a":
+                id==="stalker"?"#4d5a3a":"#6b5a3a";
+      return wrap(`<path d="M14 7 l7 -3 3 3.6 3 -3.6 7 3 4.4 6 -3.8 4 0 12 -2 16 -7.4 0 -1.2 -12 -1.2 12 -7.4 0 -2 -16 0 -12 -3.8 -4 z"
+          fill="${col}" stroke="#181210" stroke-width="1.6"/>
+        <path d="M24 7.6 l0 14 M16 21 l16 0" stroke="rgba(0,0,0,.32)" stroke-width="1.5"/>
+        <path d="M16 9 l6 -2.2" stroke="rgba(255,240,200,.4)" stroke-width="2" fill="none"/>
+        <rect x="20" y="12.5" width="8" height="6" rx="1.5" fill="rgba(0,0,0,.28)"/>
+        ${id==="exokmbes"?'<rect x="18" y="24" width="12" height="4.6" rx="2.2" fill="#9fd8ff"/><path d="M20 31 l8 0 M20 34 l8 0" stroke="#cfeaff" stroke-width="1.6"/>':
+          id==="stormkmbz"?'<path d="M18 25 l12 0" stroke="#ffd27f" stroke-width="2"/><circle cx="24" cy="17" r="2" fill="#ffd27f"/>':
+          id==="stalker"?'<circle cx="24" cy="15.5" r="1.8" fill="#a8e87f"/><path d="M19 29 l10 0" stroke="rgba(0,0,0,.3)" stroke-width="1.4"/>':
+          '<rect x="20.5" y="26" width="7" height="8" rx="1.4" fill="rgba(0,0,0,.25)"/>'}`);
+    }
     const body=id==="crystvest"?"url(#gcryst)":id==="vest3"?"#5a3f73":id==="compvest"?"#3e4a5a":
                id==="scrapvest"?"#6b5a3a":"url(#garm)";
     return wrap(`<path d="M14 8 l7 -3 2 4 2 -4 7 3 5 6 -4 5 0 18 q-10 5 -20 0 l0 -18 -4 -5 z"
@@ -756,6 +852,7 @@ function svgIcon(kind, id){
       <rect x="19" y="20" width="10" height="7" rx="1.5" fill="rgba(0,0,0,.28)"/>
       ${id==="crystvest"?'<path d="M22 21 l2 -3 2 3 -2 4 z" fill="#cfeaff"/>':""}
       ${id==="vest3"?'<circle cx="24" cy="23.5" r="2.6" fill="#9fd8ff"/>':""}
+      ${id==="vest2"?'<path d="M17 14 l4 4 m6 0 l4 -4 M24 18 l0 4" stroke="rgba(0,0,0,.35)" stroke-width="1.4"/>':""}
       <path d="M14 30 l20 0" stroke="rgba(0,0,0,.3)" stroke-width="1.6"/>`);
   }
   if(kind==="implant")
@@ -823,9 +920,9 @@ const CONSUMABLES = {
   medkit:{name:"Аптечка", desc:"Лечит 40 HP в бою (4 ОД)", price:60},
   grenade:{name:"Осколочная граната", desc:"25–40 урона по площади (5 ОД)", price:80},
 };
-/* sight — радиус зрения (как в TIO: врага не видно, пока не подойдёшь).
+/* sight — радиус зрения (как в жанровой классике: врага не видно, пока не подойдёшь).
    У пса зрение на 1 больше человеческого (7 против 6) и больше ОД. */
-/* Как в оригинальном TIO: расы, а не классы.
+/* Как в жанровой классике: расы, а не классы.
    ЧЕЛОВЕК качает ЛЮБОЙ навык и носит любое оружие,
    пёс — только укус (ближний бой), мутант — своё оружие (кирка). */
 const CLASSES = {
@@ -849,7 +946,7 @@ const ENEMY_TYPES = {
   raider: {name:"Рейдер",       emoji:"🏴‍☠️",hp:80, ap:11, acc:66, sight:6, weapon:"ak47",  xp:55, armor:3, skl:35},
   miner:  {name:"Мутант-шахтёр",emoji:"🧟", hp:120, ap:10, acc:62, sight:5, weapon:"pick",  xp:60, armor:2, skl:30},
   gunner: {name:"Пулемётчик",   emoji:"🧨", hp:95,  ap:10, acc:62, sight:6, weapon:"m60",   xp:75, armor:4, skl:45},
-  stalker:{name:"Сталкер «Спектры»", emoji:"🕵️", hp:90, ap:11, acc:74, sight:7, weapon:"svd", xp:90, armor:6, skl:55},
+  stalker:{name:"Боец «Вектора»", emoji:"🕵️", hp:90, ap:11, acc:74, sight:7, weapon:"svd", xp:90, armor:6, skl:55},
 };
 /* ---------- БИОМЫ КАРТ: у каждой своя земля, декор, препятствия и цвет неба ---------- */
 const BIOMES = {
@@ -875,8 +972,8 @@ const BIOMES = {
     obst:[3,3,1,1,2], trees:"dead" },
 };
 const MISSIONS = [
-  {id:"mine", name:"Шахта «Синий кристалл»", emoji:"💎", lvl:1, size:24, hangars:3, biome:"waste",
-   desc:"Бандиты засели в штольне и растащили оборудование. Зачисти — «Спектра» заплатит.",
+  {id:"mine", name:"Шахта «Азурит»", emoji:"💎", lvl:1, size:24, hangars:3, biome:"waste",
+   desc:"Бандиты засели в штольне и растащили оборудование. Зачисти — «Вектор» заплатит.",
    enemies:["bandit","bandit","miner","bandit"], reward:120},
   {id:"outskirts", name:"Окраина Резервации", emoji:"🏚️", lvl:2, size:27, hangars:4, biome:"forest",
    desc:"Бандиты грабят караваны новичков в лесу у покосившихся домиков. Обыщи их — есть чем поживиться.",
@@ -885,9 +982,9 @@ const MISSIONS = [
    desc:"Рейдеры перекрыли промзону на подступах к шахтам. Штурмуй блокпост, вскрывай арсеналы.",
    enemies:["raider","raider","bandit","bandit","gunner"], reward:240},
   {id:"dunes", name:"Солончаки Дикого поля", emoji:"🏜️", lvl:4, size:33, hangars:4, biome:"desert",
-   desc:"Через пустыню идут караваны «Спектры». Рейдеры бьют из сухих перелесков. Жарко. Опасно.",
+   desc:"Через пустыню идут караваны «Вектора». Рейдеры бьют из сухих перелесков. Жарко. Опасно.",
    enemies:["raider","stalker","bandit","bandit","raider"], reward:340},
-  {id:"convoy", name:"Конвой «Спектры»", emoji:"🚚", lvl:5, size:36, hangars:6, biome:"waste",
+  {id:"convoy", name:"Конвой «Вектора»", emoji:"🚚", lvl:5, size:36, hangars:6, biome:"waste",
    desc:"Пулемётчики охраняют склады с грузом. Огромная территория, полно ангаров и укрытий.",
    enemies:["gunner","raider","stalker","gunner","bandit","raider","gunner"], reward:520},
 ];
@@ -917,12 +1014,12 @@ function newMerc(cls, name){
   const c = CLASSES[cls];
   return { id: "m"+(Date.now()%1e7)+"_"+(mercSeq++), cls,
     name: name || (cls==="dog" ? pick(DOGNAMES) : pick(NAMES)),
-    level:1, xp:0, weapon:c.weapon, weapon2:null, armor:"none", implants:[],
+    level:1, xp:0, weapon:c.weapon, weapon2:null, gear:{head:null,body:null,legs:null}, implants:[],
     belt:{medkit:0, grenade:0},
     look: cls==="human" ? Math.floor(Math.random()*LOOKS.length) : 0,
     skills: blankSkills() };
 }
-const BELT_MAX = {medkit:3, grenade:3}; // пояс как в TIO: ограниченные слоты
+const BELT_MAX = {medkit:3, grenade:3}; // пояс: ограниченные слоты
 function genHirePool(){
   /* биржа: в основном люди (качают всё), реже пёс/мутант */
   const kinds=["human","human","human","dog","mutant"];
@@ -933,7 +1030,7 @@ function pick(a){return a[Math.floor(Math.random()*a.length)];}
 function rnd(a,b){return a+Math.floor(Math.random()*(b-a+1));}
 function migrate(s){ // совместимость со старыми сейвами
   (s.roster||[]).concat(s.hirePool||[]).forEach(m=>{
-    /* v6: классов «штурмовик/снайпер/тяжёлый» больше нет — все стали людьми (как в TIO) */
+    /* v6: классов «штурмовик/снайпер/тяжёлый» больше нет — все стали людьми (как в жанровой классике) */
     if(m.cls==="assault"||m.cls==="sniper"||m.cls==="heavy")m.cls="human";
     if(!m.skills)m.skills=blankSkills();
     if(m.cls==="dog"&&m.weapon==="fangs")m.weapon="dogfangs"; // v3: усиленный укус пса
@@ -941,6 +1038,14 @@ function migrate(s){ // совместимость со старыми сейв�
     if(m.weapon2===undefined)m.weapon2=null;                  // v4: запасное оружие
     if(!m.belt)m.belt={medkit:0,grenade:0};                   // v4: пояс
     if(m.look===undefined)m.look=m.cls==="human"?Math.floor(Math.random()*LOOKS.length):0; // v6: внешность
+    /* v14: броня по слотам голова/тело/ноги (старое m.armor переезжает в свой слот) */
+    if(!m.gear||typeof m.gear!=="object")m.gear={head:null,body:null,legs:null};
+    if(m.armor!==undefined){
+      const oa=ARMORS[m.armor];
+      if(oa){const sl=oa.slot==="all"?"body":oa.slot; if(!m.gear[sl])m.gear[sl]=m.armor;}
+      delete m.armor;
+    }
+    ["head","body","legs"].forEach(s=>{ if(m.gear[s]&&!ARMORS[m.gear[s]])m.gear[s]=null; });
   });
   if(!s.inv)s.inv={weapons:{},armors:{},implants:{},medkit:1,grenade:1};
   if(!s.market)s.market={listed:[], synced:false};            // v4: он-чейн торговля
@@ -964,7 +1069,7 @@ function mercStats(m){
   const c = CLASSES[m.cls];
   let hp = c.hp + (m.level-1)*10, acc = c.acc + (m.level-1)*2, ap = c.ap + Math.floor((m.level-1)/2);
   m.implants.forEach(i=>{ if(i==="imp_hp")hp+=25; if(i==="imp_acc")acc+=6; if(i==="imp_ap")ap+=2; });
-  return {hp, acc, ap, armor: ARMORS[m.armor].red, sight: c.sight};
+  return {hp, acc, ap, armor: gearArmor(m), sight: c.sight};
 }
 function xpNeed(l){ return 100*l; }
 function grantXp(m, xp){
@@ -1121,7 +1226,7 @@ function openBarracks(){
       <div class="statline" style="margin-top:8px">
         <span class="tag">🔫 <b>${w.emoji}${w.name}</b></span>
         ${w2?`<span class="tag">🔁 ${w2.emoji}${w2.name}</span>`:""}
-        <span class="tag">🦺 ${ARMORS[m.armor].name}</span>
+        <span class="tag">🦺 −${st.armor} ${gearList(m).map(a=>a.name).join(" + ")||"без брони"}</span>
         <span class="tag">💉×${m.belt.medkit} 💣×${m.belt.grenade}</span>
       </div>
       <div class="btn primary" style="width:100%;margin-top:10px" onclick="openEquip('${m.id}')">🎒 ЭКИПИРОВКА</div>
@@ -1131,7 +1236,7 @@ function openBarracks(){
 }
 
 /* =========================================================
-   ЭКИПИРОВКА БОЙЦА (инвентарь как в TIO):
+   ЭКИПИРОВКА БОЙЦА (инвентарь как в жанровой классике):
    слоты: основное оружие / запасное / броня / импланты / пояс
    ========================================================= */
 let eqMercId=null;
@@ -1154,6 +1259,21 @@ function openEquip(mid){
   </div>`;
 
   /* --- визуальные слоты экипировки --- */
+  const isDog=m.cls==="dog";
+  const emptySlotSvg=(s)=>`<svg viewBox="0 0 48 48" style="opacity:.3">${
+    s==="head"?'<path d="M13 27 q0 -14 11 -14 q11 0 11 14 l0 3 -22 0 z" fill="none" stroke="#8a7a5c" stroke-width="2" stroke-dasharray="5 4"/>':
+    s==="legs"?'<path d="M16 9 l16 0 1.5 13 -2.2 15 -6 0 -0.8 -12 -0.8 12 -6 0 -2.2 -15 z" fill="none" stroke="#8a7a5c" stroke-width="2" stroke-dasharray="5 4"/>':
+    '<path d="M14 8 l7 -3 2 4 2 -4 7 3 5 6 -4 5 0 18 q-10 5 -20 0 l0 -18 -4 -5 z" fill="none" stroke="#8a7a5c" stroke-width="2" stroke-dasharray="5 4"/>'}</svg>`;
+  let gearSlotsHtml="";
+  (isDog?["body"]:["head","body","legs"]).forEach(s=>{
+    const id=m.gear[s], a=id?ARMORS[id]:null, sd=SLOTS[s];
+    gearSlotsHtml+=`<div class="slot" onclick="pickArmorModal('${s}')">
+      ${id?svgIcon("armor",id):emptySlotSvg(s)}
+      <div><div class="sl">${isDog?"Попона 🐕":sd.emoji+" "+sd.name}</div>
+      <div class="sn">${a?a.name:"— пусто —"}</div>
+      <div class="sd">${a?"Защита -"+a.red+(a.slot==="all"?" · комбез":""):"не защищён"}</div></div>
+    </div>`;
+  });
   html+=`<div class="card"><h3>⚙️ Снаряжение</h3>
     <div class="slotrow">
       <div class="slot" ${natural?"":`onclick="pickWeaponModal('main')"`}>
@@ -1169,13 +1289,9 @@ function openEquip(mid){
       </div>`:""}
     </div>
     <div class="slotrow">
-      <div class="slot" onclick="pickArmorModal()">
-        ${m.armor!=="none"?svgIcon("armor",m.armor):`<svg viewBox="0 0 48 48" style="opacity:.3"><path d="M14 8 l7 -3 2 4 2 -4 7 3 5 6 -4 5 0 18 q-10 5 -20 0 l0 -18 -4 -5 z" fill="none" stroke="#8a7a5c" stroke-width="2" stroke-dasharray="5 4"/></svg>`}
-        <div><div class="sl">${m.cls==="dog"?"Попона 🐕":"Броня"}</div>
-        <div class="sn">${ARMORS[m.armor].name}</div>
-        <div class="sd">${m.armor!=="none"?"Защита -"+ARMORS[m.armor].red:"не защищён"}</div></div>
-      </div>
+      ${gearSlotsHtml}
     </div>
+    <div class="muted" style="margin-top:6px">Итоговая защита: <b>−${st.armor}</b>. Комбез закрывает голову, тело и ноги одним предметом.</div>
     ${natural?`<div class="muted" style="margin-top:6px">${w.name} — естественное оружие, снять нельзя.</div>`:""}
   </div>`;
 
@@ -1235,22 +1351,24 @@ function pickWeaponModal(slot){
       ${slot==="second"&&m.weapon2?`<div class="btn grow" onclick="closeModal('mGeneric');unequipSecond()">📦 Снять</div>`:""}
     </div>`);
 }
-function pickArmorModal(){
+function pickArmorModal(slot){
   const m=eqM(); if(!m)return;
   const isDog=m.cls==="dog";
   let cards="";
   Object.keys(S.inv.armors).forEach(k=>{
     const cnt=S.inv.armors[k]-listedCount("armor",k);
     const a=ARMORS[k];
-    if(cnt>0 && (!!a.dog===isDog))
-      cards+=itemCard("armor",k,{count:cnt,onclick:`closeModal('mGeneric');eqArmor('${k}')`});
+    if(cnt>0 && (!!a.dog===isDog) && (a.slot===slot||a.slot==="all"))
+      cards+=itemCard("armor",k,{count:cnt,onclick:`closeModal('mGeneric');eqArmor('${k}','${slot}')`});
   });
-  genericModal(`<h2>${isDog?"🐕 Попона для пса":"🦺 Броня"}</h2>
+  const sd=SLOTS[slot]||SLOTS.body;
+  genericModal(`<h2>${isDog?"🐕 Попона для пса":sd.emoji+" Броня: "+sd.name}</h2>
+    <div class="muted">Комбез «всё тело» тоже подходит — закроет все слоты сразу.</div>
     ${cards?`<div class="igrid">${cards}</div>`:
       `<div class="muted">${isDog?"Попоны крафтятся в мастерской из шкур мутантов!":"На складе пусто — купи в магазине или скрафти."}</div>`}
     <div class="row" style="margin-top:8px">
       <div class="btn grow" onclick="closeModal('mGeneric')">Закрыть</div>
-      ${m.armor!=="none"?`<div class="btn grow" onclick="closeModal('mGeneric');unequipArmor()">📦 Снять</div>`:""}
+      ${m.gear[slot]?`<div class="btn grow danger" onclick="closeModal('mGeneric');unequipArmor('${slot}')">📦 Снять${ARMORS[m.gear[slot]].slot==="all"?" комбез":""}</div>`:""}
     </div>`);
 }
 /* список оружия со склада, подходящего бойцу */
@@ -1290,7 +1408,7 @@ function unequipMain(){
   const m=eqM(); if(!m||(WEAPONS[m.weapon].natural&&m.weapon!=="fists"))return;
   if(m.weapon==="fists"){toast("Уже безоружен");return;}
   toStore(m.weapon);
-  /* как в TIO: можно остаться вообще без оружия — тогда в бой с кулаками */
+  /* можно остаться вообще без оружия — тогда в бой с кулаками */
   if(m.weapon2){ m.weapon=m.weapon2; m.weapon2=null; toast("Снято — в руках запасное"); }
   else { m.weapon="fists"; toast("Снято — боец дерётся кулаками 👊"); }
   save(); openEquip(m.id);
@@ -1300,7 +1418,7 @@ function unequipSecond(){
   toStore(m.weapon2); m.weapon2=null;
   save(); openEquip(m.id); toast("Снято на склад");
 }
-function eqArmor(aid){
+function eqArmor(aid,wantSlot){
   const m=eqM(); if(!m)return;
   const a=ARMORS[aid]; if(!a)return;
   /* собачья броня — только псу, человеческая — только людям/мутанту */
@@ -1308,14 +1426,23 @@ function eqArmor(aid){
   if(m.cls!=="dog"&&a.dog){toast("Это попона для пса");return;}
   if(!(S.inv.armors[aid]>0)){toast("Нет на складе");return;}
   if(isListed("armor",aid)&&S.inv.armors[aid]<=listedCount("armor",aid)){toast("Выставлено на продажу — сними с торгов");return;}
+  /* комбез занимает все три слота, отдельный предмет — свой слот */
+  const slots=a.slot==="all"?["head","body","legs"]:[wantSlot||a.slot];
+  if(a.slot!=="all"&&!m.gear.hasOwnProperty(slots[0])){toast("Такого слота нет");return;}
+  slots.forEach(s=>{ if(m.gear[s])S.inv.armors[m.gear[s]]=(S.inv.armors[m.gear[s]]||0)+1; });
   S.inv.armors[aid]--;
-  if(m.armor!=="none")S.inv.armors[m.armor]=(S.inv.armors[m.armor]||0)+1;
-  m.armor=aid; save(); openEquip(m.id); toast(a.dog?"Попона надета 🐕":"Броня надета");
+  slots.forEach(s=>{m.gear[s]=aid;});
+  save(); openEquip(m.id);
+  toast(a.dog?"Попона надета 🐕":a.slot==="all"?a.name+": всё тело закрыто":"Надето: "+a.name);
 }
-function unequipArmor(){
-  const m=eqM(); if(!m||m.armor==="none")return;
-  S.inv.armors[m.armor]=(S.inv.armors[m.armor]||0)+1;
-  m.armor="none"; save(); openEquip(m.id); toast("Броня на складе");
+function unequipArmor(slot){
+  const m=eqM(); if(!m)return;
+  const id=m.gear[slot]; if(!id)return;
+  const a=ARMORS[id]; if(!a)return;
+  const slots=a.slot==="all"?["head","body","legs"]:[slot];
+  slots.forEach(s=>{m.gear[s]=null;});
+  S.inv.armors[id]=(S.inv.armors[id]||0)+1;
+  save(); openEquip(m.id); toast((a.slot==="all"?"Комбез снят: ":"Снято: ")+a.name);
 }
 function eqImp(k){
   const m=eqM(); if(!m||m.implants.length>=2)return;
@@ -1343,7 +1470,7 @@ function beltRemove(k){
 }
 
 /* =========================================================
-   АРЕНА — КОМНАТЫ БОЁВ (как в TIO: 1×1, 2×2, 4×4, ставки)
+   АРЕНА — КОМНАТЫ БОЁВ (1×1, 2×2, 4×4, ставки)
    Соперники — «сетевые» отряды (генерируются по рейтингу).
    Контракт TIOArena бронирует ставки он-чейн.
    ========================================================= */
@@ -1364,7 +1491,7 @@ function genRooms(){
       host:pick(RIVAL_NICKS)+rnd(10,99),
       rating:Math.max(800,S.rating+spread),
       stake:pick([0,50,100,200,400]),
-      naked:Math.random()<0.25, // «голый» бой — без экипировки, как в TIO!
+      naked:Math.random()<0.25, // «голый» бой — без экипировки, как в жанровой классике!
     });
   }
   return list;
@@ -1516,7 +1643,7 @@ function startPvpBattle(){
 }
 
 /* =========================================================
-   МАСТЕРСКАЯ — КРАФТ (как в TIO)
+   МАСТЕРСКАЯ — КРАФТ (как в жанровой классике)
    ========================================================= */
 function matBar(){
   return `<div class="matbar">`+Object.keys(MATERIALS).map(k=>
@@ -1594,7 +1721,7 @@ function whoUses(type,id){
   const users=[];
   S.roster.forEach(m=>{
     if(type==="weapon"&&(m.weapon===id||m.weapon2===id))users.push(m.name);
-    if(type==="armor"&&m.armor===id)users.push(m.name);
+    if(type==="armor"&&["head","body","legs"].some(s=>m.gear[s]===id))users.push(m.name);
     if(type==="implant"&&m.implants.includes(id))users.push(m.name);
   });
   return users;
@@ -1602,7 +1729,7 @@ function whoUses(type,id){
 function openWarehouse(){
   const el=document.getElementById("whList");
   let html=`<div class="card"><h3>⛓️ Он-чейн активы</h3>
-    <div class="muted">Каждый предмет склада — токен в контракте <b>TIOItems</b> (Acki Nacki Shellnet).
+    <div class="muted">Каждый предмет склада — токен в контракте <b>PerimeterItems</b> (Acki Nacki Shellnet).
     «Выставить» создаёт листинг на он-чейн рынке: другие игроки могут купить твою вещь за кредиты.
     Подписанные транзакции уходят через chain/sync.mjs.</div>
     <div class="statline" style="margin-top:6px">
@@ -1677,7 +1804,7 @@ function openWarehouse(){
     html+=`<div class="card"><div class="row"><div style="font-size:22px">${CLASSES[m.cls].emoji}</div>
       <div class="grow"><b>${m.name}</b>
       <div class="muted">${w.emoji}${w.name}${m.weapon2?` + ${WEAPONS[m.weapon2].emoji}${WEAPONS[m.weapon2].name}`:""}
-        · 🦺${ARMORS[m.armor].name} · 💉×${m.belt.medkit} 💣×${m.belt.grenade}</div></div>
+        · 🦺${gearStr(m)} · 💉×${m.belt.medkit} 💣×${m.belt.grenade}</div></div>
       <div class="btn small" onclick="openEquip('${m.id}')">🎒</div></div></div>`;
   });
   el.innerHTML=html; show("scr-warehouse");
@@ -1700,7 +1827,8 @@ function itemMenu(type,id,listIdx){
   const kind=type==="implant"?"implant":type;
   let desc="";
   if(type==="weapon")desc=weaponDesc(it)+" · ветка «"+SKILLS[it.skill].name+"»";
-  else if(type==="armor")desc="Защита -"+it.red+(it.dog?" · 🐕 только для пса":"")+(it.craft?" · крафтовая":"");
+  else if(type==="armor")desc=(it.slot==="all"?"🧵 комбез, всё тело":SLOTS[it.slot].emoji+" "+SLOTS[it.slot].name.toLowerCase())+
+    " · Защита -"+it.red+(it.dog?" · 🐕 только для пса":"")+(it.craft?" · крафтовая":"");
   else desc=it.desc;
   genericModal(`<div style="display:flex;gap:12px;align-items:center">
       <div style="width:60px">${svgIcon(kind,id)}</div>
@@ -1713,7 +1841,8 @@ function itemMenu(type,id,listIdx){
     </div>`);
 }
 function getItemDef(type,id){
-  return type==="weapon"?WEAPONS[id]:type==="armor"?ARMORS[id]:IMPLANTS[id];
+  return type==="weapon"?WEAPONS[id]:type==="armor"?ARMORS[id]:
+         type==="cons"?CONSUMABLES[id]:IMPLANTS[id];
 }
 function invBucket(type){
   return type==="weapon"?S.inv.weapons:type==="armor"?S.inv.armors:S.inv.implants;
@@ -1754,7 +1883,7 @@ function unlistItem(i,ctx){
 }
 function marketPayload(){
   return {
-    game:"TIO_NACKI_V4_MARKET", nick:S.nick,
+    game:"RESERVATION_PERIMETER_V1", nick:S.nick,
     inventory:{
       weapons:S.inv.weapons, armors:S.inv.armors, implants:S.inv.implants,
       medkit:S.inv.medkit, grenade:S.inv.grenade
@@ -1770,6 +1899,9 @@ function marketPayload(){
    «Мои лоты» — выставленное со склада + он-чейн синхронизация.
    ========================================================= */
 let marketTab="goods";
+let marketFilter="all";
+const MARKET_FILTERS=[["all","Все"],["weapon","🔫 Оружие"],["armor","🦺 Броня"],["implant","🧠 Импланты"],["cons","🧪 Расходники"]];
+function setMarketFilter(f){ marketFilter=f; renderMarketList(); }
 /* детерминированный ГПСЧ — ассортимент одинаков весь день */
 function mulberry32(a){
   return function(){
@@ -1853,14 +1985,21 @@ function renderMarketList(){
   const el=document.getElementById("marketList");
   if(marketTab==="goods"){
     const st=S.market.stock;
+    /* фильтр по типу предмета */
+    let chips=`<div class="modetab" style="margin-bottom:8px">`+
+      MARKET_FILTERS.map(([k,n])=>
+        `<div class="btn small ${marketFilter===k?"on":""}" onclick="setMarketFilter('${k}')">${n}</div>`).join("")+
+      `</div>`;
+    const offers=st.offers.filter(o=>!o.bought&&(marketFilter==="all"||o.type===marketFilter));
     let html="";
-    st.offers.forEach((o,i)=>{
-      if(o.bought)return;
+    offers.forEach((o)=>{
+      const i=st.offers.indexOf(o);
       const it=getItemDef(o.type,o.id);
       const icon=svgIcon(o.type,o.id);
       let desc="";
       if(o.type==="weapon")desc=weaponDesc(it);
-      else if(o.type==="armor")desc="Защита -"+it.red+(it.dog?" · 🐕 для пса":"");
+      else if(o.type==="armor")desc=(it.slot==="all"?"🧵 комбез, всё тело":(SLOTS[it.slot].emoji+" "+SLOTS[it.slot].name.toLowerCase()))+
+        " · Защита -"+it.red+(it.dog?" · 🐕 для пса":"")+(it.craft?" · крафт":"");
       else desc=it.desc||"";
       const off=Math.round((1-o.price/o.base)*100);
       const tags=(off>=10?`<span class="tag" style="border-color:rgba(74,222,128,.4);color:#86efac">🔥 Скидка −${off}%</span>`:"")+
@@ -1868,7 +2007,7 @@ function renderMarketList(){
       html+=marketRow(icon,it.name,desc,tags,
         `<div class="btn small primary" style="flex-shrink:0" onclick="marketBuy(${i})">💰 ${o.price}</div>`);
     });
-    el.innerHTML=html||`<div class="muted">Товар завезут завтра.</div>`;
+    el.innerHTML=chips+(html||`<div class="card"><div class="muted">${marketFilter==="all"?"Товар завезут завтра.":"В этой категории сегодня ничего нет — загляни завтра."}</div></div>`);
   }else{
     if(!S.market.listed.length){
       el.innerHTML=`<div class="card"><div class="muted">Лотов нет.<br><br>
@@ -1950,11 +2089,16 @@ function openShop(){
       html+=shopCard("weapon",k,w.name,weaponDesc(w),w.price,`buyWeapon('${k}')`,(S.inv.weapons[k]||0));
     });
   });
-  html+=`<h2 class="sub">🦺 Броня <span class="muted" style="font-size:11px">(крафтовая и попоны — только в мастерской)</span></h2>`;
-  for(const k in ARMORS){
-    const a=ARMORS[k]; if(!a.price||a.craft||a.dog)continue;
-    html+=shopCard("armor",k,a.name,`Снижает урон на ${a.red}`,a.price,`buyArmor('${k}')`,(S.inv.armors[k]||0));
-  }
+  [["head","🪖 Голова"],["body","🦺 Тело"],["legs","🥾 Ноги"],["all","🧵 Комбезы (всё тело)"]].forEach(([sl,title])=>{
+    html+=`<h2 class="sub">${title} <span class="muted" style="font-size:11px">(крафтовая и попоны — только в мастерской)</span></h2>`;
+    let any=false;
+    for(const k in ARMORS){
+      const a=ARMORS[k]; if(!a.price||a.craft||a.dog||a.slot!==sl)continue;
+      any=true;
+      html+=shopCard("armor",k,a.name,`Защита -${a.red}${a.slot==="all"?" · закрывает голову+тело+ноги":""}`,a.price,`buyArmor('${k}')`,(S.inv.armors[k]||0));
+    }
+    if(!any)html+=`<div class="muted" style="margin-bottom:8px">—</div>`;
+  });
   html+=`<h2 class="sub">🧪 Расходники</h2>`;
   html+=shopCard("cons","medkit",CONSUMABLES.medkit.name,CONSUMABLES.medkit.desc,CONSUMABLES.medkit.price,`buyCons('medkit')`,S.inv.medkit);
   html+=shopCard("cons","grenade",CONSUMABLES.grenade.name,CONSUMABLES.grenade.desc,CONSUMABLES.grenade.price,`buyCons('grenade')`,S.inv.grenade);
@@ -2024,7 +2168,7 @@ function saveNick(){
 }
 function chainPayload(){
   return {
-    game:"TIO_NACKI_V2", nick:S.nick, // рейтинг/цены считает КОНТРАКТ — клиентом не передаются
+    game:"RESERVATION_PERIMETER_V1", nick:S.nick, // рейтинг/цены считает КОНТРАКТ — клиентом не передаются
     lastBattleHash:S.lastHash, ts: Math.floor(Date.now()/1000)
   };
 }
@@ -2112,7 +2256,7 @@ function startBattle(mission, squadIds){
       cls:m.cls, look:m.look, x:pSpawns[i].x, y:pSpawns[i].y, hp:st.hp, maxhp:st.hp,
       ap:st.ap, maxap:st.ap, acc:st.acc, armor:st.armor,
       weapon:m.weapon, weapon2:m.weapon2,
-      belt:{medkit:m.belt.medkit||0, grenade:m.belt.grenade||0}, // личный пояс как в TIO
+      belt:{medkit:m.belt.medkit||0, grenade:m.belt.grenade||0}, // личный пояс как в жанровой классике
       sight:st.sight, alive:true});
   });
   const avgL = Math.max(1, Math.round(squad.reduce((s,m)=>s+m.level,0)/squad.length));
@@ -2142,18 +2286,18 @@ function startBattle(mission, squadIds){
       • Тапни по <b>своему бойцу</b> — выбрать.<br>
       • Тапни по <b>зелёной клетке</b> — переместиться (1 ОД за шаг, хоть по диагонали).<br>
       • Тапни по <b>врагу</b> — выстрел (виден % попадания).<br>
-      • <b>У оружия есть рамки дальности как в TIO</b>: пистолет не добьёт далеко,
+      • <b>У оружия есть рамки дальности как в жанровой классике</b>: пистолет не добьёт далеко,
       снайперка и автомат <b>не стреляют в упор</b> (❌близко — мёртвая зона!),
       дробовик бьёт только вблизи. Держи запасной ствол 🔁 или кулаки 👊.<br>
       • Укрытия блокируют выстрелы и дают защиту -20% рядом.<br>
       • 💉 лечит, 💣 бьёт по площади, ⏭ передаёт ход.<br>
-      • <b>Туман войны как в TIO</b>: врагов не видно, пока боец не подойдёт
+      • <b>Туман войны как в жанровой классике</b>: врагов не видно, пока боец не подойдёт
       на дистанцию зрения (👁 6 у человека, 7 у пса, 5 у мутанта). Укрытия заслоняют обзор.
       Синяя кромка — граница зрения выбранного бойца. Пёс — лучший разведчик!<br>
       • <b>Карта большая</b> — таскай её пальцем. Заходи в ангары через двери
       (жёлтая разметка) и вскрывай светящиеся ящики ✦ (3 ОД вплотную):
       внутри оружие и расходники, но <b>всё найденное живёт только до конца боя</b> —
-      вынести с карты нельзя, как в TIO!<br>
+      вынести с карты нельзя, как в жанровой классике!<br>
       • <b>Навыки оружия растут от использования</b>: чем больше стреляешь
       из ветки (лёгкое/автоматы/тяжёлое/снайперское/ближний бой), тем выше точность,
       а с 50 навыка выстрел стоит на 1 ОД меньше!</div>
@@ -2161,7 +2305,7 @@ function startBattle(mission, squadIds){
   }
 }
 
-/* ---------- ГЕНЕРАТОР БОЛЬШИХ КАРТ С АНГАРАМИ (как в TIO) ----------
+/* ---------- ГЕНЕРАТОР БОЛЬШИХ КАРТ С АНГАРАМИ (как в жанровой классике) ----------
    biome: waste | desert | forest | industrial — меняет землю, декор,
    набор препятствий и облик построек (в лесу — деревянные домики). */
 function genMap(size, hangars, biome){
@@ -2254,7 +2398,7 @@ function blocked(x,y){
 }
 
 /* =========================================================
-   ЗРЕНИЕ / ТУМАН ВОЙНЫ (как в TIO)
+   ЗРЕНИЕ / ТУМАН ВОЙНЫ (как в жанровой классике)
    Клетка видна, если до неё <= sight наблюдателя и есть линия обзора.
    Враги вне зрения отряда не отображаются вообще.
    ========================================================= */
@@ -2534,7 +2678,7 @@ cv.addEventListener("click",ev=>{
   }
 });
 /* =========================================================
-   ЛУТ-ЯЩИКИ В АНГАРАХ (как в TIO):
+   ЛУТ-ЯЩИКИ В АНГАРАХ (как в жанровой классике):
    всё найденное — ТОЛЬКО на этот бой, из карты не выносится!
    ========================================================= */
 function openCrate(u,x,y){
@@ -2598,7 +2742,7 @@ function toggleGrenade(){
   toast(B.mode==="grenade"?"Выбери клетку (дальность 7)":"Отмена");
   updateHud();
 }
-/* смена оружия в бою — 2 ОД, как в TIO */
+/* смена оружия в бою — 2 ОД */
 function swapWeapon(){
   if(!B||B.phase!=="p"||!B.sel||!B.sel.alive)return;
   const u=B.sel;
@@ -2855,7 +2999,7 @@ function finishBattle(win){
   if(B.over)return;B.over=true;
   clearTimeout(B.aiTimer);
   /* остатки пояса и текущее оружие (после смен) возвращаются бойцу.
-     ТРОФЕИ С КАРТЫ НЕ ВЫНОСЯТСЯ (как в TIO): lootBelt сгорает,
+     ТРОФЕИ С КАРТЫ НЕ ВЫНОСЯТСЯ (как в жанровой классике): lootBelt сгорает,
      трофейный ствол бросается — бойцу возвращается его родное оружие.
      В «голом» бою экипировка не участвовала — ничего не трогаем. */
   B.units.forEach(bu=>{
@@ -2888,7 +3032,7 @@ function finishBattle(win){
       const m=S.roster.find(x=>x.id===bu.mercId);
       if(m){const ups=grantXp(m,per);if(ups)lvlMsgs.push(`⬆ ${m.name} — уровень ${m.level}!`);}
     });
-    /* лут материалов — только в PvE (обыск трупов как в TIO) */
+    /* лут материалов — только в PvE (обыск трупов как в жанровой классике) */
     let lootStr="";
     if(!isPvp){
       const killed=B.units.filter(u=>u.side==="e"&&!u.alive).map(u=>u.etype);
@@ -3423,7 +3567,7 @@ function draw(){
   }
   /* объекты и юниты по глубине; враги в тумане НЕ рисуются.
      5 (пол) и 6 (дверь) — плоские, в пререндере, тут не нужны */
-  /* РЕНТГЕН как в TIO: объекты, загораживающие своих бойцов, — прозрачные */
+  /* РЕНТГЕН: объекты, загораживающие своих бойцов, — прозрачные */
   const xray=new Set();
   B.units.forEach(u=>{
     if(!u.alive||u.side!=="p")return;

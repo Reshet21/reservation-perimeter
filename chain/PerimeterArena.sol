@@ -4,8 +4,8 @@ pragma AbiHeader expire;
 pragma AbiHeader pubkey;
 
 /**
- * TIOArena — он-чейн комнаты PvP-боёв TIO:Nacki (как комнаты в TIO).
- * Режимы: 1x1, 2x2, 4x4. Ставки в кредитах (эскроу в контракте TIOItems
+ * PerimeterArena — он-чейн комнаты PvP-боёв Reservation: Perimeter (комнаты PvP).
+ * Режимы: 1x1, 2x2, 4x4. Ставки в кредитах (эскроу в контракте PerimeterItems
  * упрощён до внутреннего учёта кредитов арены).
  *
  * Поток:
@@ -18,7 +18,7 @@ pragma AbiHeader pubkey;
  * Для честности commitResult требует совпадающего battleHash от обоих:
  * клиенты обоих игроков детерминированно реплеят бой по логу ходов.
  */
-contract TIOArena {
+contract PerimeterArena {
 
     uint8 constant MODE_1X1 = 1;
     uint8 constant MODE_2X2 = 2;
@@ -57,7 +57,7 @@ contract TIOArena {
         gosh.cnvrtshellq(value);
     }
 
-    /// Пополнить арену кредитами (в проде — перевод из TIOItems)
+    /// Пополнить арену кредитами (в проде — перевод из PerimeterItems)
     function deposit(uint64 amount) public onlySigned {
         balance[msg.pubkey()] += amount;
     }

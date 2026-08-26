@@ -1,7 +1,7 @@
 {
-  "name": "TIO: Nacki — тактика в Зоне",
-  "short_name": "TIO:Nacki",
-  "description": "Пошаговая тактическая игра в духе Total Influence Online с он-чейн профилем на Acki Nacki",
+  "name": "Reservation: Perimeter — тактика в Зоне",
+  "short_name": "ReservPerimeter",
+  "description": "Пошаговая тактическая игра: выжившие в Резервации, он-чейн профиль на Acki Nacki",
   "start_url": "./index.html",
   "scope": "./",
   "display": "fullscreen",

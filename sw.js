@@ -1,5 +1,5 @@
-/* TIO:Nacki service worker — офлайн-кэш для PWA */
-const CACHE = "tio-nacki-v13";
+/* Reservation: Perimeter service worker — офлайн-кэш для PWA */
+const CACHE = "reservation-perimeter-v1";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {

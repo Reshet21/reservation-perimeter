@@ -1,16 +1,16 @@
 /**
- * sync.mjs — клиент контрактов TIO:Nacki на Acki Nacki Shellnet (TVM SDK).
+ * sync.mjs — клиент контрактов Reservation: Perimeter на Acki Nacki Shellnet (TVM SDK).
  *
  * Установка (бесплатно):
  *   npm i @tvmsdk/core @tvmsdk/lib-node
  *
- * Профиль (контракт TIOProfiles):
+ * Профиль (контракт PerimeterProfiles):
  *   node sync.mjs init                # сгенерировать ключи игрока (keys.json)
  *   node sync.mjs profile "Ник"       # создать профиль (рейтинг 1000) / переименоваться
  *   node sync.mjs battle win 0x1a2b3c4d        # записать результат (рейтинг считает контракт)
  *   node sync.mjs read                # прочитать свой профиль (бесплатно)
  *
- * Предметы и рынок (контракт TIOItems, адрес в TIO_ITEMS):
+ * Предметы и рынок (контракт PerimeterItems, адрес в RP_ITEMS):
  *   node sync.mjs items ak47          # мой баланс предмета + кредиты
  *   node sync.mjs list ak47 1 560     # выставить 1 шт по 560 кредитов
  *   node sync.mjs unlist 3            # снять листинг #3
@@ -18,14 +18,14 @@
  *   node sync.mjs gift <pubkey> usp 1 # подарить предмет другу
  *   node sync.mjs market              # статистика рынка
  *
- * Арена PvP (контракт TIOArena, адрес в TIO_ARENA):
+ * Арена PvP (контракт PerimeterArena, адрес в RP_ARENA):
  *   node sync.mjs room-create 1 100 false  # комната 1x1, ставка 100
  *   node sync.mjs room-join 5              # войти в комнату #5
  *   node sync.mjs room-result 5 <winnerPubkey> 0x1a2b  # подтвердить результат
  *   node sync.mjs room-timeout 5           # возврат ставок после дедлайна (1 час)
  *   node sync.mjs rooms                    # статистика арены
  *
- * Адреса: TIO_CONTRACT (профили), TIO_ITEMS (предметы), TIO_ARENA (арена).
+ * Адреса: RP_CONTRACT (профили), RP_ITEMS (предметы), RP_ARENA (арена).
  */
 import { TvmClient } from "@tvmsdk/core";
 import { libNode } from "@tvmsdk/lib-node";
@@ -33,13 +33,13 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 
 TvmClient.useBinaryLibrary(libNode);
 
-const ENDPOINT = process.env.TIO_ENDPOINT || "https://shellnet.ackinacki.org/graphql";
-const CONTRACT_ADDR = process.env.TIO_CONTRACT || "PASTE_PROFILES_ADDRESS_HERE";
-const ITEMS_ADDR = process.env.TIO_ITEMS || "PASTE_ITEMS_ADDRESS_HERE";
-const ARENA_ADDR = process.env.TIO_ARENA || "PASTE_ARENA_ADDRESS_HERE";
-const ABI_PATH = new URL("./TIOProfiles.abi.json", import.meta.url).pathname;
-const ITEMS_ABI_PATH = new URL("./TIOItems.abi.json", import.meta.url).pathname;
-const ARENA_ABI_PATH = new URL("./TIOArena.abi.json", import.meta.url).pathname;
+const ENDPOINT = process.env.RP_ENDPOINT || "https://shellnet.ackinacki.org/graphql";
+const CONTRACT_ADDR = process.env.RP_CONTRACT || "PASTE_PROFILES_ADDRESS_HERE";
+const ITEMS_ADDR = process.env.RP_ITEMS || "PASTE_ITEMS_ADDRESS_HERE";
+const ARENA_ADDR = process.env.RP_ARENA || "PASTE_ARENA_ADDRESS_HERE";
+const ABI_PATH = new URL("./PerimeterProfiles.abi.json", import.meta.url).pathname;
+const ITEMS_ABI_PATH = new URL("./PerimeterItems.abi.json", import.meta.url).pathname;
+const ARENA_ABI_PATH = new URL("./PerimeterArena.abi.json", import.meta.url).pathname;
 const KEYS_PATH = new URL("./keys.json", import.meta.url).pathname;
 
 const client = new TvmClient({ network: { endpoints: [ENDPOINT] } });
