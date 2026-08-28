@@ -1,0 +1,33 @@
+name: Compile TVM Contracts
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'contracts/**'
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download sold
+        run: |
+          wget -q https://github.com/gosh-sh/TVM-Solidity-Compiler/releases/download/gosh_0.81.0/sold_gosh_0.81.0_linux_x86_64.tar.gz
+          tar -xzf sold_gosh_0.81.0_linux_x86_64.tar.gz
+          chmod +x sold
+
+      - name: Compile contracts
+        run: |
+          mkdir -p artifacts
+          ./sold --tvm-version gosh ../tio-nacki/chain/PerimeterProfiles.sol -o artifacts/
+          ./sold --tvm-version gosh ../tio-nacki/chain/PerimeterItems.sol -o artifacts/
+          ./sold --tvm-version gosh ../tio-nacki/chain/PerimeterArena.sol -o artifacts/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tvm-contracts
+          path: artifacts/
+          retention-days: 7
