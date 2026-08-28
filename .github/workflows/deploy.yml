@@ -1,0 +1,163 @@
+name: Deploy Contracts to Shellnet
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      ENDPOINT: "https://shellnet.ackinacki.org/graphql"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download tvm-cli (x86_64)
+        run: |
+          wget -q https://github.com/tvmlabs/tvm-sdk/releases/download/v3.0.5.an/tvm-cli-3.0.5.an-linux-musl-amd64.tar.gz
+          tar -xzf tvm-cli-3.0.5.an-linux-musl-amd64.tar.gz
+          chmod +x tvm-cli
+          ./tvm-cli --version
+
+      - name: Restore deploy keys
+        run: |
+          echo '${{ secrets.DEPLOY_KEYS_JSON }}' > deploy.keys.json
+          cat deploy.keys.json
+
+      - name: Config tvm-cli
+        run: |
+          ./tvm-cli config -g --url shellnet.ackinacki.org
+
+      - name: Deploy PerimeterProfiles
+        id: profiles
+        run: |
+          ./tvm-cli -u shellnet.ackinacki.org deploy chain/PerimeterProfiles.tvc \
+            --abi chain/PerimeterProfiles.abi.json \
+            --sign deploy.keys.json \
+            '{"value":10000000000}' 2>&1 | tee deploy_profiles.log
+          
+          # Extract address from output
+          ADDR=$(grep -oE 'account_id: ([a-f0-9]{64})' deploy_profiles.log | head -1 | cut -d' ' -f2)
+          echo "PROFILES_ADDR=${ADDR}::${ADDR}" >> $GITHUB_OUTPUT
+          echo "Profiles deployed at: ${ADDR}::${ADDR}"
+
+      - name: Deploy PerimeterItems
+        id: items
+        run: |
+          ./tvm-cli -u shellnet.ackinacki.org deploy chain/PerimeterItems.tvc \
+            --abi chain/PerimeterItems.abi.json \
+            --sign deploy.keys.json \
+            --data '{"ownerKey":"0xc8f43f24be0fb530d4752b68421c5d3dfd377ebc9459ee5442c5f3cf7719fc72"}' \
+            '{"value":10000000000}' 2>&1 | tee deploy_items.log
+          
+          ADDR=$(grep -oE 'account_id: ([a-f0-9]{64})' deploy_items.log | head -1 | cut -d' ' -f2)
+          echo "ITEMS_ADDR=${ADDR}::${ADDR}" >> $GITHUB_OUTPUT
+          echo "Items deployed at: ${ADDR}::${ADDR}"
+
+      - name: Deploy PerimeterArena
+        id: arena
+        run: |
+          ./tvm-cli -u shellnet.ackinacki.org deploy chain/PerimeterArena.tvc \
+            --abi chain/PerimeterArena.abi.json \
+            --sign deploy.keys.json \
+            '{"value":10000000000}' 2>&1 | tee deploy_arena.log
+          
+          ADDR=$(grep -oE 'account_id: ([a-f0-9]{64})' deploy_arena.log | head -1 | cut -d' ' -f2)
+          echo "ARENA_ADDR=${ADDR}::${ADDR}" >> $GITHUB_OUTPUT
+          echo "Arena deployed at: ${ADDR}::${ADDR}"
+
+      - name: Set NPC Prices (PerimeterItems)
+        if: steps.items.outputs.ITEMS_ADDR != ''
+        run: |
+          ITEMS_ADDR="${{ steps.items.outputs.ITEMS_ADDR }}"
+          echo "Setting NPC prices on ${ITEMS_ADDR}"
+          
+          # Item prices in credits (nano-credits, 9 decimals)
+          declare -A PRICES=(
+            ["usp"]=100000000
+            ["pm"]=120000000
+            ["gsh18"]=150000000
+            ["ak74u"]=250000000
+            ["ak47"]=400000000
+            ["m4"]=500000000
+            ["val"]=600000000
+            ["groza"]=800000000
+            ["svd"]=1000000000
+            ["barrett"]=2000000000
+            ["rpk"]=600000000
+            ["m60"]=1200000000
+            ["minigun"]=3000000000
+            ["rpg7"]=1500000000
+            ["vest1"]=200000000
+            ["vest2"]=400000000
+            ["vest3"]=800000000
+            ["helmet1"]=150000000
+            ["helmet2"]=300000000
+            ["helmet3"]=600000000
+            ["legs1"]=150000000
+            ["legs2"]=300000000
+            ["legs3"]=600000000
+            ["suit_nord"]=1000000000
+            ["suit_grom"]=2000000000
+            ["exo_hrebet"]=4000000000
+            ["stalker_suit"]=800000000
+            ["dog_armor"]=500000000
+            ["imp_acc"]=200000000
+            ["imp_refl"]=300000000
+            ["imp_med"]=400000000
+            ["imp_stealth"]=600000000
+            ["imp_berserk"]=800000000
+            ["medkit"]=50000000
+            ["medkit_large"]=100000000
+            ["grenade"]=80000000
+            ["scrap"]=10000000
+            ["leather"]=20000000
+            ["comp"]=50000000
+            ["crystal"]=200000000
+            ["machete"]=100000000
+          )
+          
+          for CODE in "${!PRICES[@]}"; do
+            PRICE="${PRICES[$CODE]}"
+            echo "Setting $CODE = $PRICE"
+            ./tvm-cli -u shellnet.ackinacki.org callx \
+              --abi chain/PerimeterItems.abi.json \
+              --keys deploy.keys.json \
+              --addr "${ITEMS_ADDR}" \
+              -m setNpcPrice "{\"itemCode\":\"$CODE\",\"price\":$PRICE}" 2>&1 | tail -3
+            sleep 1
+          done
+
+      - name: Verify Contracts
+        run: |
+          echo "=== Verifying contracts ==="
+          ./tvm-cli -u shellnet.ackinacki.org account "${{ steps.profiles.outputs.PROFILES_ADDR }}"
+          ./tvm-cli -u shellnet.ackinacki.org account "${{ steps.items.outputs.ITEMS_ADDR }}"
+          ./tvm-cli -u shellnet.ackinacki.org account "${{ steps.arena.outputs.ARENA_ADDR }}"
+
+      - name: Upload Deploy Info
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-results
+          path: |
+            deploy_profiles.log
+            deploy_items.log
+            deploy_arena.log
+          retention-days: 7
+
+      - name: Summary
+        run: |
+          echo "## ✅ Contracts Deployed to Shellnet" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Contract | Address |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| PerimeterProfiles | ${{ steps.profiles.outputs.PROFILES_ADDR }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| PerimeterItems | ${{ steps.items.outputs.ITEMS_ADDR }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| PerimeterArena | ${{ steps.arena.outputs.ARENA_ADDR }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next steps:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Copy addresses to game (Profile tab) and chain/sync.mjs" >> $GITHUB_STEP_SUMMARY
+          echo "2. Test: \`node sync.mjs read\`" >> $GITHUB_STEP_SUMMARY
+          echo "3. Commit & push updated files" >> $GITHUB_STEP_SUMMARY
