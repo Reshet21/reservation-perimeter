@@ -258,6 +258,16 @@
     box-shadow:0 10px 30px rgba(0,0,0,.6);}
   .toast.show{display:block;animation:toastIn .22s cubic-bezier(.2,.9,.3,1.2);}
   h2.sub{color:var(--dim);font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:1.6px;margin:16px 2px 8px;}
+  .turn-order{display:flex;gap:4px;padding:6px 8px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow-x:auto;white-space:nowrap;}
+  .turn-order .unit-slot{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:32px;border-radius:8px;font-size:11px;font-weight:700;color:var(--sand);background:rgba(255,255,255,.06);border:1px solid var(--line);transition:all .2s;}
+  .turn-order .unit-slot.current{background:var(--grad);border-color:transparent;box-shadow:0 0 12px rgba(255,106,46,.5);animation:pulseGlow 1.5s ease-in-out infinite;}
+  .turn-order .unit-slot.enemy{background:rgba(251,113,133,.15);border-color:rgba(251,113,133,.3);}
+  .turn-order .unit-slot.dead{opacity:.3;text-decoration:line-through;}
+  .turn-timer{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;font-size:12px;font-weight:600;}
+  .turn-timer .timer-bar{flex:1;height:6px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;}
+  .turn-timer .timer-bar i{display:block;height:100%;background:var(--grad);border-radius:99px;transition:width .5s linear,background .2s;}
+  .turn-timer .timer-bar i.warning{background:linear-gradient(90deg,#fb7185,#fbbf24);}
+  .turn-timer .timer-text{min-width:44px;text-align:right;font-variant-numeric:tabular-nums;}
 </style>
 </head>
 <body>
@@ -410,26 +420,27 @@
     <canvas id="cv"></canvas>
     <div id="blog"></div>
   </div>
-  <div id="bhud">
-    <div id="unitInfo">
-      <div class="face" id="uiFace">🪖</div>
-      <div class="bars">
-        <div class="row"><b id="uiName">—</b><span class="muted" id="uiWeap"></span></div>
-        <div class="hpbar"><i id="uiHp" style="width:100%"></i></div>
-        <div class="apdots" id="uiAp"></div>
+<div id="bhud">
+      <div id="unitInfo">
+        <div class="face" id="uiFace">🪖</div>
+        <div class="bars">
+          <div class="row"><b id="uiName">—</b><span class="muted" id="uiWeap"></span></div>
+          <div class="hpbar"><i id="uiHp" style="width:100%"></i></div>
+          <div class="apdots" id="uiAp"></div>
+        </div>
+        <div style="text-align:right;font-size:12px" class="muted" id="uiHint">Ход 1</div>
       </div>
-      <div style="text-align:right;font-size:12px" class="muted" id="uiHint">Ход 1</div>
+      <div id="turnOrder" class="turn-order"></div>
+      <div id="bbtns">
+        <div class="btn" id="btnMed" onclick="useMedkit()">💉<span id="medCnt"></span></div>
+        <div class="btn" id="btnGren" onclick="toggleGrenade()">💣<span id="grenCnt"></span></div>
+        <div class="btn" id="btnSwap" onclick="swapWeapon()">🔁</div>
+        <div class="btn" onclick="nextUnit()">👤</div>
+        <div class="btn primary" onclick="endPlayerTurn()">⏭ Ход</div>
+        <div class="btn" style="flex:0 0 42px" id="btnSnd" onclick="toggleSnd()">🔊</div>
+        <div class="btn danger" style="flex:0 0 40px" onclick="surrender()">🏳</div>
+      </div>
     </div>
-    <div id="bbtns">
-      <div class="btn" id="btnMed" onclick="useMedkit()">💉<span id="medCnt"></span></div>
-      <div class="btn" id="btnGren" onclick="toggleGrenade()">💣<span id="grenCnt"></span></div>
-      <div class="btn" id="btnSwap" onclick="swapWeapon()">🔁</div>
-      <div class="btn" onclick="nextUnit()">👤</div>
-      <div class="btn primary" onclick="endPlayerTurn()">⏭ Ход</div>
-      <div class="btn" style="flex:0 0 42px" id="btnSnd" onclick="toggleSnd()">🔊</div>
-      <div class="btn danger" style="flex:0 0 40px" onclick="surrender()">🏳</div>
-    </div>
-  </div>
 </div>
 
 <!-- modals -->
@@ -1635,6 +1646,8 @@ function startPvpBattle(){
      fog:[],spotted:new Set(),pvp:{stake,hostName,naked}};
   logLines=[];effects=[];particles=[];initDust();
   recomputeFog();
+  buildTurnOrder();
+  startTurnTimer();
   blog(`🎮 ${pvpCtx.mode} против ${hostName}${naked?" · 🚿":""}${stake?` · ставка ${stake}💰`:""}`);
   selectUnit(B.units.find(u=>u.side==="p"));
   show("scr-battle");
@@ -2273,9 +2286,12 @@ function startBattle(mission, squadIds){
   });
   B = { mission, units, turn:1, phase:"p", sel:null, reach:null, mode:"normal",
         log:[], over:false,
-        kills:0, aiTimer:null, map, fog:[], spotted:new Set() };
+        kills:0, aiTimer:null, map, fog:[], spotted:new Set(),
+        turnTimer:180, turnTimerMax:180, turnTimerActive:false, turnOrder:[] };
   logLines=[]; effects=[]; particles=[]; initDust();
   recomputeFog();
+  buildTurnOrder();
+  startTurnTimer();
   blog(`⚔️ ${mission.name}. Найди противника — врагов не видно, пока не подойдёшь!`);
   selectUnit(B.units.find(u=>u.side==="p"));
   show("scr-battle");
@@ -2524,20 +2540,22 @@ function applyDamage(def, dmg, srcName, info){
   sfx("hit");
   if(def.side==="p")redFlash=Math.min(0.42,redFlash+0.15+(crit?0.12:0));
   doShake(crit?4:2,180);
-  if(def.hp<=0){
-    def.alive=false;
-    def.deadT=now();
-    deathDecal(def,info); // лужа крови + тело остаются на земле до конца боя
-    addEffect({type:"text",x:def.x,y:def.y,str:"☠",color:"#ffd27f",t:now()});
-    spawnSparks(def.x,def.y,"#d94f3d",14);
-    doShake(6,320);
-    punch={t:now()+210,mag:1};
-    sfx("death");
-    blog(`☠ ${def.emoji}${def.name} погибает!`);
-    B.log.push(`kill:${def.name}`);
-    if(def.side==="e")B.kills++;
-    else recomputeFog(); // погиб наблюдатель — обзор отряда сузился
-  }
+if(def.hp<=0){
+      def.alive=false;
+      def.deadT=now();
+      deathDecal(def,info);
+      addEffect({type:"text",x:def.x,y:def.y,str:"☠",color:"#ffd27f",t:now()});
+      spawnSparks(def.x,def.y,"#d94f3d",14);
+      doShake(6,320);
+      punch={t:now()+210,mag:1};
+      sfx("death");
+      blog(`☠ ${def.emoji}${def.name} погибает!`);
+      B.log.push(`kill:${def.name}`);
+      if(def.side==="e")B.kills++;
+      else recomputeFog();
+      buildTurnOrder();
+      updateHud();
+    }
 }
 function doAttack(att,def){
   const w=WEAPONS[att.weapon];
@@ -2613,7 +2631,8 @@ function selectUnit(u){
   if(!u||!u.alive||u.side!=="p")return;
   B.sel=u; B.mode="normal";
   B.reach=reachable(u);
-  centerCam(u.x,u.y); // камера следует за выбранным бойцом
+  centerCam(u.x,u.y);
+  if(B.phase==="p" && !B.turnTimerActive) startTurnTimer();
   updateHud();
 }
 function nextUnit(){
@@ -2775,15 +2794,83 @@ function throwGrenade(c){
 }
 function endPlayerTurn(){
   if(!B||B.over||B.phase!=="p")return;
+  stopTurnTimer();
   B.phase="e";B.mode="normal";
   B.units.forEach(u=>{if(u.side==="e"&&u.alive)u.ap=u.maxap;});
   blog(`— Ход противника —`);
   updateHud();
   aiStep();
 }
+function buildTurnOrder(){
+  if(!B)return;
+  const alive=B.units.filter(u=>u.alive).sort((a,b)=>{
+    if(a.side!=="b.side")return a.side==="p"?-1:1;
+    return (b.acc||0)-(a.acc||0);
+  });
+  B.turnOrder=alive.map((u,i)=>({...u, order:i+1}));
+}
+function startTurnTimer(){
+  if(!B)return;
+  B.turnTimer=B.turnTimerMax;
+  B.turnTimerActive=true;
+  if(B.turnTimerInterval)clearInterval(B.turnTimerInterval);
+  B.turnTimerInterval=setInterval(()=>{
+    if(!B||B.over||!B.turnTimerActive)return;
+    B.turnTimer--;
+    updateTurnTimerUI();
+    if(B.turnTimer<=0){
+      stopTurnTimer();
+      autoEndTurn();
+    }
+  },1000);
+  updateTurnTimerUI();
+}
+function stopTurnTimer(){
+  if(B && B.turnTimerInterval){
+    clearInterval(B.turnTimerInterval);
+    B.turnTimerInterval=null;
+  }
+  if(B)B.turnTimerActive=false;
+}
+function autoEndTurn(){
+  if(!B||B.over)return;
+  if(B.phase==="p"){
+    blog(`⏰ Время вышло — ход передан автоматически`);
+    endPlayerTurn();
+  }else{
+    nextAITurn();
+  }
+}
+function nextAITurn(){
+  if(!B)return;
+  B.phase="p";B.turn++;
+  B.units.forEach(u=>{if(u.side==="p"&&u.alive)u.ap=u.maxap;});
+  buildTurnOrder();
+  startTurnTimer();
+  blog(`— Ход ${B.turn}. Твоя очередь —`);
+  addEffect({type:"banner",str:"ХОД "+B.turn,t:now()});
+  B.aiFocus=null;
+  if(B.sel&&B.sel.alive)B.reach=reachable(B.sel);
+  else selectUnit(B.units.find(u=>u.side==="p"&&u.alive));
+  updateHud();
+}
+function updateTurnTimerUI(){
+  if(!B)return;
+  const el=document.getElementById("turnTimerBar");
+  const txt=document.getElementById("turnTimerText");
+  if(!el||!txt)return;
+  const pct=Math.max(0,B.turnTimer/B.turnTimerMax*100);
+  el.style.width=pct+"%";
+  el.classList.toggle("warning",B.turnTimer<=30);
+  const m=Math.floor(B.turnTimer/60),s=B.turnTimer%60;
+  txt.textContent=`${m}:${s.toString().padStart(2,"0")}`;
+}
 function surrender(){
   if(!B||B.over)return;
-  if(confirm("Сдаться и покинуть бой?"))finishBattle(false);
+  if(confirm("Сдаться и покинуть бой?")){
+    stopTurnTimer();
+    finishBattle(false);
+  }
 }
 
 /* --- ИИ v2: BFS-поиск пути, фокус-огонь, гранаты/аптечки, обход укрытий --- */
@@ -2912,14 +2999,7 @@ function aiStep(){
   if(!B||B.over)return;
   const e=B.units.find(u=>u.side==="e"&&u.alive&&u.ap>=2);
   if(!e){
-    B.phase="p";B.turn++;
-    B.units.forEach(u=>{if(u.side==="p"&&u.alive)u.ap=u.maxap;});
-    blog(`— Ход ${B.turn}. Твоя очередь —`);
-    addEffect({type:"banner",str:"ХОД "+B.turn,t:now()});
-    B.aiFocus=null;
-    if(B.sel&&B.sel.alive)B.reach=reachable(B.sel);
-    else selectUnit(B.units.find(u=>u.side==="p"&&u.alive));
-    updateHud();
+    nextAITurn();
     return;
   }
   const players=B.units.filter(u=>u.side==="p"&&u.alive);
@@ -2997,6 +3077,7 @@ function battleHash(){
 }
 function finishBattle(win){
   if(B.over)return;B.over=true;
+  stopTurnTimer();
   clearTimeout(B.aiTimer);
   /* остатки пояса и текущее оружие (после смен) возвращаются бойцу.
      ТРОФЕИ С КАРТЫ НЕ ВЫНОСЯТСЯ (как в жанровой классике): lootBelt сгорает,
@@ -3096,6 +3177,38 @@ function updateHud(){
   document.getElementById("btnGren").style.outline=B.mode==="grenade"?"2px solid var(--rust2)":"none";
   const swapBtn=document.getElementById("btnSwap");
   if(swapBtn)swapBtn.style.opacity=u.weapon2?"1":"0.4";
+  renderTurnOrder();
+  ensureTurnTimerUI();
+}
+function ensureTurnTimerUI(){
+  if(document.getElementById("turnTimerBar"))return;
+  const wrap=document.getElementById("bbtns");
+  if(!wrap)return;
+  const html=`<div class="turn-timer" style="margin-bottom:8px">
+    <span class="timer-text" id="turnTimerText">3:00</span>
+    <div class="timer-bar"><i id="turnTimerBar" style="width:100%"></i></div>
+  </div>`;
+  wrap.insertAdjacentHTML("beforebegin",html);
+}
+function renderTurnOrder(){
+  const el=document.getElementById("turnOrder");
+  if(!el||!B.turnOrder)return;
+  const current=B.sel;
+  let html="";
+  B.turnOrder.forEach((u,idx)=>{
+    const isCurrent=current && u.id===current.id;
+    const isDead=!u.alive;
+    const cls=["unit-slot", u.side==="e"?"enemy":"", isCurrent?"current":"", isDead?"dead":""].filter(Boolean).join(" ");
+    html+=`<div class="${cls}" title="${u.name} (${u.side==="p"?"свой":"враг"})">${idx+1}</div>`;
+  });
+  el.innerHTML=html;
+  if(current){
+    const idx=B.turnOrder.findIndex(u=>u.id===current.id);
+    if(idx>=0){
+      const child=el.children[idx];
+      if(child)child.scrollIntoView({inline:"center",behavior:"smooth"});
+    }
+  }
 }
 
 /* =========================================================
