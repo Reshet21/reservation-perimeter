@@ -272,8 +272,40 @@
 </head>
 <body>
 
+<!-- ===================== WALLET CONNECT ===================== -->
+<div class="screen active" id="scr-wallet">
+  <div class="scroll" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:20px;text-align:center">
+    <div style="font-size:64px;margin-bottom:16px">⛓️</div>
+    <h1 style="font-size:24px;font-weight:800;margin-bottom:8px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">RESERVATION: PERIMETER</h1>
+    <div class="muted" style="margin-bottom:24px;max-width:320px">Для входа в Зону необходимо подключить кошелёк Acki Nacki. Это твой паспорт в Резервацию — профиль, рейтинг и предметы хранятся в блокчейне.</div>
+    <div class="card" style="width:100%;max-width:360px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px">
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:18px">🦊</div>
+        <div style="text-align:left;flex:1">
+          <div style="font-weight:700">Acki Nacki Wallet</div>
+          <div class="muted" style="font-size:12px">Расширение для браузера / мобильное приложение</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="width:100%;max-width:360px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;font-size=18px">🌐</div>
+        <div style="text-align:left;flex:1">
+          <div style="font-weight:700">Tonkeeper / MyTonWallet</div>
+          <div class="muted" style="font-size:12px">Поддержка через Ton Connect (если доступно)</div>
+        </div>
+      </div>
+    </div>
+    <div class="btn primary" style="width:100%;max-width:360px;padding:16px;font-size:16px" onclick="connectWallet()">
+      <span id="walletBtnText">🔗 Подключить кошелёк</span>
+    </div>
+    <div class="muted" style="margin-top:16px;max-width:360px;font-size:12px" id="walletStatus"></div>
+    <div class="muted" style="margin-top:8px;max-width:360px;font-size:11px">Кошелёк не найден? Установи <a href="https://ackinacki.com/wallet" target="_blank" style="color:var(--acc)">Acki Nacki Wallet</a> или используй <a href="https://tonkeeper.com" target="_blank" style="color:var(--acc)">Tonkeeper</a> с поддержкой Acki Nacki.</div>
+  </div>
+</div>
+
 <!-- ===================== HUB ===================== -->
-<div class="screen active" id="scr-hub">
+<div class="screen" id="scr-hub">
   <header class="topbar">
     <h1><span class="ttl">☢ RESERVATION<span style="font-size:.55em;display:block;letter-spacing:.35em;color:#9fb4d8">PERIMETER</span></span></h1>
     <span class="chip">💰 <b id="hubCr">0</b></span>
@@ -389,11 +421,11 @@
     <div class="card">
       <h3>⛓️ Acki Nacki (Shellnet)</h3>
       <div class="muted" style="margin:6px 0">Профиль и результаты боёв записываются в смарт-контракт
-        <b>TIOProfiles</b> в тестовой сети Shellnet — бесплатно. Укажи адрес задеплоенного контракта
+        <b>PerimeterProfiles</b> в тестовой сети Shellnet — бесплатно. Укажи адрес задеплоенного контракта
         (см. README в проекте).</div>
       <div style="margin:8px 0 4px;font-size:13px">GraphQL endpoint:</div>
       <input type="text" id="chainEndpoint">
-      <div style="margin:8px 0 4px;font-size:13px">Адрес контракта TIOProfiles:</div>
+      <div style="margin:8px 0 4px;font-size:13px">Адрес контракта PerimeterProfiles:</div>
       <input type="text" id="chainAddr" placeholder="0:...">
       <div class="row" style="margin-top:10px">
         <div class="btn primary grow" onclick="chainSync()">📡 Синхронизировать он-чейн</div>
@@ -1073,6 +1105,111 @@ function resetSave(){
   if(!confirm("Точно сбросить весь прогресс?"))return;
   localStorage.removeItem(SAVE_KEY); S=defaultSave(); save(); show("scr-hub");
   toast("Прогресс сброшен");
+}
+
+/* ---------- WALLET CONNECTION (Acki Nacki) ---------- */
+let walletConnected = false;
+let walletAddress = null;
+let walletPubKey = null;
+
+function checkWalletConnection(){
+  const saved = localStorage.getItem("acki_wallet");
+  if(saved){
+    try{
+      const data = JSON.parse(saved);
+      walletAddress = data.address;
+      walletPubKey = data.pubkey;
+      walletConnected = true;
+      updateWalletUI(true);
+      return true;
+    }catch(e){}
+  }
+  return false;
+}
+
+function updateWalletUI(connected){
+  const btn = document.getElementById("walletBtnText");
+  const status = document.getElementById("walletStatus");
+  if(connected && walletAddress){
+    btn.textContent = "✅ Кошелёк подключен";
+    btn.classList.remove("primary");
+    btn.style.opacity = "0.6";
+    btn.onclick = null;
+    status.textContent = `Подключён: ${walletAddress.slice(0,8)}...${walletAddress.slice(-6)}`;
+    status.style.color = "var(--green)";
+    document.getElementById("scr-wallet").querySelector(".btn.primary").textContent = "✅ Войти в Зону";
+    document.getElementById("scr-wallet").querySelector(".btn.primary").onclick = enterGame;
+  }else{
+    btn.textContent = "🔗 Подключить кошелёк";
+    btn.classList.add("primary");
+    btn.style.opacity = "1";
+    btn.onclick = connectWallet;
+    status.textContent = "Кошелёк не подключен";
+    status.style.color = "var(--dim)";
+  }
+}
+
+async function connectWallet(){
+  const status = document.getElementById("walletStatus");
+  status.textContent = "Поиск кошелька...";
+  status.style.color = "var(--amber)";
+
+  try{
+    if(window.ackiWallet && window.ackiWallet.connect){
+      const res = await window.ackiWallet.connect();
+      if(res && res.address){
+        walletAddress = res.address;
+        walletPubKey = res.pubkey || res.publicKey;
+        walletConnected = true;
+        localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
+        updateWalletUI(true);
+        return;
+      }
+    }
+  }catch(e){
+    console.log("Acki wallet not available:", e);
+  }
+
+  try{
+    if(window.tonConnectUI || window.tonkeeper){
+      status.textContent = "Ton Connect не реализован в этой версии. Используй Acki Nacki Wallet.";
+      status.style.color = "var(--red)";
+      return;
+    }
+  }catch(e){}
+
+  if(window.ethereum && window.ethereum.isMetaMask){
+    status.textContent = "MetaMask не поддерживается для Acki Nacki. Установи Acki Nacki Wallet.";
+    status.style.color = "var(--red)";
+    return;
+  }
+
+  status.textContent = "Кошелёк не найден. Установи Acki Nacki Wallet (ackinacki.com/wallet).";
+  status.style.color = "var(--red)";
+}
+
+function enterGame(){
+  if(!walletConnected){
+    toast("Сначала подключи кошелёк");
+    return;
+  }
+  S.chain.pubkey = walletPubKey;
+  S.chain.address = walletAddress;
+  save();
+  show("scr-hub");
+  if(!S.seenTut) setTimeout(()=>{ /* tutorial will show in startBattle */ }, 100);
+}
+
+/* ---------- НАВИГАЦИЯ ---------- */
+function show(id){
+  if(id !== "scr-wallet" && !walletConnected){
+    show("scr-wallet");
+    return;
+  }
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.querySelectorAll(".crview").forEach(e=>e.textContent=S.credits);
+  if(id==="scr-hub") renderHub();
 }
 
 /* ---------- ХАРАКТЕРИСТИКИ ---------- */
@@ -5115,7 +5252,12 @@ function drawDust(w,h){
 
 /* ---------- ИНИЦИАЛИЗАЦИЯ ---------- */
 load();save();
-renderHub();
+checkWalletConnection();
+if(walletConnected){
+  show("scr-hub");
+}else{
+  show("scr-wallet");
+}
 requestAnimationFrame(draw);
 window.addEventListener("orientationchange",()=>setTimeout(resize,300));
 if("serviceWorker"in navigator){
