@@ -299,6 +299,9 @@
     <div class="btn primary" style="width:100%;max-width:360px;padding:16px;font-size:16px" onclick="connectWallet()">
       <span id="walletBtnText">🔗 Подключить кошелёк</span>
     </div>
+    <div class="btn" style="width:100%;max-width:360px;margin-top:8px;padding:12px;font-size:13px" onclick="debugWallet()">
+      🔍 Диагностика (консоль F12)
+    </div>
     <div class="muted" style="margin-top:16px;max-width:360px;font-size:12px" id="walletStatus"></div>
     <div class="muted" style="margin-top:8px;max-width:360px;font-size:11px">Кошелёк не найден? Установи <a href="https://ackinacki.com/wallet" target="_blank" style="color:var(--acc)">Acki Nacki Wallet</a> или используй <a href="https://tonkeeper.com" target="_blank" style="color:var(--acc)">Tonkeeper</a> с поддержкой Acki Nacki.</div>
   </div>
@@ -1154,12 +1157,22 @@ async function connectWallet(){
   status.textContent = "Поиск кошелька...";
   status.style.color = "var(--amber)";
 
+  console.log("Available wallet objects:", {
+    ackiWallet: !!window.ackiWallet,
+    ackiWalletConnect: !!(window.ackiWallet && window.ackiWallet.connect),
+    tonkeeper: !!window.tonkeeper,
+    tonConnect: !!window.tonConnectUI,
+    ethereum: !!window.ethereum,
+    ackiWalletObj: window.ackiWallet
+  });
+
   try{
     if(window.ackiWallet && window.ackiWallet.connect){
       const res = await window.ackiWallet.connect();
-      if(res && res.address){
-        walletAddress = res.address;
-        walletPubKey = res.pubkey || res.publicKey;
+      console.log("Acki wallet connect result:", res);
+      if(res && (res.address || res.account)){
+        walletAddress = res.address || res.account;
+        walletPubKey = res.pubkey || res.publicKey || (res.account ? "0x" + res.account.slice(2, 66) : null);
         walletConnected = true;
         localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
         updateWalletUI(true);
@@ -1167,24 +1180,50 @@ async function connectWallet(){
       }
     }
   }catch(e){
-    console.log("Acki wallet not available:", e);
-  }
-
-  try{
-    if(window.tonConnectUI || window.tonkeeper){
-      status.textContent = "Ton Connect не реализован в этой версии. Используй Acki Nacki Wallet.";
-      status.style.color = "var(--red)";
-      return;
-    }
-  }catch(e){}
-
-  if(window.ethereum && window.ethereum.isMetaMask){
-    status.textContent = "MetaMask не поддерживается для Acki Nacki. Установи Acki Nacki Wallet.";
+    console.log("Acki wallet connect error:", e);
+    status.textContent = "Ошибка подключения: " + e.message;
     status.style.color = "var(--red)";
     return;
   }
 
-  status.textContent = "Кошелёк не найден. Установи Acki Nacki Wallet (ackinacki.com/wallet).";
+  if(window.ackiWallet && window.ackiWallet.tonConnect){
+    try{
+      const tc = window.ackiWallet.tonConnect;
+      if(tc && tc.connect){
+        const res = await tc.connect();
+        console.log("TonConnect result:", res);
+        if(res && res.account){
+          walletAddress = res.account.address;
+          walletPubKey = res.account.publicKey;
+          walletConnected = true;
+          localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
+          updateWalletUI(true);
+          return;
+        }
+      }
+    }catch(e){
+      console.log("TonConnect error:", e);
+    }
+  }
+
+  if(window.tonkeeper && window.tonkeeper.connect){
+    try{
+      const res = await window.tonkeeper.connect();
+      console.log("Tonkeeper result:", res);
+      if(res && res.address){
+        walletAddress = res.address;
+        walletPubKey = res.publicKey;
+        walletConnected = true;
+        localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
+        updateWalletUI(true);
+        return;
+      }
+    }catch(e){
+      console.log("Tonkeeper error:", e);
+    }
+  }
+
+  status.textContent = "Кошелёк не найден. Проверь консоль (F12) — там список обнаруженных объектов. Убедись, что Acki Nacki Wallet разблокирован и страница перезагружена после установки.";
   status.style.color = "var(--red)";
 }
 
@@ -1198,6 +1237,21 @@ function enterGame(){
   save();
   show("scr-hub");
   if(!S.seenTut) setTimeout(()=>{ /* tutorial will show in startBattle */ }, 100);
+}
+
+function debugWallet(){
+  const info = {
+    ackiWallet: window.ackiWallet,
+    ackiWalletKeys: window.ackiWallet ? Object.keys(window.ackiWallet) : [],
+    tonkeeper: window.tonkeeper,
+    tonConnectUI: window.tonConnectUI,
+    ethereum: window.ethereum,
+    ton: window.ton,
+    userAgent: navigator.userAgent
+  };
+  console.log("=== WALLET DEBUG ===", info);
+  document.getElementById("walletStatus").textContent = "Смотри консоль (F12) → Console";
+  document.getElementById("walletStatus").style.color = "var(--blue)";
 }
 
 /* ---------- НАВИГАЦИЯ ---------- */
