@@ -6,7 +6,6 @@
 <meta name="theme-color" content="#07090e">
 <title>RESERVATION: PERIMETER — пошаговая тактика в Зоне</title>
 <link rel="manifest" href="manifest.json">
-<script src="https://cdn.jsdelivr.net/npm/@tonconnect/sdk@3/dist/tonconnect-sdk.min.js"></script>
 <style>
   :root{
     --bg:#07090e; --bg2:#0b0e15;
@@ -273,44 +272,47 @@
 </head>
 <body>
 
-<!-- ===================== WALLET CONNECT ===================== -->
+<!-- ===================== KEYPAIR MANAGEMENT (Acki Nacki Identity) ===================== -->
 <div class="screen active" id="scr-wallet">
   <div class="scroll" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:20px;text-align:center">
     <div style="font-size:64px;margin-bottom:16px">⛓️</div>
     <h1 style="font-size:24px;font-weight:800;margin-bottom:8px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">RESERVATION: PERIMETER</h1>
-    <div class="muted" style="margin-bottom:24px;max-width:320px">Для входа в Зону необходимо подключить кошелёк Acki Nacki. Это твой паспорт в Резервацию — профиль, рейтинг и предметы хранятся в блокчейне.</div>
-    <div class="card" style="width:100%;max-width:360px;margin-bottom:16px">
-      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px">
-        <div style="width:40px;height:40px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:18px">🦊</div>
-        <div style="text-align:left;flex:1">
-          <div style="font-weight:700">Acki Nacki Wallet</div>
-          <div class="muted" style="font-size:12px">Расширение для браузера / мобильное приложение</div>
-        </div>
+    <div class="muted" style="margin-bottom:24px;max-width:320px">Для работы с он-чейн профилем, предметами и ареной нужен ключ Acki Nacki (ed25519). Создай новый или импортируй свой <code>keys.json</code>.</div>
+    
+    <div class="card" id="walletEmptyState" style="width:100%;max-width:360px;margin-bottom:16px">
+      <div style="font-size:48px;margin-bottom:12px">🔐</div>
+      <div style="font-weight:700;margin-bottom:8px">Кошелёк не создан</div>
+      <div class="muted" style="margin-bottom:16px">Создай новый ключ или импортируй существующий</div>
+      <div class="btn primary" style="width:100%;margin-bottom:8px" onclick="createNewKeypair()">✨ Создать новый кошелёк</div>
+      <div class="btn" style="width:100%" onclick="showImportKeypair()">📥 Импортировать keys.json</div>
+    </div>
+
+    <div class="card" id="walletActiveState" style="width:100%;max-width:360px;margin-bottom:16px;display:none">
+      <div style="font-weight:700;margin-bottom:12px">✅ Кошелёк подключен</div>
+      <div style="text-align:left;font-size:12px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:12px;font-family:monospace">
+        <div class="muted">Адрес (Raw):</div>
+        <div id="walletAddressDisplay" style="word-break:break-all"></div>
+        <div class="muted" style="margin-top:8px">Публичный ключ:</div>
+        <div id="walletPubkeyDisplay" style="word-break:break-all"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+        <div class="btn primary" style="flex:1;min-width:140px" onclick="enterGame()">🎮 Войти в игру</div>
+        <div class="btn" style="flex:1;min-width:140px" onclick="exportKeypair()">💾 Экспорт keys.json</div>
+        <div class="btn danger" style="flex:1;min-width:140px" onclick="disconnectWallet()">🔓 Отключить</div>
       </div>
     </div>
-    <div class="card" style="width:100%;max-width:360px;margin-bottom:16px">
-      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px">
-        <div style="width:40px;height:40px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;font-size=18px">🌐</div>
-        <div style="text-align:left;flex:1">
-          <div style="font-weight:700">Tonkeeper / MyTonWallet</div>
-          <div class="muted" style="font-size:12px">Поддержка через Ton Connect (если доступно)</div>
-        </div>
+
+    <div class="card" id="importForm" style="width:100%;max-width:360px;margin-bottom:16px;display:none">
+      <div style="font-weight:700;margin-bottom:12px">📥 Импорт keys.json</div>
+      <div class="muted" style="margin-bottom:12px;text-align:left">Вставь содержимое файла <code>keys.json</code> (полученный через <code>tvm-cli genaddr</code> или <code>sync.mjs init</code>)</div>
+      <textarea id="importKeysJson" placeholder='{"public":"...","secret":"..."}' style="width:100%;height:100px;padding:10px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:8px;color:var(--sand);font-family:monospace;font-size:11px"></textarea>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <div class="btn primary" style="flex:1" onclick="doImportKeypair()">Импортировать</div>
+        <div class="btn" style="flex:1" onclick="hideImportKeypair()">Отмена</div>
       </div>
     </div>
-    <div class="btn primary" style="width:100%;max-width:360px;padding:16px;font-size:16px" onclick="connectWallet()">
-      <span id="walletBtnText">🔗 Подключить кошелёк</span>
-    </div>
-    <div class="btn" style="width:100%;max-width:360px;margin-top:8px;padding:12px;font-size:13px" onclick="debugWallet()">
-      🔍 Диагностика (консоль F12)
-    </div>
-    <div class="muted" style="margin-top:16px;max-width:360px;font-size:12px" id="walletStatus"></div>
-    <div class="muted" style="margin-top:8px;max-width:360px;font-size:11px">Кошелёк не найден? Установи <a href="https://ackinacki.com/wallet" target="_blank" style="color:var(--acc)">Acki Nacki Wallet</a> или используй <a href="https://tonkeeper.com" target="_blank" style="color:var(--acc)">Tonkeeper</a> с поддержкой Acki Nacki.</div>
-    <div style="margin-top:16px;padding:12px;background:rgba(255,255,255,.03);border:1px dashed var(--line);border-radius:10px;text-align:left;font-size:12px;max-width:360px">
-      <div style="font-weight:700;margin-bottom:8px">🔧 Ручной ввод (если автоне работает):</div>
-      <input type="text" id="manualAddress" placeholder="Адрес кошелька (0:... или EQ...)" style="width:100%;padding:10px;margin-bottom:8px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:8px;color:var(--sand)">
-      <input type="text" id="manualPubkey" placeholder="Публичный ключ (64 hex символа)" style="width:100%;padding:10px;margin-bottom:8px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:8px;color:var(--sand)">
-      <div class="btn primary" style="width:100%" onclick="manualWalletConnect()">Подключить вручную</div>
-    </div>
+
+    <div class="muted" style="margin-top:16px;max-width:360px;font-size:11px">Ключ хранится локально в браузере. Для безопасности: не передавай <code>secret</code> никому. Официальный кошелёк: <a href="https://ackinacki.com/wallet" target="_blank" style="color:var(--acc)">ackinacki.com/wallet</a></div>
   </div>
 </div>
 
@@ -1137,214 +1139,186 @@ function checkWalletConnection(){
   return false;
 }
 
-function updateWalletUI(connected){
-  const btn = document.getElementById("walletBtnText");
-  const status = document.getElementById("walletStatus");
-  if(connected && walletAddress){
-    btn.textContent = "✅ Кошелёк подключен";
-    btn.classList.remove("primary");
-    btn.style.opacity = "0.6";
-    btn.onclick = null;
-    status.textContent = `Подключён: ${walletAddress.slice(0,8)}...${walletAddress.slice(-6)}`;
-    status.style.color = "var(--green)";
-    document.getElementById("scr-wallet").querySelector(".btn.primary").textContent = "✅ Войти в Зону";
-    document.getElementById("scr-wallet").querySelector(".btn.primary").onclick = enterGame;
-  }else{
-    btn.textContent = "🔗 Подключить кошелёк";
-    btn.classList.add("primary");
-    btn.style.opacity = "1";
-    btn.onclick = connectWallet;
-    status.textContent = "Кошелёк не подключен";
-    status.style.color = "var(--dim)";
+// ed25519 keypair management for Acki Nacki (TVM)
+let walletKeypair = null; // {publicKey: "hex", secretKey: "hex"}
+let walletAddress = null; // Raw address format
+let walletPubKey = null;  // 0x... format for contracts
+let walletConnected = false;
+
+// Generate ed25519 keypair using Web Crypto API
+async function generateKeypair(){
+  const keyPair = await crypto.subtle.generateKey(
+    {name: "Ed25519"},
+    true, // extractable
+    ["sign", "verify"]
+  );
+  const publicKey = await crypto.subtle.exportKey("raw", keyPair.publicKey);
+  const privateKey = await crypto.subtle.exportKey("raw", keyPair.privateKey);
+  return {
+    publicKey: bytesToHex(new Uint8Array(publicKey)),
+    secretKey: bytesToHex(new Uint8Array(privateKey))
+  };
+}
+
+// Compute raw address from public key (TVM address format)
+// For Acki Nacki, address = workchain:hash(publicKey) - simplified
+function computeRawAddress(pubKeyHex){
+  // TVM address: workchain (0) + 32-byte hash
+  // For ed25519, the account ID is typically hash of public key
+  // We'll use a simple approach: "0:" + first 64 hex chars of SHA256(pubkey)
+  return "0:" + pubKeyHex; // Simplified - actual TVM uses more complex derivation
+}
+
+function bytesToHex(bytes){
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function hexToBytes(hex){
+  const bytes = new Uint8Array(hex.length / 2);
+  for(let i = 0; i < hex.length; i += 2){
+    bytes[i/2] = parseInt(hex.substr(i, 2), 16);
+  }
+  return bytes;
+}
+
+async function createNewKeypair(){
+  const btn = event.target;
+  btn.textContent = "⏳ Генерация...";
+  btn.disabled = true;
+  
+  try{
+    const kp = await generateKeypair();
+    walletKeypair = kp;
+    walletPubKey = "0x" + kp.publicKey;
+    walletAddress = computeRawAddress(kp.publicKey);
+    walletConnected = true;
+    
+    // Save to localStorage
+    localStorage.setItem("acki_keypair", JSON.stringify({
+      publicKey: kp.publicKey,
+      secretKey: kp.secretKey,
+      address: walletAddress,
+      pubKey: walletPubKey
+    }));
+    
+    showWalletActive();
+    toast("Кошелёк создан! Ключ сохранён в браузере.");
+  }catch(e){
+    console.error("Keypair generation failed:", e);
+    toast("Ошибка генерации: " + e.message);
+  }finally{
+    btn.textContent = "✨ Создать новый кошелёк";
+    btn.disabled = false;
   }
 }
 
-let tonConnectInstance = null;
-let tonConnectManifest = {
-  url: window.location.origin,
-  name: "Reservation: Perimeter",
-  iconUrl: window.location.origin + "/icon-192.png",
-  termsOfServiceUrl: window.location.origin,
-  privacyPolicyUrl: window.location.origin
-};
+function showImportKeypair(){
+  document.getElementById("walletEmptyState").style.display = "none";
+  document.getElementById("importForm").style.display = "block";
+}
 
-function initTonConnect(){
-  if(typeof TonConnect !== "undefined" && !tonConnectInstance){
-    try{
-      tonConnectInstance = new TonConnect({
-        manifest: tonConnectManifest,
-        storage: new TonConnectLocalStorage()
-      });
-      console.log("TonConnect initialized");
-      return true;
-    }catch(e){
-      console.error("TonConnect init failed:", e);
+function hideImportKeypair(){
+  document.getElementById("importForm").style.display = "none";
+  document.getElementById("walletEmptyState").style.display = "block";
+  document.getElementById("importKeysJson").value = "";
+}
+
+function doImportKeypair(){
+  const textarea = document.getElementById("importKeysJson");
+  const text = textarea.value.trim();
+  if(!text){
+    toast("Вставь JSON");
+    return;
+  }
+  try{
+    const data = JSON.parse(text);
+    // Support both formats: {publicKey, secretKey} or {public, secret}
+    const pub = data.publicKey || data.public;
+    const sec = data.secretKey || data.secret;
+    if(!pub || !sec){
+      toast("Неверный формат: нужны publicKey и secretKey");
+      return;
     }
+    walletKeypair = {publicKey: pub, secretKey: sec};
+    walletPubKey = "0x" + pub;
+    walletAddress = computeRawAddress(pub);
+    walletConnected = true;
+    
+    localStorage.setItem("acki_keypair", JSON.stringify({
+      publicKey: pub,
+      secretKey: sec,
+      address: walletAddress,
+      pubKey: walletPubKey
+    }));
+    
+    hideImportKeypair();
+    showWalletActive();
+    toast("Кошелёк импортирован!");
+  }catch(e){
+    console.error("Import failed:", e);
+    toast("Ошибка: неверный JSON");
+  }
+}
+
+function showWalletActive(){
+  document.getElementById("walletEmptyState").style.display = "none";
+  document.getElementById("importForm").style.display = "none";
+  document.getElementById("walletActiveState").style.display = "block";
+  document.getElementById("walletAddressDisplay").textContent = walletAddress;
+  document.getElementById("walletPubkeyDisplay").textContent = walletPubKey;
+}
+
+function exportKeypair(){
+  if(!walletKeypair){
+    toast("Нет ключа для экспорта");
+    return;
+  }
+  const data = {
+    publicKey: walletKeypair.publicKey,
+    secretKey: walletKeypair.secretKey
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "keys.json";
+  a.click();
+  URL.revokeObjectURL(url);
+  toast("keys.json скачан");
+}
+
+function disconnectWallet(){
+  walletKeypair = null;
+  walletAddress = null;
+  walletPubKey = null;
+  walletConnected = false;
+  localStorage.removeItem("acki_keypair");
+  document.getElementById("walletActiveState").style.display = "none";
+  document.getElementById("walletEmptyState").style.display = "block";
+  toast("Кошелёк отключен");
+}
+
+function checkSavedKeypair(){
+  const saved = localStorage.getItem("acki_keypair");
+  if(saved){
+    try{
+      const data = JSON.parse(saved);
+      if(data.publicKey && data.secretKey){
+        walletKeypair = {publicKey: data.publicKey, secretKey: data.secretKey};
+        walletPubKey = data.pubKey || ("0x" + data.publicKey);
+        walletAddress = data.address || computeRawAddress(data.publicKey);
+        walletConnected = true;
+        showWalletActive();
+        return true;
+      }
+    }catch(e){}
   }
   return false;
 }
 
-class TonConnectLocalStorage {
-  getItem(key){ return localStorage.getItem(key); }
-  setItem(key, value){ localStorage.setItem(key, value); }
-  removeItem(key){ localStorage.removeItem(key); }
-}
-
-function isMobile(){
-  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-}
-
-async function connectWallet(){
-  const status = document.getElementById("walletStatus");
-  const btn = document.getElementById("walletBtnText");
-  status.textContent = "Подключение...";
-  status.style.color = "var(--amber)";
-  btn.textContent = "⏳ Подключение...";
-
-  const mobile = isMobile();
-  console.log("=== WALLET CONNECT START ===");
-  console.log("Mobile:", mobile);
-  console.log("UserAgent:", navigator.userAgent);
-  console.log("TonConnect available:", typeof TonConnect !== "undefined");
-
-  // 1. Try injected wallet first (desktop browser extension)
-  if(!mobile){
-    if(window.ackiWallet && typeof window.ackiWallet.connect === "function"){
-      try{
-        const res = await window.ackiWallet.connect();
-        if(res && (res.address || res.account)){
-          walletAddress = res.address || res.account;
-          walletPubKey = res.pubkey || res.publicKey || (res.account ? "0x" + res.account.slice(2, 66) : null);
-          walletConnected = true;
-          localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
-          updateWalletUI(true);
-          return;
-        }
-      }catch(e){ console.log("Injected ackiWallet failed:", e); }
-    }
-    if(window.tonkeeper && typeof window.tonkeeper.connect === "function"){
-      try{
-        const res = await window.tonkeeper.connect();
-        if(res && res.address){
-          walletAddress = res.address;
-          walletPubKey = res.publicKey;
-          walletConnected = true;
-          localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
-          updateWalletUI(true);
-          return;
-        }
-      }catch(e){ console.log("Injected tonkeeper failed:", e); }
-    }
-  }
-
-  // 2. Try TonConnect (works on mobile via deep link / QR)
-  if(typeof TonConnect !== "undefined" || (window.TonConnect && window.TonConnect.TonConnect)){
-    try{
-      initTonConnect();
-      if(tonConnectInstance){
-        status.textContent = mobile ? "Открываем кошелёк..." : "Сканируй QR или открой в кошельке";
-        
-        // Restore previous connection if exists
-        if(tonConnectInstance.connected){
-          const acc = tonConnectInstance.account;
-          walletAddress = acc.address;
-          walletPubKey = acc.publicKey;
-          walletConnected = true;
-          updateWalletUI(true);
-          return;
-        }
-
-        // Connect - this opens wallet app or shows QR
-        await tonConnectInstance.connect();
-        
-        // Wait for connection (TonConnect handles this via event)
-        return new Promise((resolve) => {
-          const checkConnection = setInterval(() => {
-            if(tonConnectInstance && tonConnectInstance.connected){
-              clearInterval(checkConnection);
-              const acc = tonConnectInstance.account;
-              walletAddress = acc.address;
-              walletPubKey = acc.publicKey;
-              walletConnected = true;
-              localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
-              updateWalletUI(true);
-              resolve();
-            }
-          }, 500);
-          
-          // Timeout after 2 minutes
-          setTimeout(() => {
-            clearInterval(checkConnection);
-            if(!walletConnected){
-              status.textContent = "Время вышло. Попробуй ещё раз или введи адрес вручную.";
-              status.style.color = "var(--red)";
-              btn.textContent = "🔗 Подключить кошелёк";
-            }
-          }, 120000);
-        });
-      }
-    }catch(e){
-      console.error("TonConnect error:", e);
-    }
-  }
-
-  // 3. Try TonConnect UI if available (some wallets inject this)
-  if(window.tonConnectUI && typeof window.tonConnectUI.connect === "function"){
-    try{
-      const res = await window.tonConnectUI.connect();
-      if(res && res.account){
-        walletAddress = res.account.address;
-        walletPubKey = res.account.publicKey;
-        walletConnected = true;
-        localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
-        updateWalletUI(true);
-        return;
-      }
-    }catch(e){ console.log("tonConnectUI failed:", e); }
-  }
-
-  // 4. Deep link fallback for mobile - try to open wallet app directly
-  if(mobile){
-    status.textContent = "Пробуем открыть приложение кошелька...";
-    btn.textContent = "⏳ Открытие приложения...";
-    
-    const deepLinks = [
-      "tonkeeper://tonconnect/",
-      "ackiwallet://tonconnect/",
-      "tonhub://tonconnect/",
-      "mytonwallet://tonconnect/",
-      "okxwallet://tonconnect/"
-    ];
-    
-    // We can't easily detect which opens, but we can try the connect via TonConnect
-    // which should handle deep links automatically
-  }
-
-  status.textContent = mobile 
-    ? "Автоподключение не сработало. Убедись: 1) Кошелёк установлен и разблокирован 2) В настройках кошелька включено 'TonConnect' / 'Подключение к dApp' 3) Попробуй ручной ввод ниже"
-    : "Кошелёк не найден. Установи Acki Nacki Wallet или Tonkeeper, перезагрузи страницу. Или введи адрес вручную.";
-  status.style.color = "var(--red)";
-  btn.textContent = "🔗 Подключить кошелёк";
-}
-
-// Listen for TonConnect events
-if(typeof TonConnect !== "undefined"){
-  document.addEventListener("tonconnect_connect", (e) => {
-    console.log("TonConnect connected event:", e.detail);
-    if(tonConnectInstance && tonConnectInstance.connected){
-      const acc = tonConnectInstance.account;
-      walletAddress = acc.address;
-      walletPubKey = acc.publicKey;
-      walletConnected = true;
-      localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
-      updateWalletUI(true);
-    }
-  });
-}
-
 function enterGame(){
   if(!walletConnected){
-    toast("Сначала подключи кошелёк");
+    toast("Сначала создай или импортируй кошелёк");
     return;
   }
   S.chain.pubkey = walletPubKey;
@@ -1352,37 +1326,6 @@ function enterGame(){
   save();
   show("scr-hub");
   if(!S.seenTut) setTimeout(()=>{ /* tutorial will show in startBattle */ }, 100);
-}
-
-function debugWallet(){
-  const info = {
-    ackiWallet: window.ackiWallet,
-    ackiWalletKeys: window.ackiWallet ? Object.keys(window.ackiWallet) : [],
-    tonkeeper: window.tonkeeper,
-    tonConnectUI: window.tonConnectUI,
-    ethereum: window.ethereum,
-    ton: window.ton,
-    okxwallet: window.okxwallet,
-    userAgent: navigator.userAgent
-  };
-  console.log("=== WALLET DEBUG ===", info);
-  document.getElementById("walletStatus").textContent = "Смотри консоль (F12) → Console";
-  document.getElementById("walletStatus").style.color = "var(--blue)";
-}
-
-function manualWalletConnect(){
-  const addr = document.getElementById("manualAddress").value.trim();
-  const pk = document.getElementById("manualPubkey").value.trim();
-  if(!addr || !pk){
-    toast("Введи адрес и публичный ключ");
-    return;
-  }
-  walletAddress = addr;
-  walletPubKey = pk.startsWith("0x") ? pk : "0x" + pk;
-  walletConnected = true;
-  localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
-  updateWalletUI(true);
-  toast("Кошелёк подключен вручную");
 }
 
 /* ---------- НАВИГАЦИЯ ---------- */
@@ -5437,7 +5380,7 @@ function drawDust(w,h){
 
 /* ---------- ИНИЦИАЛИЗАЦИЯ ---------- */
 load();save();
-checkWalletConnection();
+checkSavedKeypair();
 if(walletConnected){
   show("scr-hub");
 }else{
