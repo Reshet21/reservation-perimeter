@@ -1,0 +1,196 @@
+{
+	"ABI version": 2,
+	"version": "2.4",
+	"header": ["pubkey", "time", "expire"],
+	"functions": [
+		{
+			"name": "constructor",
+			"inputs": [
+				{"name":"value","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "setNpcPrice",
+			"inputs": [
+				{"name":"itemCode","type":"string"},
+				{"name":"price","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "mintItem",
+			"inputs": [
+				{"name":"player","type":"uint256"},
+				{"name":"itemCode","type":"string"},
+				{"name":"amount","type":"uint32"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "mintCredits",
+			"inputs": [
+				{"name":"player","type":"uint256"},
+				{"name":"amount","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "npcBuy",
+			"inputs": [
+				{"name":"itemCode","type":"string"},
+				{"name":"amount","type":"uint32"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "npcSell",
+			"inputs": [
+				{"name":"itemCode","type":"string"},
+				{"name":"amount","type":"uint32"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "listItem",
+			"inputs": [
+				{"name":"itemCode","type":"string"},
+				{"name":"amount","type":"uint32"},
+				{"name":"priceEach","type":"uint64"}
+			],
+			"outputs": [
+				{"name":"lid","type":"uint64"}
+			]
+		},
+		{
+			"name": "unlist",
+			"inputs": [
+				{"name":"lid","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "buy",
+			"inputs": [
+				{"name":"lid","type":"uint64"},
+				{"name":"amount","type":"uint32"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "transferItem",
+			"inputs": [
+				{"name":"to","type":"uint256"},
+				{"name":"itemCode","type":"string"},
+				{"name":"amount","type":"uint32"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "topUp",
+			"inputs": [
+				{"name":"value","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "getBalance",
+			"inputs": [
+				{"name":"player","type":"uint256"},
+				{"name":"itemCode","type":"string"}
+			],
+			"outputs": [
+				{"name":"count","type":"uint32"},
+				{"name":"creditBalance","type":"uint64"}
+			]
+		},
+		{
+			"name": "getNpcPrice",
+			"inputs": [
+				{"name":"itemCode","type":"string"}
+			],
+			"outputs": [
+				{"name":"buy","type":"uint64"},
+				{"name":"sell","type":"uint64"}
+			]
+		},
+		{
+			"name": "getListing",
+			"inputs": [
+				{"name":"lid","type":"uint64"}
+			],
+			"outputs": [
+				{"name":"seller","type":"uint256"},
+				{"name":"itemCode","type":"string"},
+				{"name":"amount","type":"uint32"},
+				{"name":"priceEach","type":"uint64"},
+				{"name":"active","type":"bool"}
+			]
+		},
+		{
+			"name": "getMarketStats",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"lids","type":"uint64"},
+				{"name":"active","type":"uint32"}
+			]
+		},
+		{
+			"name": "credits",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"credits","type":"map(uint256,uint64)"}
+			]
+		},
+		{
+			"name": "listings",
+			"inputs": [
+			],
+			"outputs": [
+				{"components":[{"name":"seller","type":"uint256"},{"name":"itemCode","type":"string"},{"name":"amount","type":"uint32"},{"name":"priceEach","type":"uint64"},{"name":"active","type":"bool"}],"name":"listings","type":"map(uint64,tuple)"}
+			]
+		},
+		{
+			"name": "nextLid",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"nextLid","type":"uint64"}
+			]
+		},
+		{
+			"name": "totalListings",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"totalListings","type":"uint32"}
+			]
+		}
+	],
+	"events": [
+	],
+	"fields": [
+		{"init":true,"name":"_pubkey","type":"uint256"},
+		{"init":false,"name":"_timestamp","type":"uint64"},
+		{"init":false,"name":"_constructorFlag","type":"bool"},
+		{"init":true,"name":"ownerKey","type":"uint256"},
+		{"init":false,"name":"items","type":"map(uint256,map(uint256,uint32))"},
+		{"init":false,"name":"credits","type":"map(uint256,uint64)"},
+		{"init":false,"name":"npcPrices","type":"map(uint256,uint64)"},
+		{"components":[{"name":"seller","type":"uint256"},{"name":"itemCode","type":"string"},{"name":"amount","type":"uint32"},{"name":"priceEach","type":"uint64"},{"name":"active","type":"bool"}],"init":false,"name":"listings","type":"map(uint64,tuple)"},
+		{"init":false,"name":"nextLid","type":"uint64"},
+		{"init":false,"name":"totalListings","type":"uint32"}
+	]
+}

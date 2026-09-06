@@ -1,0 +1,152 @@
+{
+	"ABI version": 2,
+	"version": "2.4",
+	"header": ["pubkey", "time", "expire"],
+	"functions": [
+		{
+			"name": "constructor",
+			"inputs": [
+				{"name":"value","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "deposit",
+			"inputs": [
+				{"name":"amount","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "createRoom",
+			"inputs": [
+				{"name":"mode","type":"uint8"},
+				{"name":"stake","type":"uint64"},
+				{"name":"naked","type":"bool"}
+			],
+			"outputs": [
+				{"name":"roomId","type":"uint64"}
+			]
+		},
+		{
+			"name": "joinRoom",
+			"inputs": [
+				{"name":"roomId","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "cancelRoom",
+			"inputs": [
+				{"name":"roomId","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "timeoutRoom",
+			"inputs": [
+				{"name":"roomId","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "commitResult",
+			"inputs": [
+				{"name":"roomId","type":"uint64"},
+				{"name":"winner","type":"uint256"},
+				{"name":"battleHash","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "topUp",
+			"inputs": [
+				{"name":"value","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "getRoom",
+			"inputs": [
+				{"name":"roomId","type":"uint64"}
+			],
+			"outputs": [
+				{"name":"host","type":"uint256"},
+				{"name":"guest","type":"uint256"},
+				{"name":"mode","type":"uint8"},
+				{"name":"stake","type":"uint64"},
+				{"name":"naked","type":"bool"},
+				{"name":"state","type":"uint8"},
+				{"name":"deadline","type":"uint64"}
+			]
+		},
+		{
+			"name": "getArenaStats",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"totalRooms","type":"uint64"},
+				{"name":"open","type":"uint32"}
+			]
+		},
+		{
+			"name": "getBalance",
+			"inputs": [
+				{"name":"player","type":"uint256"}
+			],
+			"outputs": [
+				{"name":"value0","type":"uint64"}
+			]
+		},
+		{
+			"name": "rooms",
+			"inputs": [
+			],
+			"outputs": [
+				{"components":[{"name":"host","type":"uint256"},{"name":"guest","type":"uint256"},{"name":"mode","type":"uint8"},{"name":"stake","type":"uint64"},{"name":"naked","type":"bool"},{"name":"state","type":"uint8"},{"name":"deadline","type":"uint64"},{"name":"hostClaimWinner","type":"uint256"},{"name":"guestClaimWinner","type":"uint256"},{"name":"hostHash","type":"uint64"},{"name":"guestHash","type":"uint64"}],"name":"rooms","type":"map(uint64,tuple)"}
+			]
+		},
+		{
+			"name": "balance",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"balance","type":"map(uint256,uint64)"}
+			]
+		},
+		{
+			"name": "nextRoomId",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"nextRoomId","type":"uint64"}
+			]
+		},
+		{
+			"name": "openRooms",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"openRooms","type":"uint32"}
+			]
+		}
+	],
+	"events": [
+	],
+	"fields": [
+		{"init":true,"name":"_pubkey","type":"uint256"},
+		{"init":false,"name":"_timestamp","type":"uint64"},
+		{"init":false,"name":"_constructorFlag","type":"bool"},
+		{"components":[{"name":"host","type":"uint256"},{"name":"guest","type":"uint256"},{"name":"mode","type":"uint8"},{"name":"stake","type":"uint64"},{"name":"naked","type":"bool"},{"name":"state","type":"uint8"},{"name":"deadline","type":"uint64"},{"name":"hostClaimWinner","type":"uint256"},{"name":"guestClaimWinner","type":"uint256"},{"name":"hostHash","type":"uint64"},{"name":"guestHash","type":"uint64"}],"init":false,"name":"rooms","type":"map(uint64,tuple)"},
+		{"init":false,"name":"balance","type":"map(uint256,uint64)"},
+		{"init":false,"name":"nextRoomId","type":"uint64"},
+		{"init":false,"name":"openRooms","type":"uint32"}
+	]
+}

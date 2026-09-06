@@ -73,7 +73,17 @@ tvm-cli -u shellnet.ackinacki.org deploy PerimeterProfiles.tvc '{"value":1000000
    --abi PerimeterProfiles.abi.json --sign deploy.keys.json
 ```
 
-Адрес контракта вставь в игре: **Профиль → Адрес контракта PerimeterProfiles**.
+**⚠️ Контракты уже скомпилированы и адреса предвычислены** (см. DEPLOYMENT_SUMMARY.md). После деплоя адреса будут:
+
+| Контракт | Адрес (новый формат: dapp_id::account_id) | Legacy (0:...) |
+|----------|-------------------------------------------|----------------|
+| **PerimeterProfiles** | `86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c::86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c` | `0:86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c` |
+| **PerimeterItems** | `0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775::0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775` | `0:0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775` |
+| **PerimeterArena** | `fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74::fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74` | `0:fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74` |
+
+> **PerimeterItems** требует constructor init data: `ownerKey = 0xc8f43f24be0fb530d4752b68421c5d3dfd377ebc9459ee5442c5f3cf7719fc72` (публичный ключ деплоера).
+
+Адреса вставь в игре: **Профиль → Адрес контракта PerimeterProfiles**, **PerimeterItems**, **PerimeterArena** + GraphQL endpoint `https://shellnet.ackinacki.org/graphql`.
 
 ### Синхронизация результатов
 
@@ -86,9 +96,7 @@ node sync.mjs battle win 0x1a2b3c4d      # записать бой — рейт�
 node sync.mjs read                       # прочитать профиль (бесплатный get-метод)
 ```
 
-Честность он-чейн слоя: рейтинг и цены NPC считает сам контракт (клиент не может накрутить),
-повтор одного и того же hash боя запрещён, у PvP-комнаты есть дедлайн 1 час —
-если вторая сторона молчит, ставки возвращаются обоим (`room-timeout`).
+**sync.mjs уже настроен на адреса выше** (переменные окружения RP_CONTRACT, RP_ITEMS, RP_ARENA или дефолты в коде).
 
 ### Почему это 0 ₽
 

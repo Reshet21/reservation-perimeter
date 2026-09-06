@@ -1,0 +1,99 @@
+{
+	"ABI version": 2,
+	"version": "2.4",
+	"header": ["pubkey", "time", "expire"],
+	"functions": [
+		{
+			"name": "constructor",
+			"inputs": [
+				{"name":"value","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "createProfile",
+			"inputs": [
+				{"name":"nick","type":"string"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "reportBattle",
+			"inputs": [
+				{"name":"win","type":"bool"},
+				{"name":"battleHash","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "topUp",
+			"inputs": [
+				{"name":"value","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "getProfile",
+			"inputs": [
+				{"name":"pk","type":"uint256"}
+			],
+			"outputs": [
+				{"name":"nick","type":"string"},
+				{"name":"rating","type":"uint32"},
+				{"name":"wins","type":"uint32"},
+				{"name":"losses","type":"uint32"},
+				{"name":"battles","type":"uint32"},
+				{"name":"lastBattleHash","type":"uint64"},
+				{"name":"updatedAt","type":"uint32"},
+				{"name":"exists","type":"bool"}
+			]
+		},
+		{
+			"name": "getStats",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"players","type":"uint32"},
+				{"name":"battles","type":"uint32"}
+			]
+		},
+		{
+			"name": "profiles",
+			"inputs": [
+			],
+			"outputs": [
+				{"components":[{"name":"nick","type":"string"},{"name":"rating","type":"uint32"},{"name":"wins","type":"uint32"},{"name":"losses","type":"uint32"},{"name":"battles","type":"uint32"},{"name":"lastBattleHash","type":"uint64"},{"name":"updatedAt","type":"uint32"},{"name":"exists","type":"bool"}],"name":"profiles","type":"map(uint256,tuple)"}
+			]
+		},
+		{
+			"name": "totalPlayers",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"totalPlayers","type":"uint32"}
+			]
+		},
+		{
+			"name": "totalBattles",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"totalBattles","type":"uint32"}
+			]
+		}
+	],
+	"events": [
+	],
+	"fields": [
+		{"init":true,"name":"_pubkey","type":"uint256"},
+		{"init":false,"name":"_timestamp","type":"uint64"},
+		{"init":false,"name":"_constructorFlag","type":"bool"},
+		{"components":[{"name":"nick","type":"string"},{"name":"rating","type":"uint32"},{"name":"wins","type":"uint32"},{"name":"losses","type":"uint32"},{"name":"battles","type":"uint32"},{"name":"lastBattleHash","type":"uint64"},{"name":"updatedAt","type":"uint32"},{"name":"exists","type":"bool"}],"init":false,"name":"profiles","type":"map(uint256,tuple)"},
+		{"init":false,"name":"totalPlayers","type":"uint32"},
+		{"init":false,"name":"totalBattles","type":"uint32"}
+	]
+}
