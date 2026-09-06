@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#07090e">
 <title>RESERVATION: PERIMETER — пошаговая тактика в Зоне</title>
 <link rel="manifest" href="manifest.json">
+<script src="https://cdn.jsdelivr.net/npm/@tonconnect/sdk@3/dist/tonconnect-sdk.min.js"></script>
 <style>
   :root{
     --bg:#07090e; --bg2:#0b0e15;
@@ -1158,29 +1159,59 @@ function updateWalletUI(connected){
   }
 }
 
+let tonConnectInstance = null;
+let tonConnectManifest = {
+  url: window.location.origin,
+  name: "Reservation: Perimeter",
+  iconUrl: window.location.origin + "/icon-192.png",
+  termsOfServiceUrl: window.location.origin,
+  privacyPolicyUrl: window.location.origin
+};
+
+function initTonConnect(){
+  if(typeof TonConnect !== "undefined" && !tonConnectInstance){
+    try{
+      tonConnectInstance = new TonConnect({
+        manifest: tonConnectManifest,
+        storage: new TonConnectLocalStorage()
+      });
+      console.log("TonConnect initialized");
+      return true;
+    }catch(e){
+      console.error("TonConnect init failed:", e);
+    }
+  }
+  return false;
+}
+
+class TonConnectLocalStorage {
+  getItem(key){ return localStorage.getItem(key); }
+  setItem(key, value){ localStorage.setItem(key, value); }
+  removeItem(key){ localStorage.removeItem(key); }
+}
+
+function isMobile(){
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
 async function connectWallet(){
   const status = document.getElementById("walletStatus");
   const btn = document.getElementById("walletBtnText");
-  status.textContent = "Поиск кошелька...";
+  status.textContent = "Подключение...";
   status.style.color = "var(--amber)";
   btn.textContent = "⏳ Подключение...";
 
-  console.log("=== WALLET DETECTION START ===");
-  console.log("window.ackiWallet:", window.ackiWallet);
-  console.log("window.tonkeeper:", window.tonkeeper);
-  console.log("window.tonConnectUI:", window.tonConnectUI);
-  console.log("window.ton:", window.ton);
-  console.log("window.okxwallet:", window.okxwallet);
+  const mobile = isMobile();
+  console.log("=== WALLET CONNECT START ===");
+  console.log("Mobile:", mobile);
   console.log("UserAgent:", navigator.userAgent);
+  console.log("TonConnect available:", typeof TonConnect !== "undefined");
 
-  // 1. Try Acki Nacki Wallet (official extension)
-  if(window.ackiWallet){
-    console.log("AckiWallet found, keys:", Object.keys(window.ackiWallet));
-    try{
-      // Try different possible APIs
-      if(typeof window.ackiWallet.connect === "function"){
+  // 1. Try injected wallet first (desktop browser extension)
+  if(!mobile){
+    if(window.ackiWallet && typeof window.ackiWallet.connect === "function"){
+      try{
         const res = await window.ackiWallet.connect();
-        console.log("ackiWallet.connect() result:", res);
         if(res && (res.address || res.account)){
           walletAddress = res.address || res.account;
           walletPubKey = res.pubkey || res.publicKey || (res.account ? "0x" + res.account.slice(2, 66) : null);
@@ -1189,43 +1220,11 @@ async function connectWallet(){
           updateWalletUI(true);
           return;
         }
-      }
-      if(window.ackiWallet.tonConnect && typeof window.ackiWallet.tonConnect.connect === "function"){
-        const res = await window.ackiWallet.tonConnect.connect();
-        console.log("ackiWallet.tonConnect.connect() result:", res);
-        if(res && res.account){
-          walletAddress = res.account.address;
-          walletPubKey = res.account.publicKey;
-          walletConnected = true;
-          localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
-          updateWalletUI(true);
-          return;
-        }
-      }
-      if(window.ackiWallet.provider && typeof window.ackiWallet.provider.connect === "function"){
-        const res = await window.ackiWallet.provider.connect();
-        console.log("ackiWallet.provider.connect() result:", res);
-        if(res && res.address){
-          walletAddress = res.address;
-          walletPubKey = res.pubkey || res.publicKey;
-          walletConnected = true;
-          localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
-          updateWalletUI(true);
-          return;
-        }
-      }
-    }catch(e){
-      console.error("AckiWallet error:", e);
+      }catch(e){ console.log("Injected ackiWallet failed:", e); }
     }
-  }
-
-  // 2. Try Tonkeeper (supports Acki Nacki via TonConnect)
-  if(window.tonkeeper){
-    console.log("Tonkeeper found, keys:", Object.keys(window.tonkeeper));
-    try{
-      if(typeof window.tonkeeper.connect === "function"){
+    if(window.tonkeeper && typeof window.tonkeeper.connect === "function"){
+      try{
         const res = await window.tonkeeper.connect();
-        console.log("tonkeeper.connect() result:", res);
         if(res && res.address){
           walletAddress = res.address;
           walletPubKey = res.publicKey;
@@ -1234,89 +1233,113 @@ async function connectWallet(){
           updateWalletUI(true);
           return;
         }
-      }
-      if(window.tonkeeper.tonConnect && typeof window.tonkeeper.tonConnect.connect === "function"){
-        const res = await window.tonkeeper.tonConnect.connect();
-        console.log("tonkeeper.tonConnect.connect() result:", res);
-        if(res && res.account){
-          walletAddress = res.account.address;
-          walletPubKey = res.account.publicKey;
-          walletConnected = true;
-          localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
-          updateWalletUI(true);
-          return;
-        }
-      }
-    }catch(e){
-      console.error("Tonkeeper error:", e);
+      }catch(e){ console.log("Injected tonkeeper failed:", e); }
     }
   }
 
-  // 3. Try generic TonConnect (if wallet injected it)
-  if(window.tonConnectUI){
-    console.log("TonConnectUI found");
+  // 2. Try TonConnect (works on mobile via deep link / QR)
+  if(typeof TonConnect !== "undefined" || (window.TonConnect && window.TonConnect.TonConnect)){
     try{
-      if(typeof window.tonConnectUI.connect === "function"){
-        const res = await window.tonConnectUI.connect();
-        console.log("tonConnectUI.connect() result:", res);
-        if(res && res.account){
-          walletAddress = res.account.address;
-          walletPubKey = res.account.publicKey;
+      initTonConnect();
+      if(tonConnectInstance){
+        status.textContent = mobile ? "Открываем кошелёк..." : "Сканируй QR или открой в кошельке";
+        
+        // Restore previous connection if exists
+        if(tonConnectInstance.connected){
+          const acc = tonConnectInstance.account;
+          walletAddress = acc.address;
+          walletPubKey = acc.publicKey;
           walletConnected = true;
-          localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
           updateWalletUI(true);
           return;
         }
+
+        // Connect - this opens wallet app or shows QR
+        await tonConnectInstance.connect();
+        
+        // Wait for connection (TonConnect handles this via event)
+        return new Promise((resolve) => {
+          const checkConnection = setInterval(() => {
+            if(tonConnectInstance && tonConnectInstance.connected){
+              clearInterval(checkConnection);
+              const acc = tonConnectInstance.account;
+              walletAddress = acc.address;
+              walletPubKey = acc.publicKey;
+              walletConnected = true;
+              localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
+              updateWalletUI(true);
+              resolve();
+            }
+          }, 500);
+          
+          // Timeout after 2 minutes
+          setTimeout(() => {
+            clearInterval(checkConnection);
+            if(!walletConnected){
+              status.textContent = "Время вышло. Попробуй ещё раз или введи адрес вручную.";
+              status.style.color = "var(--red)";
+              btn.textContent = "🔗 Подключить кошелёк";
+            }
+          }, 120000);
+        });
       }
     }catch(e){
-      console.error("TonConnectUI error:", e);
+      console.error("TonConnect error:", e);
     }
   }
 
-  // 4. Try OKX Wallet (supports TON)
-  if(window.okxwallet && window.okxwallet.ton){
-    console.log("OKX Wallet TON found");
+  // 3. Try TonConnect UI if available (some wallets inject this)
+  if(window.tonConnectUI && typeof window.tonConnectUI.connect === "function"){
     try{
-      const res = await window.okxwallet.ton.connect();
-      console.log("okxwallet.ton.connect() result:", res);
-      if(res && res.address){
-        walletAddress = res.address;
-        walletPubKey = res.publicKey;
+      const res = await window.tonConnectUI.connect();
+      if(res && res.account){
+        walletAddress = res.account.address;
+        walletPubKey = res.account.publicKey;
         walletConnected = true;
         localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
         updateWalletUI(true);
         return;
       }
-    }catch(e){
-      console.error("OKX Wallet error:", e);
-    }
+    }catch(e){ console.log("tonConnectUI failed:", e); }
   }
 
-  // 5. Check for any injected TON provider
-  const tonProviders = ['ton', 'tonweb', 'tonconnect'];
-  for(const name of tonProviders){
-    if(window[name] && typeof window[name].connect === "function"){
-      console.log(`Found ${name} provider`);
-      try{
-        const res = await window[name].connect();
-        console.log(`${name}.connect() result:`, res);
-        if(res && (res.address || res.account)){
-          walletAddress = res.address || res.account;
-          walletPubKey = res.pubkey || res.publicKey;
-          walletConnected = true;
-          localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
-          updateWalletUI(true);
-          return;
-        }
-      }catch(e){
-        console.error(`${name} error:`, e);
-      }
-    }
+  // 4. Deep link fallback for mobile - try to open wallet app directly
+  if(mobile){
+    status.textContent = "Пробуем открыть приложение кошелька...";
+    btn.textContent = "⏳ Открытие приложения...";
+    
+    const deepLinks = [
+      "tonkeeper://tonconnect/",
+      "ackiwallet://tonconnect/",
+      "tonhub://tonconnect/",
+      "mytonwallet://tonconnect/",
+      "okxwallet://tonconnect/"
+    ];
+    
+    // We can't easily detect which opens, but we can try the connect via TonConnect
+    // which should handle deep links automatically
   }
 
-  status.textContent = "Кошелёк не обнаружен. Открой консоль (F12) — там полный лог. Убедись: 1) Кошелёк разблокирован 2) Страница перезагружена после установки 3) В настройках кошелька включено 'Разрешить доступ к сайтам'";
+  status.textContent = mobile 
+    ? "Автоподключение не сработало. Убедись: 1) Кошелёк установлен и разблокирован 2) В настройках кошелька включено 'TonConnect' / 'Подключение к dApp' 3) Попробуй ручной ввод ниже"
+    : "Кошелёк не найден. Установи Acki Nacki Wallet или Tonkeeper, перезагрузи страницу. Или введи адрес вручную.";
   status.style.color = "var(--red)";
   btn.textContent = "🔗 Подключить кошелёк";
+}
+
+// Listen for TonConnect events
+if(typeof TonConnect !== "undefined"){
+  document.addEventListener("tonconnect_connect", (e) => {
+    console.log("TonConnect connected event:", e.detail);
+    if(tonConnectInstance && tonConnectInstance.connected){
+      const acc = tonConnectInstance.account;
+      walletAddress = acc.address;
+      walletPubKey = acc.publicKey;
+      walletConnected = true;
+      localStorage.setItem("acki_wallet", JSON.stringify({address: walletAddress, pubkey: walletPubKey}));
+      updateWalletUI(true);
+    }
+  });
 }
 
 function enterGame(){
