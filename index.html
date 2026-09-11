@@ -269,12 +269,40 @@
   .seed-box{font-family:monospace;font-size:11px;background:rgba(0,0,0,.4);color:var(--sand);
     padding:10px;border-radius:10px;border:1px solid var(--line);word-break:break-all;
     max-height:80px;overflow-y:auto;margin-top:6px;}
+  #scr-splash .card{border:1px solid rgba(255,138,61,.25);
+    box-shadow:0 0 30px rgba(255,106,46,.1);}
 </style>
 </head>
 <body>
 
+<!-- ===================== SPLASH — Подключи кошелёк ===================== -->
+<div class="screen active" id="scr-splash">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:24px;text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">☢</div>
+    <h1 style="font-size:22px;font-weight:800;margin-bottom:8px">
+      <span class="ttl">RESERVATION<span style="font-size:.55em;display:block;letter-spacing:.35em;color:#9fb4d8">PERIMETER</span></span>
+    </h1>
+    <div class="muted" style="margin:12px 0 24px;max-width:300px">
+      Пошаговая тактика в Зоне. Профиль, предметы и PvP — на блокчейне Acki Nacki.
+    </div>
+    <div id="splashWalletBox" style="width:100%;max-width:340px">
+      <div class="card" style="text-align:left">
+        <h3>🔑 Подключи кошелёк</h3>
+        <div class="muted" style="margin:6px 0">Для игры нужен <b>AN Wallet</b>. Нажми кнопку — откроется приложение кошелька для подключения.</div>
+        <div class="row" style="margin-top:10px">
+          <div class="btn primary grow" id="splashBtnConnect" onclick="splashConnect()">🔗 Подключить AN Wallet</div>
+        </div>
+        <div id="splashStatus" style="margin-top:10px;text-align:center"></div>
+      </div>
+    </div>
+    <div class="muted" style="margin-top:20px;font-size:11px">
+      Нет кошелька? Скачай <a href="https://ackinacki.com/wallet" target="_blank" style="color:var(--blue)">ackinacki.com/wallet</a>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== HUB ===================== -->
-<div class="screen active" id="scr-hub">
+<div class="screen" id="scr-hub">
   <header class="topbar">
     <h1><span class="ttl">☢ RESERVATION<span style="font-size:.55em;display:block;letter-spacing:.35em;color:#9fb4d8">PERIMETER</span></span></h1>
     <span class="chip">💰 <b id="hubCr">0</b></span>
@@ -1082,7 +1110,9 @@ function load(){
 function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
 function resetSave(){
   if(!confirm("Точно сбросить весь прогресс?"))return;
-  localStorage.removeItem(SAVE_KEY); S=defaultSave(); save(); show("scr-hub");
+  localStorage.removeItem(SAVE_KEY); S=defaultSave(); save();
+  localStorage.removeItem('rp-wallet-session');
+  show("scr-splash");
   toast("Прогресс сброшен");
 }
 
@@ -1128,11 +1158,18 @@ function gainSkill(u, amount){
 }
 
 /* ---------- НАВИГАЦИЯ ---------- */
+function hasWallet(){
+  try{ return !!(window.anWallet && window.anWallet.getSession && window.anWallet.getSession()); }catch(e){ return false; }
+}
 function show(id){
+  if(id!=="scr-splash" && !hasWallet()){
+    id = "scr-splash";
+  }
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
   document.querySelectorAll(".crview").forEach(e=>e.textContent=S.credits);
   if(id==="scr-hub") renderHub();
+  if(id==="scr-splash") renderSplash();
 }
 function closeModal(id){ document.getElementById(id).classList.remove("active"); }
 function openModal(id){ document.getElementById(id).classList.add("active"); }
@@ -1142,6 +1179,82 @@ function toast(msg, ms){
 }
 function genericModal(html){
   document.getElementById("genericBox").innerHTML = html; openModal("mGeneric");
+}
+
+/* ---------- SPLASH ---------- */
+let splashWaitToken = 0;
+function renderSplash(){
+  const status = document.getElementById("splashStatus");
+  const btn = document.getElementById("splashBtnConnect");
+  if(!status || !btn) return;
+  if(hasWallet()){
+    status.innerHTML = '<div style="color:var(--green);font-size:13px">✅ Кошелёк подключён</div>';
+    btn.textContent = "进入 ИГРУ →";
+    btn.onclick = ()=>show("scr-hub");
+    return;
+  }
+  btn.textContent = "🔗 Подключить AN Wallet";
+  btn.onclick = splashConnect;
+  status.innerHTML = "";
+}
+async function splashConnect(){
+  const btn = document.getElementById("splashBtnConnect");
+  const status = document.getElementById("splashStatus");
+  if(!btn || !status) return;
+  btn.disabled = true;
+  btn.textContent = "⏳ Загрузка SDK...";
+  if(!window.anWallet){
+    try{
+      await new Promise((res,rej)=>{
+        const c=()=>{if(window.anWallet&&window.anWallet.connect)res();else setTimeout(c,200);};
+        c(); setTimeout(()=>rej(new Error("SDK не загрузился")),30000);
+      });
+    }catch(e){
+      btn.disabled=false; btn.textContent="🔗 Подключить AN Wallet";
+      status.innerHTML='<div class="muted" style="color:var(--red)">'+e.message+'</div>';
+      return;
+    }
+  }
+  try{
+    const session = await window.anWallet.connect();
+    btn.style.display = "none";
+    status.innerHTML = `
+      <div style="background:#fff;display:inline-block;padding:12px;border-radius:12px;margin:8px 0">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(session.deepLink)}" width="200" height="200" alt="QR">
+      </div>
+      <div style="margin:8px 0">
+        <a href="${session.deepLink}" target="_blank" style="color:var(--blue);font-size:13px;text-decoration:underline">Открыть AN Wallet</a>
+      </div>
+      <div class="muted" style="font-size:11px">1. Открой ссылку в AN Wallet<br>2. Нажми «Подключить»<br>3. Подожди подтверждения</div>
+      <div style="margin-top:8px;height:3px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden">
+        <div style="height:100%;background:var(--blue);border-radius:99px;animation:pulseGlow 1.5s infinite;width:60%;margin:0 auto"></div>
+      </div>
+      <div style="margin-top:8px"><div class="btn small danger" onclick="splashCancel()">Отмена</div></div>`;
+    const token = ++splashWaitToken;
+    const conn = await window.anWallet.waitHello(
+      session.sessionId, session.description,
+      session.clientDhSecret, session.createdAt
+    );
+    if(token !== splashWaitToken) return;
+    toast("✅ Кошелёк подключён!");
+    show("scr-hub");
+  }catch(e){
+    toast("❌ "+(e.message||e));
+    status.innerHTML = `<div class="muted" style="color:var(--red)">${e.message||e}</div>
+      <div style="margin-top:8px"><div class="btn small" onclick="splashConnect()">Попробовать снова</div></div>`;
+    btn.style.display = "none";
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "🔗 Подключить AN Wallet";
+    btn.style.display = "";
+  }
+}
+function splashCancel(){
+  splashWaitToken++;
+  const status = document.getElementById("splashStatus");
+  if(status) status.innerHTML = "";
+  const btn = document.getElementById("splashBtnConnect");
+  if(btn){ btn.style.display=""; btn.disabled=false; btn.textContent="🔗 Подключить AN Wallet"; btn.onclick=splashConnect; }
 }
 
 /* ---------- HUB ---------- */
@@ -5188,7 +5301,7 @@ const BEE_SDK_URL = 'https://unpkg.com/@teamgosh/bee-sdk@5.1.1/bee_sdk.js';
 const BEE_WASM_URL = 'https://unpkg.com/@teamgosh/bee-sdk@5.1.1/bee_sdk_bg.wasm';
 const AN_ENDPOINTS = ['https://shellnet.ackinacki.org'];
 const AN_API = 'https://app-backend-dev.ackinacki.org/api';
-const APP_ID = '0x0000000000000000000000000000000000000000000000000000000000000026';
+const APP_ID = '0x0000000000000000000000000000000000000000000000000000000000005250';
 const SESSION_KEY = 'rp-wallet-session';
 
 let sdkMod = null;
