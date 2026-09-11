@@ -258,66 +258,23 @@
     box-shadow:0 10px 30px rgba(0,0,0,.6);}
   .toast.show{display:block;animation:toastIn .22s cubic-bezier(.2,.9,.3,1.2);}
   h2.sub{color:var(--dim);font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:1.6px;margin:16px 2px 8px;}
-  .turn-order{display:flex;gap:4px;padding:6px 8px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow-x:auto;white-space:nowrap;}
-  .turn-order .unit-slot{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:32px;border-radius:8px;font-size:11px;font-weight:700;color:var(--sand);background:rgba(255,255,255,.06);border:1px solid var(--line);transition:all .2s;}
-  .turn-order .unit-slot.current{background:var(--grad);border-color:transparent;box-shadow:0 0 12px rgba(255,106,46,.5);animation:pulseGlow 1.5s ease-in-out infinite;}
-  .turn-order .unit-slot.enemy{background:rgba(251,113,133,.15);border-color:rgba(251,113,133,.3);}
-  .turn-order .unit-slot.dead{opacity:.3;text-decoration:line-through;}
-  .turn-timer{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;font-size:12px;font-weight:600;}
-  .turn-timer .timer-bar{flex:1;height:6px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;}
-  .turn-timer .timer-bar i{display:block;height:100%;background:var(--grad);border-radius:99px;transition:width .5s linear,background .2s;}
-  .turn-timer .timer-bar i.warning{background:linear-gradient(90deg,#fb7185,#fbbf24);}
-  .turn-timer .timer-text{min-width:44px;text-align:right;font-variant-numeric:tabular-nums;}
+  /* wallet styles */
+  .wallet-addr{font-family:monospace;font-size:12px;color:var(--amber);word-break:break-all;
+    background:rgba(255,196,107,.08);padding:8px 10px;border-radius:10px;margin-top:6px;
+    border:1px solid rgba(255,196,107,.15);}
+  .wallet-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
+    font-size:12px;font-weight:700;}
+  .wallet-badge.on{background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.25);}
+  .wallet-badge.off{background:rgba(251,113,133,.1);color:var(--red);border:1px solid rgba(251,113,133,.2);}
+  .seed-box{font-family:monospace;font-size:11px;background:rgba(0,0,0,.4);color:var(--sand);
+    padding:10px;border-radius:10px;border:1px solid var(--line);word-break:break-all;
+    max-height:80px;overflow-y:auto;margin-top:6px;}
 </style>
 </head>
 <body>
 
-<!-- ===================== KEYPAIR MANAGEMENT (Acki Nacki Identity) ===================== -->
-<div class="screen active" id="scr-wallet">
-  <div class="scroll" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:20px;text-align:center">
-    <div style="font-size:64px;margin-bottom:16px">⛓️</div>
-    <h1 style="font-size:24px;font-weight:800;margin-bottom:8px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">RESERVATION: PERIMETER</h1>
-    <div class="muted" style="margin-bottom:24px;max-width:320px">Для работы с он-чейн профилем, предметами и ареной нужен ключ Acki Nacki (ed25519). Создай новый или импортируй свой <code>keys.json</code>.</div>
-    
-    <div class="card" id="walletEmptyState" style="width:100%;max-width:360px;margin-bottom:16px">
-      <div style="font-size:48px;margin-bottom:12px">🔐</div>
-      <div style="font-weight:700;margin-bottom:8px">Кошелёк не создан</div>
-      <div class="muted" style="margin-bottom:16px">Создай новый ключ или импортируй существующий</div>
-      <div class="btn primary" style="width:100%;margin-bottom:8px" onclick="createNewKeypair()">✨ Создать новый кошелёк</div>
-      <div class="btn" style="width:100%" onclick="showImportKeypair()">📥 Импортировать keys.json</div>
-    </div>
-
-    <div class="card" id="walletActiveState" style="width:100%;max-width:360px;margin-bottom:16px;display:none">
-      <div style="font-weight:700;margin-bottom:12px">✅ Кошелёк подключен</div>
-      <div style="text-align:left;font-size:12px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:12px;font-family:monospace">
-        <div class="muted">Адрес (Raw):</div>
-        <div id="walletAddressDisplay" style="word-break:break-all"></div>
-        <div class="muted" style="margin-top:8px">Публичный ключ:</div>
-        <div id="walletPubkeyDisplay" style="word-break:break-all"></div>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-        <div class="btn primary" style="flex:1;min-width:140px" onclick="enterGame()">🎮 Войти в игру</div>
-        <div class="btn" style="flex:1;min-width:140px" onclick="exportKeypair()">💾 Экспорт keys.json</div>
-        <div class="btn danger" style="flex:1;min-width:140px" onclick="disconnectWallet()">🔓 Отключить</div>
-      </div>
-    </div>
-
-    <div class="card" id="importForm" style="width:100%;max-width:360px;margin-bottom:16px;display:none">
-      <div style="font-weight:700;margin-bottom:12px">📥 Импорт keys.json</div>
-      <div class="muted" style="margin-bottom:12px;text-align:left">Вставь содержимое файла <code>keys.json</code> (полученный через <code>tvm-cli genaddr</code> или <code>sync.mjs init</code>)</div>
-      <textarea id="importKeysJson" placeholder='{"public":"...","secret":"..."}' style="width:100%;height:100px;padding:10px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:8px;color:var(--sand);font-family:monospace;font-size:11px"></textarea>
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <div class="btn primary" style="flex:1" onclick="doImportKeypair()">Импортировать</div>
-        <div class="btn" style="flex:1" onclick="hideImportKeypair()">Отмена</div>
-      </div>
-    </div>
-
-    <div class="muted" style="margin-top:16px;max-width:360px;font-size:11px">Ключ хранится локально в браузере. Для безопасности: не передавай <code>secret</code> никому. Официальный кошелёк: <a href="https://ackinacki.com/wallet" target="_blank" style="color:var(--acc)">ackinacki.com/wallet</a></div>
-  </div>
-</div>
-
 <!-- ===================== HUB ===================== -->
-<div class="screen" id="scr-hub">
+<div class="screen active" id="scr-hub">
   <header class="topbar">
     <h1><span class="ttl">☢ RESERVATION<span style="font-size:.55em;display:block;letter-spacing:.35em;color:#9fb4d8">PERIMETER</span></span></h1>
     <span class="chip">💰 <b id="hubCr">0</b></span>
@@ -348,7 +305,7 @@
       <div class="tile" onclick="openMarket()"><div class="ico">🏪</div><b>РЫНОК</b><div>Барахолка · мои лоты</div></div>
       <div class="tile" style="grid-column:1/-1;display:flex;align-items:center;gap:12px" onclick="openProfile()">
         <div class="ico" style="margin-bottom:0">⛓️</div>
-        <div style="flex:1"><b>ACKI NACKI</b><div>Профиль и он-чейн синхронизация</div></div>
+        <div style="flex:1"><b>ACKI NACKI</b><div id="hubWalletStatus">Кошелёк и он-чейн</div></div>
         <div style="color:var(--dim);font-size:18px">›</div>
       </div>
     </div>
@@ -430,25 +387,31 @@
       </div>
       <div class="statline" id="profStats" style="margin-top:10px"></div>
     </div>
+
+    <div class="card">
+      <h3>🔑 Кошелёк</h3>
+      <div id="walletInfo"></div>
+    </div>
+
     <div class="card">
       <h3>⛓️ Acki Nacki (Shellnet)</h3>
-      <div class="muted" style="margin:6px 0">Профиль и результаты боёв записываются в смарт-контракт
-        <b>PerimeterProfiles</b> в тестовой сети Shellnet — бесплатно. Укажи адрес задеплоенного контракта
-        (см. README в проекте).</div>
+      <div class="muted" style="margin:6px 0">Контракт <b>PerimeterProfiles</b> в тестовой сети Shellnet.
+        Укажи адрес задеплоенного контракта для он-чейн синхронизации.</div>
       <div style="margin:8px 0 4px;font-size:13px">GraphQL endpoint:</div>
       <input type="text" id="chainEndpoint">
       <div style="margin:8px 0 4px;font-size:13px">Адрес контракта PerimeterProfiles:</div>
       <input type="text" id="chainAddr" placeholder="0:...">
       <div class="row" style="margin-top:10px">
-        <div class="btn primary grow" onclick="chainSync()">📡 Синхронизировать он-чейн</div>
+        <div class="btn primary grow" onclick="chainSync()">📡 Синхронизировать</div>
       </div>
       <div class="row" style="margin-top:8px">
-        <div class="btn small grow" onclick="chainPing()">Проверить связь с сетью</div>
-        <div class="btn small grow" onclick="showPayload()">Показать payload</div>
+        <div class="btn small grow" onclick="chainPing()">Проверить связь</div>
+        <div class="btn small grow" onclick="showPayload()">Payload</div>
       </div>
-      <div class="muted" id="chainStatus" style="margin-top:8px">Статус: офлайн (локальное сохранение активно)</div>
+      <div class="muted" id="chainStatus" style="margin-top:8px">Статус: офлайн</div>
       <textarea id="payloadBox" style="display:none;margin-top:8px" readonly></textarea>
     </div>
+
     <div class="card">
       <h3>Данные</h3>
       <div class="row" style="margin-top:8px">
@@ -464,27 +427,26 @@
     <canvas id="cv"></canvas>
     <div id="blog"></div>
   </div>
-<div id="bhud">
-      <div id="unitInfo">
-        <div class="face" id="uiFace">🪖</div>
-        <div class="bars">
-          <div class="row"><b id="uiName">—</b><span class="muted" id="uiWeap"></span></div>
-          <div class="hpbar"><i id="uiHp" style="width:100%"></i></div>
-          <div class="apdots" id="uiAp"></div>
-        </div>
-        <div style="text-align:right;font-size:12px" class="muted" id="uiHint">Ход 1</div>
+  <div id="bhud">
+    <div id="unitInfo">
+      <div class="face" id="uiFace">🪖</div>
+      <div class="bars">
+        <div class="row"><b id="uiName">—</b><span class="muted" id="uiWeap"></span></div>
+        <div class="hpbar"><i id="uiHp" style="width:100%"></i></div>
+        <div class="apdots" id="uiAp"></div>
       </div>
-      <div id="turnOrder" class="turn-order"></div>
-      <div id="bbtns">
-        <div class="btn" id="btnMed" onclick="useMedkit()">💉<span id="medCnt"></span></div>
-        <div class="btn" id="btnGren" onclick="toggleGrenade()">💣<span id="grenCnt"></span></div>
-        <div class="btn" id="btnSwap" onclick="swapWeapon()">🔁</div>
-        <div class="btn" onclick="nextUnit()">👤</div>
-        <div class="btn primary" onclick="endPlayerTurn()">⏭ Ход</div>
-        <div class="btn" style="flex:0 0 42px" id="btnSnd" onclick="toggleSnd()">🔊</div>
-        <div class="btn danger" style="flex:0 0 40px" onclick="surrender()">🏳</div>
-      </div>
+      <div style="text-align:right;font-size:12px" class="muted" id="uiHint">Ход 1</div>
     </div>
+    <div id="bbtns">
+      <div class="btn" id="btnMed" onclick="useMedkit()">💉<span id="medCnt"></span></div>
+      <div class="btn" id="btnGren" onclick="toggleGrenade()">💣<span id="grenCnt"></span></div>
+      <div class="btn" id="btnSwap" onclick="swapWeapon()">🔁</div>
+      <div class="btn" onclick="nextUnit()">👤</div>
+      <div class="btn primary" onclick="endPlayerTurn()">⏭ Ход</div>
+      <div class="btn" style="flex:0 0 42px" id="btnSnd" onclick="toggleSnd()">🔊</div>
+      <div class="btn danger" style="flex:0 0 40px" onclick="surrender()">🏳</div>
+    </div>
+  </div>
 </div>
 
 <!-- modals -->
@@ -1060,7 +1022,9 @@ function defaultSave(){
     hirePool: genHirePool(),
     market: { listed:[], synced:false },
     mats: { scrap:3, leather:2, comp:0, crystal:0 },
-    chain: { endpoint:"https://shellnet.ackinacki.org/graphql", addr:"86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c::86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c" },
+    chain: { endpoint:"https://shellnet.ackinacki.org/graphql", addr:"" },
+    wallet: null,
+    balance: null,
     seenTut: false,
   };
 }
@@ -1105,6 +1069,9 @@ function migrate(s){ // совместимость со старыми сейв�
   if(!s.inv)s.inv={weapons:{},armors:{},implants:{},medkit:1,grenade:1};
   if(!s.market)s.market={listed:[], synced:false};            // v4: он-чейн торговля
   if(!s.mats)s.mats={scrap:3,leather:2,comp:0,crystal:0};     // v5: материалы крафта
+  if(s.wallet&&typeof s.wallet==="object"&&s.wallet.pk!==undefined)s.wallet=null; // v8: миграция с Ed25519 на bee-sdk
+  if(s.wallet===undefined)s.wallet=null;                       // v8: bee-sdk сессия
+  if(s.balance===undefined)s.balance=null;                     // v7: баланс
   if(s.snd===undefined)s.snd=true;                            // v7: звук
   return s;
 }
@@ -1117,227 +1084,6 @@ function resetSave(){
   if(!confirm("Точно сбросить весь прогресс?"))return;
   localStorage.removeItem(SAVE_KEY); S=defaultSave(); save(); show("scr-hub");
   toast("Прогресс сброшен");
-}
-
-/* ---------- WALLET CONNECTION (Acki Nacki) ---------- */
-let walletConnected = false;
-let walletAddress = null;
-let walletPubKey = null;
-
-function checkWalletConnection(){
-  const saved = localStorage.getItem("acki_wallet");
-  if(saved){
-    try{
-      const data = JSON.parse(saved);
-      walletAddress = data.address;
-      walletPubKey = data.pubkey;
-      walletConnected = true;
-      updateWalletUI(true);
-      return true;
-    }catch(e){}
-  }
-  return false;
-}
-
-// ed25519 keypair management for Acki Nacki (TVM)
-let walletKeypair = null; // {publicKey: "hex", secretKey: "hex"}
-let walletAddress = null; // Raw address format
-let walletPubKey = null;  // 0x... format for contracts
-let walletConnected = false;
-
-// Generate ed25519 keypair using Web Crypto API
-async function generateKeypair(){
-  const keyPair = await crypto.subtle.generateKey(
-    {name: "Ed25519"},
-    true, // extractable
-    ["sign", "verify"]
-  );
-  const publicKey = await crypto.subtle.exportKey("raw", keyPair.publicKey);
-  const privateKey = await crypto.subtle.exportKey("raw", keyPair.privateKey);
-  return {
-    publicKey: bytesToHex(new Uint8Array(publicKey)),
-    secretKey: bytesToHex(new Uint8Array(privateKey))
-  };
-}
-
-// Compute raw address from public key (TVM address format)
-// For Acki Nacki, address = workchain:hash(publicKey) - simplified
-function computeRawAddress(pubKeyHex){
-  // TVM address: workchain (0) + 32-byte hash
-  // For ed25519, the account ID is typically hash of public key
-  // We'll use a simple approach: "0:" + first 64 hex chars of SHA256(pubkey)
-  return "0:" + pubKeyHex; // Simplified - actual TVM uses more complex derivation
-}
-
-function bytesToHex(bytes){
-  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-function hexToBytes(hex){
-  const bytes = new Uint8Array(hex.length / 2);
-  for(let i = 0; i < hex.length; i += 2){
-    bytes[i/2] = parseInt(hex.substr(i, 2), 16);
-  }
-  return bytes;
-}
-
-async function createNewKeypair(){
-  const btn = event.target;
-  btn.textContent = "⏳ Генерация...";
-  btn.disabled = true;
-  
-  try{
-    const kp = await generateKeypair();
-    walletKeypair = kp;
-    walletPubKey = "0x" + kp.publicKey;
-    walletAddress = computeRawAddress(kp.publicKey);
-    walletConnected = true;
-    
-    // Save to localStorage
-    localStorage.setItem("acki_keypair", JSON.stringify({
-      publicKey: kp.publicKey,
-      secretKey: kp.secretKey,
-      address: walletAddress,
-      pubKey: walletPubKey
-    }));
-    
-    showWalletActive();
-    toast("Кошелёк создан! Ключ сохранён в браузере.");
-  }catch(e){
-    console.error("Keypair generation failed:", e);
-    toast("Ошибка генерации: " + e.message);
-  }finally{
-    btn.textContent = "✨ Создать новый кошелёк";
-    btn.disabled = false;
-  }
-}
-
-function showImportKeypair(){
-  document.getElementById("walletEmptyState").style.display = "none";
-  document.getElementById("importForm").style.display = "block";
-}
-
-function hideImportKeypair(){
-  document.getElementById("importForm").style.display = "none";
-  document.getElementById("walletEmptyState").style.display = "block";
-  document.getElementById("importKeysJson").value = "";
-}
-
-function doImportKeypair(){
-  const textarea = document.getElementById("importKeysJson");
-  const text = textarea.value.trim();
-  if(!text){
-    toast("Вставь JSON");
-    return;
-  }
-  try{
-    const data = JSON.parse(text);
-    // Support both formats: {publicKey, secretKey} or {public, secret}
-    const pub = data.publicKey || data.public;
-    const sec = data.secretKey || data.secret;
-    if(!pub || !sec){
-      toast("Неверный формат: нужны publicKey и secretKey");
-      return;
-    }
-    walletKeypair = {publicKey: pub, secretKey: sec};
-    walletPubKey = "0x" + pub;
-    walletAddress = computeRawAddress(pub);
-    walletConnected = true;
-    
-    localStorage.setItem("acki_keypair", JSON.stringify({
-      publicKey: pub,
-      secretKey: sec,
-      address: walletAddress,
-      pubKey: walletPubKey
-    }));
-    
-    hideImportKeypair();
-    showWalletActive();
-    toast("Кошелёк импортирован!");
-  }catch(e){
-    console.error("Import failed:", e);
-    toast("Ошибка: неверный JSON");
-  }
-}
-
-function showWalletActive(){
-  document.getElementById("walletEmptyState").style.display = "none";
-  document.getElementById("importForm").style.display = "none";
-  document.getElementById("walletActiveState").style.display = "block";
-  document.getElementById("walletAddressDisplay").textContent = walletAddress;
-  document.getElementById("walletPubkeyDisplay").textContent = walletPubKey;
-}
-
-function exportKeypair(){
-  if(!walletKeypair){
-    toast("Нет ключа для экспорта");
-    return;
-  }
-  const data = {
-    publicKey: walletKeypair.publicKey,
-    secretKey: walletKeypair.secretKey
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "keys.json";
-  a.click();
-  URL.revokeObjectURL(url);
-  toast("keys.json скачан");
-}
-
-function disconnectWallet(){
-  walletKeypair = null;
-  walletAddress = null;
-  walletPubKey = null;
-  walletConnected = false;
-  localStorage.removeItem("acki_keypair");
-  document.getElementById("walletActiveState").style.display = "none";
-  document.getElementById("walletEmptyState").style.display = "block";
-  toast("Кошелёк отключен");
-}
-
-function checkSavedKeypair(){
-  const saved = localStorage.getItem("acki_keypair");
-  if(saved){
-    try{
-      const data = JSON.parse(saved);
-      if(data.publicKey && data.secretKey){
-        walletKeypair = {publicKey: data.publicKey, secretKey: data.secretKey};
-        walletPubKey = data.pubKey || ("0x" + data.publicKey);
-        walletAddress = data.address || computeRawAddress(data.publicKey);
-        walletConnected = true;
-        showWalletActive();
-        return true;
-      }
-    }catch(e){}
-  }
-  return false;
-}
-
-function enterGame(){
-  if(!walletConnected){
-    toast("Сначала создай или импортируй кошелёк");
-    return;
-  }
-  S.chain.pubkey = walletPubKey;
-  S.chain.address = walletAddress;
-  save();
-  show("scr-hub");
-  if(!S.seenTut) setTimeout(()=>{ /* tutorial will show in startBattle */ }, 100);
-}
-
-/* ---------- НАВИГАЦИЯ ---------- */
-function show(id){
-  if(id !== "scr-wallet" && !walletConnected){
-    show("scr-wallet");
-    return;
-  }
-  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-  document.querySelectorAll(".crview").forEach(e=>e.textContent=S.credits);
-  if(id==="scr-hub") renderHub();
 }
 
 /* ---------- ХАРАКТЕРИСТИКИ ---------- */
@@ -1408,6 +1154,15 @@ function renderHub(){
      <span class="tag">Побед: <b>${S.wins}</b></span>
      <span class="tag">Поражений: <b>${S.losses}</b></span>
      <span class="tag">Отряд: <b>${S.roster.length}</b></span>`;
+  const ws = document.getElementById("hubWalletStatus");
+  if(ws){
+    try{
+      const conn = (window.anWallet && window.anWallet.getSession) ? window.anWallet.getSession() : null;
+      ws.textContent = conn
+        ? "AN Wallet: ✅ " + conn.walletName
+        : "Подключить AN Wallet";
+    }catch(e){ ws.textContent = "Подключить AN Wallet"; }
+  }
 }
 
 /* ---------- МИССИИ ---------- */
@@ -1911,8 +1666,6 @@ function startPvpBattle(){
      fog:[],spotted:new Set(),pvp:{stake,hostName,naked}};
   logLines=[];effects=[];particles=[];initDust();
   recomputeFog();
-  buildTurnOrder();
-  startTurnTimer();
   blog(`🎮 ${pvpCtx.mode} против ${hostName}${naked?" · 🚿":""}${stake?` · ставка ${stake}💰`:""}`);
   selectUnit(B.units.find(u=>u.side==="p"));
   show("scr-battle");
@@ -2438,6 +2191,7 @@ function openProfile(){
     `<span class="tag">🏆 Рейтинг <b>${S.rating}</b></span>
      <span class="tag">Боёв <b>${S.battles}</b></span>
      <span class="tag">W/L <b>${S.wins}/${S.losses}</b></span>`;
+  renderWalletInfo();
   show("scr-profile");
 }
 function saveNick(){
@@ -2445,8 +2199,10 @@ function saveNick(){
   if(v){S.nick=v;save();toast("Позывной сохранён");}
 }
 function chainPayload(){
+  const conn = window.anWallet ? window.anWallet.getSession() : null;
   return {
-    game:"RESERVATION_PERIMETER_V1", nick:S.nick, // рейтинг/цены считает КОНТРАКТ — клиентом не передаются
+    game:"RESERVATION_PERIMETER_V1", nick:S.nick,
+    wallet: conn ? conn.walletAddress : "(не подключён)",
     lastBattleHash:S.lastHash, ts: Math.floor(Date.now()/1000)
   };
 }
@@ -2490,6 +2246,142 @@ async function chainSync(){
   }catch(e){
     st.textContent="Статус: ❌ нет связи ("+e.message+"). Payload сохранён локально и уйдёт при следующей синхронизации.";
     showPayload();
+  }
+}
+
+/* =========================================================
+   КОШЕЛЁК — AN Wallet через Bee SDK (deep link)
+   ========================================================= */
+let walletWaitToken = 0;
+
+function renderWalletInfo(){
+  const el = document.getElementById("walletInfo");
+  if(!el)return;
+  let conn = null;
+  try{ conn = (window.anWallet && window.anWallet.getSession) ? window.anWallet.getSession() : null; }catch(e){}
+  if(!conn){
+    el.innerHTML = `
+      <div class="muted" style="margin-bottom:10px">Подключи <b>AN Wallet</b> для он-чейн операций
+        (профиль, арена, рынок).</div>
+      <div class="row">
+        <div class="btn primary grow" id="btnWalletConnect" onclick="walletConnect()">🔗 Подключить AN Wallet</div>
+      </div>
+      <div id="walletLoadStatus" style="margin-top:8px;text-align:center"></div>`;
+  }else{
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="wallet-badge on">● Подключён</span>
+        <span style="font-size:13px;color:var(--sand)">${conn.walletName}</span>
+      </div>
+      <div style="font-size:13px;margin-bottom:4px">Адрес:</div>
+      <div class="wallet-addr" onclick="navigator.clipboard.writeText('${conn.walletAddress}');toast('📋 Скопировано')">${conn.walletAddress}</div>
+      <div id="walletBalance" class="statline" style="margin-top:8px">
+        <span class="tag">Баланс: <b>⏳</b></span>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="btn small grow" onclick="walletRefreshBalance()">🔄 Баланс</div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="btn small grow danger" onclick="walletDisconnect()">Отключить</div>
+      </div>`;
+    walletRefreshBalance();
+  }
+}
+
+async function walletConnect(){
+  const btn = document.getElementById("btnWalletConnect");
+  const status = document.getElementById("walletLoadStatus");
+  if(!btn)return;
+
+  btn.disabled = true;
+  btn.textContent = "⏳ Загрузка SDK (8 MB)...";
+
+  if(!window.anWallet){
+    try{
+      await new Promise((resolve,reject)=>{
+        const check=()=>{ if(window.anWallet && window.anWallet.connect){resolve();}else{setTimeout(check,200);} };
+        check();
+        setTimeout(()=>reject(new Error("SDK не загрузился за 30 сек")),30000);
+      });
+    }catch(e){
+      btn.disabled=false; btn.textContent="🔗 Подключить AN Wallet";
+      if(status) status.innerHTML='<div class="muted" style="color:var(--red)">'+e.message+'</div>';
+      return;
+    }
+  }
+
+  try{
+    const session = await window.anWallet.connect();
+    btn.style.display = "none";
+
+    const qrHtml = `
+      <div style="text-align:center">
+        <div style="font-size:14px;color:var(--sand);margin-bottom:8px">Отсканируй QR в AN Wallet</div>
+        <div style="background:#fff;display:inline-block;padding:12px;border-radius:12px;margin:8px 0">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(session.deepLink)}" width="200" height="200" alt="QR">
+        </div>
+        <div style="margin:8px 0">
+          <a href="${session.deepLink}" target="_blank" style="color:var(--blue);font-size:13px;text-decoration:underline">Открыть AN Wallet напрямую</a>
+        </div>
+        <div class="muted" style="font-size:11px;margin-top:6px">1. Открой ссылку в AN Wallet<br>2. Нажми «Подключить»<br>3. Подожди подтверждения</div>
+        <div style="margin-top:10px;height:3px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden">
+          <div style="height:100%;background:var(--blue);border-radius:99px;animation:pulseGlow 1.5s infinite;width:60%;margin:0 auto"></div>
+        </div>
+        <div style="margin-top:8px">
+          <div class="btn small danger" onclick="walletCancelConnect()">Отмена</div>
+        </div>
+      </div>`;
+    if(status) status.innerHTML = qrHtml;
+
+    const token = ++walletWaitToken;
+    const conn = await window.anWallet.waitHello(
+      session.sessionId, session.description,
+      session.clientDhSecret, session.createdAt
+    );
+    if(token !== walletWaitToken) return;
+
+    toast("✅ Кошелёк подключён: " + conn.walletName);
+    renderWalletInfo();
+  }catch(e){
+    toast("❌ Ошибка: " + (e.message || e));
+    if(status) status.innerHTML = `<div class="muted" style="color:var(--red)">${e.message||e}</div>
+      <div style="margin-top:8px"><div class="btn small" onclick="walletConnect()">Попробовать снова</div></div>`;
+    btn.style.display = "none";
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "🔗 Подключить AN Wallet";
+    btn.style.display = "";
+  }
+}
+
+function walletCancelConnect(){
+  walletWaitToken++;
+  const status = document.getElementById("walletLoadStatus");
+  if(status) status.innerHTML = "";
+  const btn = document.getElementById("btnWalletConnect");
+  if(btn){ btn.style.display = ""; btn.disabled = false; btn.textContent = "🔗 Подключить AN Wallet"; }
+}
+
+async function walletDisconnect(){
+  if(!confirm("Отключить кошелёк?"))return;
+  const conn = window.anWallet.getSession();
+  if(conn && window.anWallet){
+    await window.anWallet.disconnect(conn);
+  }
+  renderWalletInfo();
+  toast("Кошелёк отключён");
+}
+
+async function walletRefreshBalance(){
+  const el = document.getElementById("walletBalance");
+  const conn = window.anWallet.getSession();
+  if(!conn||!el)return;
+  el.innerHTML = `<span class="tag">Баланс: <b>⏳</b></span>`;
+  try{
+    const bal = await window.anWallet.getBalance(conn.walletAddress);
+    el.innerHTML = `<span class="tag">NACKL: <b>${bal||'0'}</b></span>`;
+  }catch(e){
+    el.innerHTML = `<span class="tag">Баланс: <b style="color:var(--red)">ошибка</b></span>`;
   }
 }
 
@@ -2551,12 +2443,9 @@ function startBattle(mission, squadIds){
   });
   B = { mission, units, turn:1, phase:"p", sel:null, reach:null, mode:"normal",
         log:[], over:false,
-        kills:0, aiTimer:null, map, fog:[], spotted:new Set(),
-        turnTimer:180, turnTimerMax:180, turnTimerActive:false, turnOrder:[] };
+        kills:0, aiTimer:null, map, fog:[], spotted:new Set() };
   logLines=[]; effects=[]; particles=[]; initDust();
   recomputeFog();
-  buildTurnOrder();
-  startTurnTimer();
   blog(`⚔️ ${mission.name}. Найди противника — врагов не видно, пока не подойдёшь!`);
   selectUnit(B.units.find(u=>u.side==="p"));
   show("scr-battle");
@@ -2805,22 +2694,20 @@ function applyDamage(def, dmg, srcName, info){
   sfx("hit");
   if(def.side==="p")redFlash=Math.min(0.42,redFlash+0.15+(crit?0.12:0));
   doShake(crit?4:2,180);
-if(def.hp<=0){
-      def.alive=false;
-      def.deadT=now();
-      deathDecal(def,info);
-      addEffect({type:"text",x:def.x,y:def.y,str:"☠",color:"#ffd27f",t:now()});
-      spawnSparks(def.x,def.y,"#d94f3d",14);
-      doShake(6,320);
-      punch={t:now()+210,mag:1};
-      sfx("death");
-      blog(`☠ ${def.emoji}${def.name} погибает!`);
-      B.log.push(`kill:${def.name}`);
-      if(def.side==="e")B.kills++;
-      else recomputeFog();
-      buildTurnOrder();
-      updateHud();
-    }
+  if(def.hp<=0){
+    def.alive=false;
+    def.deadT=now();
+    deathDecal(def,info); // лужа крови + тело остаются на земле до конца боя
+    addEffect({type:"text",x:def.x,y:def.y,str:"☠",color:"#ffd27f",t:now()});
+    spawnSparks(def.x,def.y,"#d94f3d",14);
+    doShake(6,320);
+    punch={t:now()+210,mag:1};
+    sfx("death");
+    blog(`☠ ${def.emoji}${def.name} погибает!`);
+    B.log.push(`kill:${def.name}`);
+    if(def.side==="e")B.kills++;
+    else recomputeFog(); // погиб наблюдатель — обзор отряда сузился
+  }
 }
 function doAttack(att,def){
   const w=WEAPONS[att.weapon];
@@ -2896,8 +2783,7 @@ function selectUnit(u){
   if(!u||!u.alive||u.side!=="p")return;
   B.sel=u; B.mode="normal";
   B.reach=reachable(u);
-  centerCam(u.x,u.y);
-  if(B.phase==="p" && !B.turnTimerActive) startTurnTimer();
+  centerCam(u.x,u.y); // камера следует за выбранным бойцом
   updateHud();
 }
 function nextUnit(){
@@ -3059,83 +2945,15 @@ function throwGrenade(c){
 }
 function endPlayerTurn(){
   if(!B||B.over||B.phase!=="p")return;
-  stopTurnTimer();
   B.phase="e";B.mode="normal";
   B.units.forEach(u=>{if(u.side==="e"&&u.alive)u.ap=u.maxap;});
   blog(`— Ход противника —`);
   updateHud();
   aiStep();
 }
-function buildTurnOrder(){
-  if(!B)return;
-  const alive=B.units.filter(u=>u.alive).sort((a,b)=>{
-    if(a.side!=="b.side")return a.side==="p"?-1:1;
-    return (b.acc||0)-(a.acc||0);
-  });
-  B.turnOrder=alive.map((u,i)=>({...u, order:i+1}));
-}
-function startTurnTimer(){
-  if(!B)return;
-  B.turnTimer=B.turnTimerMax;
-  B.turnTimerActive=true;
-  if(B.turnTimerInterval)clearInterval(B.turnTimerInterval);
-  B.turnTimerInterval=setInterval(()=>{
-    if(!B||B.over||!B.turnTimerActive)return;
-    B.turnTimer--;
-    updateTurnTimerUI();
-    if(B.turnTimer<=0){
-      stopTurnTimer();
-      autoEndTurn();
-    }
-  },1000);
-  updateTurnTimerUI();
-}
-function stopTurnTimer(){
-  if(B && B.turnTimerInterval){
-    clearInterval(B.turnTimerInterval);
-    B.turnTimerInterval=null;
-  }
-  if(B)B.turnTimerActive=false;
-}
-function autoEndTurn(){
-  if(!B||B.over)return;
-  if(B.phase==="p"){
-    blog(`⏰ Время вышло — ход передан автоматически`);
-    endPlayerTurn();
-  }else{
-    nextAITurn();
-  }
-}
-function nextAITurn(){
-  if(!B)return;
-  B.phase="p";B.turn++;
-  B.units.forEach(u=>{if(u.side==="p"&&u.alive)u.ap=u.maxap;});
-  buildTurnOrder();
-  startTurnTimer();
-  blog(`— Ход ${B.turn}. Твоя очередь —`);
-  addEffect({type:"banner",str:"ХОД "+B.turn,t:now()});
-  B.aiFocus=null;
-  if(B.sel&&B.sel.alive)B.reach=reachable(B.sel);
-  else selectUnit(B.units.find(u=>u.side==="p"&&u.alive));
-  updateHud();
-}
-function updateTurnTimerUI(){
-  if(!B)return;
-  const el=document.getElementById("turnTimerBar");
-  const txt=document.getElementById("turnTimerText");
-  if(!el||!txt)return;
-  const pct=Math.max(0,B.turnTimer/B.turnTimerMax*100);
-  el.style.width=pct+"%";
-  el.classList.toggle("warning",B.turnTimer<=30);
-  const m=Math.floor(B.turnTimer/60),s=B.turnTimer%60;
-  txt.textContent=`${m}:${s.toString().padStart(2,"0")}`;
-}
 function surrender(){
   if(!B||B.over)return;
-  if(confirm("Сдаться и покинуть бой?")){
-    stopTurnTimer();
-    finishBattle(false);
-  }
+  if(confirm("Сдаться и покинуть бой?"))finishBattle(false);
 }
 
 /* --- ИИ v2: BFS-поиск пути, фокус-огонь, гранаты/аптечки, обход укрытий --- */
@@ -3264,7 +3082,14 @@ function aiStep(){
   if(!B||B.over)return;
   const e=B.units.find(u=>u.side==="e"&&u.alive&&u.ap>=2);
   if(!e){
-    nextAITurn();
+    B.phase="p";B.turn++;
+    B.units.forEach(u=>{if(u.side==="p"&&u.alive)u.ap=u.maxap;});
+    blog(`— Ход ${B.turn}. Твоя очередь —`);
+    addEffect({type:"banner",str:"ХОД "+B.turn,t:now()});
+    B.aiFocus=null;
+    if(B.sel&&B.sel.alive)B.reach=reachable(B.sel);
+    else selectUnit(B.units.find(u=>u.side==="p"&&u.alive));
+    updateHud();
     return;
   }
   const players=B.units.filter(u=>u.side==="p"&&u.alive);
@@ -3342,7 +3167,6 @@ function battleHash(){
 }
 function finishBattle(win){
   if(B.over)return;B.over=true;
-  stopTurnTimer();
   clearTimeout(B.aiTimer);
   /* остатки пояса и текущее оружие (после смен) возвращаются бойцу.
      ТРОФЕИ С КАРТЫ НЕ ВЫНОСЯТСЯ (как в жанровой классике): lootBelt сгорает,
@@ -3442,38 +3266,6 @@ function updateHud(){
   document.getElementById("btnGren").style.outline=B.mode==="grenade"?"2px solid var(--rust2)":"none";
   const swapBtn=document.getElementById("btnSwap");
   if(swapBtn)swapBtn.style.opacity=u.weapon2?"1":"0.4";
-  renderTurnOrder();
-  ensureTurnTimerUI();
-}
-function ensureTurnTimerUI(){
-  if(document.getElementById("turnTimerBar"))return;
-  const wrap=document.getElementById("bbtns");
-  if(!wrap)return;
-  const html=`<div class="turn-timer" style="margin-bottom:8px">
-    <span class="timer-text" id="turnTimerText">3:00</span>
-    <div class="timer-bar"><i id="turnTimerBar" style="width:100%"></i></div>
-  </div>`;
-  wrap.insertAdjacentHTML("beforebegin",html);
-}
-function renderTurnOrder(){
-  const el=document.getElementById("turnOrder");
-  if(!el||!B.turnOrder)return;
-  const current=B.sel;
-  let html="";
-  B.turnOrder.forEach((u,idx)=>{
-    const isCurrent=current && u.id===current.id;
-    const isDead=!u.alive;
-    const cls=["unit-slot", u.side==="e"?"enemy":"", isCurrent?"current":"", isDead?"dead":""].filter(Boolean).join(" ");
-    html+=`<div class="${cls}" title="${u.name} (${u.side==="p"?"свой":"враг"})">${idx+1}</div>`;
-  });
-  el.innerHTML=html;
-  if(current){
-    const idx=B.turnOrder.findIndex(u=>u.id===current.id);
-    if(idx>=0){
-      const child=el.children[idx];
-      if(child)child.scrollIntoView({inline:"center",behavior:"smooth"});
-    }
-  }
 }
 
 /* =========================================================
@@ -5380,17 +5172,119 @@ function drawDust(w,h){
 
 /* ---------- ИНИЦИАЛИЗАЦИЯ ---------- */
 load();save();
-checkSavedKeypair();
-if(walletConnected){
-  show("scr-hub");
-}else{
-  show("scr-wallet");
-}
+renderHub();
 requestAnimationFrame(draw);
 window.addEventListener("orientationchange",()=>setTimeout(resize,300));
 if("serviceWorker"in navigator){
   try{navigator.serviceWorker.register("sw.js").catch(()=>{});}catch(e){}
 }
 </script>
+
+<!-- =========================================================
+     AN WALLET — Bee SDK (WASM) подключение через deep link
+     ========================================================= -->
+<script type="module">
+const BEE_SDK_URL = 'https://unpkg.com/@teamgosh/bee-sdk@5.1.1/bee_sdk.js';
+const BEE_WASM_URL = 'https://unpkg.com/@teamgosh/bee-sdk@5.1.1/bee_sdk_bg.wasm';
+const AN_ENDPOINTS = ['https://shellnet.ackinacki.org'];
+const AN_API = 'https://app-backend-dev.ackinacki.org/api';
+const APP_ID = '0x0000000000000000000000000000000000000000000000000000000000000026';
+const SESSION_KEY = 'rp-wallet-session';
+
+let sdkMod = null;
+let beeConn = null;
+let sdkLoading = false;
+let sdkReady = false;
+let sdkError = null;
+
+async function loadBeeSdk() {
+  if (sdkReady) return;
+  if (sdkLoading) return;
+  sdkLoading = true;
+  try {
+    const mod = await import(BEE_SDK_URL);
+    await mod.default({ module_or_path: BEE_WASM_URL });
+    sdkMod = mod;
+    beeConn = new mod.BeeConnect();
+    sdkReady = true;
+  } catch(e) {
+    sdkLoading = false;
+    sdkError = e.message || String(e);
+    throw e;
+  }
+}
+
+function getStoredSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function storeSession(conn) {
+  if (conn) localStorage.setItem(SESSION_KEY, JSON.stringify(conn));
+  else localStorage.removeItem(SESSION_KEY);
+}
+
+window.anWallet = {
+  sdkReady: () => sdkReady,
+  sdkError: () => sdkError,
+  loading: () => sdkLoading,
+  getSession: getStoredSession,
+
+  async connect() {
+    await loadBeeSdk();
+    const session = beeConn.create_shared_key_session(APP_ID, 300, null);
+    return {
+      deepLink: session.deep_link,
+      sessionId: session.session_id,
+      description: session.description,
+      sessionStateJson: session.session_state_json,
+      clientDhSecret: session.client_dh_secret,
+      createdAt: session.created_at,
+    };
+  },
+
+  async waitHello(sessionId, description, clientDhSecret, createdAt) {
+    const hello = await beeConn.wait_wallet_hello(
+      AN_ENDPOINTS, sessionId, description, clientDhSecret, createdAt, 180, 1000
+    );
+    const conn = {
+      walletName: hello.wallet_name,
+      walletAddress: hello.wallet_address,
+      profileAddress: hello.profile_address,
+      sessionId, description,
+      sessionStateJson: hello.session_state_json,
+    };
+    storeSession(conn);
+    return conn;
+  },
+
+  async disconnect(conn) {
+    storeSession(null);
+    try {
+      await loadBeeSdk();
+      await beeConn.disconnect_session(
+        AN_ENDPOINTS, conn.sessionId, conn.description,
+        conn.sessionStateJson, 'user_requested', 10, 1000
+      );
+    } catch(e) { console.warn('disconnect (blockchain) failed:', e); }
+  },
+
+  async getBalance(walletAddress) {
+    await loadBeeSdk();
+    const wallet = new sdkMod.Wallet(AN_ENDPOINTS, null, AN_API, APP_ID);
+    try {
+      const b = await wallet.get_multifactor_balances({ multifactor_address: walletAddress });
+      const raw = (b.ecc && b.ecc['1']) || '0';
+      return (BigInt(raw) / 1000000000n).toString();
+    } catch { return null; }
+    finally { wallet.free(); }
+  }
+};
+
+console.log('[AN Wallet] SDK module loaded, window.anWallet ready');
+</script>
+
 </body>
 </html>
