@@ -288,25 +288,13 @@
     <div id="splashWalletBox" style="width:100%;max-width:340px">
       <div class="card" style="text-align:left">
         <h3>🔑 Подключи кошелёк</h3>
-        <div class="muted" style="margin:6px 0">Подключи <b>AN Wallet</b> для входа в Зону.</div>
-
-        <div id="splashDLBox" style="margin-top:12px;text-align:center">
-          <div id="splashDLQR" style="display:none"></div>
-          <div class="btn primary grow" id="splashBtnDL" onclick="splashDeepLink()" style="width:100%">
-            Открыть AN Wallet
-          </div>
-          <div id="splashDLStatus" style="margin-top:8px"></div>
-        </div>
-
-        <div style="margin:12px 0 8px;border-top:1px solid var(--line);padding-top:10px;text-align:center">
-          <span class="muted" style="font-size:11px">или введи имя кошелька вручную</span>
-        </div>
-        <div>
+        <div class="muted" style="margin:6px 0">Введи имя своего <b>AN Wallet</b> для входа в Зону.</div>
+        <div style="margin-top:10px">
           <input id="splashWalletName" type="text" placeholder="МойWallet123" autocomplete="off"
             style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.4);color:var(--sand);font-size:14px;outline:none;box-sizing:border-box">
         </div>
         <div class="row" style="margin-top:10px">
-          <div class="btn grow" id="splashBtnConnect" onclick="splashManualConnect()" style="width:100%">Войти по имени →</div>
+          <div class="btn primary grow" id="splashBtnConnect" onclick="splashManualConnect()" style="width:100%">Войти →</div>
         </div>
         <div id="splashStatus" style="margin-top:10px;text-align:center"></div>
       </div>
@@ -1233,47 +1221,9 @@ function renderSplash(){
     btn.onclick = ()=>show("scr-hub");
     return;
   }
-  btn.textContent = "Войти по имени →";
+  btn.textContent = "Войти →";
   btn.onclick = splashManualConnect;
   status.innerHTML = "";
-}
-
-let splashPollTimer = null;
-
-async function splashDeepLink(){
-  const btn = document.getElementById("splashBtnDL");
-  const st = document.getElementById("splashDLStatus");
-  const qr = document.getElementById("splashDLQR");
-  if(!btn||!st) return;
-  btn.disabled=true;
-  btn.textContent="⏳ Подключение...";
-  st.innerHTML='<div style="font-size:11px;color:var(--sand)">Создание сессии...</div>';
-  try{
-    if(!window.anWallet) await waitForWallet();
-    const session = await window.anWallet.connectDeepLink();
-    log('Deep link session:', session);
-
-    st.innerHTML=`
-      <div style="font-size:11px;color:var(--sand);margin-bottom:8px">Нажми кнопку ниже — откроется AN Wallet</div>
-      <a href="${session.deepLink}" target="_blank" rel="noopener"
-         style="display:inline-block;padding:12px 20px;background:var(--green);color:#000;font-weight:700;border-radius:8px;text-decoration:none;font-size:14px">
-        Открыть AN Wallet
-      </a>
-      <div style="margin-top:8px;font-size:10px;color:var(--muted)">Одобрь подключение в кошельке</div>`;
-    btn.style.display="none";
-
-    const conn = await window.anWallet.waitHello(
-      session.sessionId, session.description, session.clientDhSecret, session.createdAt
-    );
-    showWalletResult(conn, "scr-hub");
-  }catch(e){
-    logErr('DeepLink error:', e);
-    st.innerHTML=`<div style="color:var(--red);font-size:12px;margin:6px 0">${e.message||e}</div>
-      <div class="btn small" onclick="splashDeepLink()">Попробовать снова</div>`;
-    btn.disabled=false;
-    btn.textContent="Открыть AN Wallet";
-    btn.style.display="";
-  }
 }
 
 async function splashManualConnect(){
@@ -1300,7 +1250,7 @@ async function splashManualConnect(){
       <div class="btn small" onclick="splashManualConnect()">Попробовать снова</div>`;
   }finally{
     btn.disabled=false;
-    btn.textContent="Войти по имени →";
+    btn.textContent="Войти →";
   }
 }
 
@@ -1748,15 +1698,38 @@ function genRooms(){
 }
 function openRooms(){
   roomsList=genRooms();
-  renderRooms();
+  if(waitingForOpponent){
+    renderWaitingRoom();
+    startWaitingTimer();
+  } else {
+    renderRooms();
+  }
   show("scr-rooms");
+}
+let waitingTimerInterval = null;
+function startWaitingTimer(){
+  if(waitingTimerInterval) clearInterval(waitingTimerInterval);
+  waitingTimerInterval = setInterval(()=>{
+    if(!waitingForOpponent){clearInterval(waitingTimerInterval);return;}
+    renderWaitingRoom();
+  },1000);
 }
 function renderRooms(){
   const md=ROOM_MODES[roomMode];
   const el=document.getElementById("roomsBody");
   let html=`<div class="modetab">`+Object.keys(ROOM_MODES).map(k=>
-    `<div class="btn ${k===roomMode?"on":""}" onclick="setRoomMode('${k}')">${ROOM_MODES[k].emoji} ${k}</div>`).join("")+`</div>
-  <div class="card"><h3>${md.emoji} Режим «${md.name}»</h3>
+    `<div class="btn ${k===roomMode?"on":""}" onclick="setRoomMode('${k}')">${ROOM_MODES[k].emoji} ${k}</div>`).join("")+`</div>`;
+  if(waitingForOpponent && myCreatedRoom){
+    html+=`<div class="card" style="border:1px solid var(--blue);margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="font-size:24px">⏳</div>
+        <div style="flex:1"><b style="color:var(--blue)">Твоя комната</b>
+          <div class="muted" style="font-size:11px">${myCreatedRoom.mode} · ${myCreatedRoom.naked?"🚿 голый":myCreatedRoom.stake?"💰 "+myCreatedRoom.stake:"без ставки"}</div></div>
+        <div class="btn small danger" onclick="cancelWait()">Отмена</div>
+      </div>
+    </div>`;
+  }
+  html+=`<div class="card"><h3>${md.emoji} Режим «${md.name}»</h3>
     <div class="muted">${md.desc}. Победа: +35 рейтинга и ставка соперника. Поражение: −20 и своя ставка.
     В «голых» комнатах экипировка не действует — только базовые стволы, самые честные бои!</div>
   </div>
@@ -1780,6 +1753,8 @@ function renderRooms(){
   el.innerHTML=html;
 }
 function setRoomMode(k){ roomMode=k; roomsList=genRooms(); renderRooms(); }
+let myCreatedRoom = null;
+let waitingForOpponent = false;
 function createRoom(){
   const md=ROOM_MODES[roomMode];
   if(S.roster.length<md.units){toast("Нужно бойцов: "+md.units+" — найми ещё");return;}
@@ -1787,18 +1762,89 @@ function createRoom(){
     <div class="muted">Ставка (спишется при поражении, выигрыш при победе):</div>
     <div class="row" style="margin-top:10px;flex-wrap:wrap;gap:6px">
       ${[0,50,100,200,400].map(s=>`<div class="btn small ${S.credits>=s?"":"disabled"}" 
-        onclick="closeModal('mGeneric');startRoomBattle(${s},false,'Хозяин')">${s?s+" 💰":"Без ставки"}</div>`).join("")}
+        onclick="closeModal('mGeneric');waitInRoom(${s},false)">${s?s+" 💰":"Без ставки"}</div>`).join("")}
     </div>
     <div class="row" style="margin-top:8px">
-      <div class="btn grow" onclick="closeModal('mGeneric');startRoomBattle(0,true,'Хозяин')">🚿 Голый бой</div>
+      <div class="btn grow" onclick="closeModal('mGeneric');waitInRoom(0,true)">🚿 Голый бой</div>
       <div class="btn grow" onclick="closeModal('mGeneric')">Отмена</div>
     </div>`);
+}
+function waitInRoom(stake, naked){
+  const md=ROOM_MODES[roomMode];
+  waitingForOpponent = true;
+  myCreatedRoom = {
+    stake, naked, mode: roomMode,
+    hostName: S.nick,
+    hostRating: S.rating,
+    units: md.units,
+    createdAt: Date.now(),
+  };
+  show("scr-rooms");
+  renderWaitingRoom();
+}
+function renderWaitingRoom(){
+  const el=document.getElementById("roomsBody");
+  const md=ROOM_MODES[roomMode];
+  const r=myCreatedRoom;
+  if(!r||!waitingForOpponent){
+    renderRooms();
+    return;
+  }
+  const elapsed = Math.floor((Date.now()-r.createdAt)/1000);
+  const min = Math.floor(elapsed/60);
+  const sec = elapsed%60;
+  el.innerHTML=`
+    <div class="card" style="text-align:center;border:1px solid var(--blue)">
+      <div style="font-size:48px;margin-bottom:12px">⏳</div>
+      <h3>Ожидание соперника</h3>
+      <div class="muted">${r.mode} · ${r.naked?"🚿 голый бой":r.stake?"💰 ставка "+r.stake:"без ставки"}</div>
+      <div style="margin:16px 0;font-size:14px;color:var(--sand)">
+        ${min}:${sec<10?"0"+sec:sec}
+      </div>
+      <div class="muted" style="font-size:12px;margin-bottom:12px">Соперник найдёт тебя в списке комнат</div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <div class="btn danger" onclick="cancelWait()">❌ Покинуть комнату</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:10px">
+      <h3>📋 Твои бойцы (${r.mode})</h3>
+      <div class="muted" style="font-size:12px;margin-bottom:8px">Подбери отряд, пока ждёшь</div>
+      <div id="waitingSquadList"></div>
+    </div>`;
+  renderWaitingSquad();
+}
+function renderWaitingSquad(){
+  const el=document.getElementById("waitingSquadList");
+  if(!el||!myCreatedRoom) return;
+  const md=ROOM_MODES[myCreatedRoom.mode];
+  let html='';
+  S.roster.slice(0,md.units).forEach((m,i)=>{
+    const w=WEAPONS[m.weapon]||WEAPONS.knife;
+    html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px;background:rgba(0,0,0,.2);border-radius:6px;margin-bottom:4px">
+      <span style="font-size:16px">${CLASSES[m.cls]?.icon||"?"}</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--sand)">${m.name} <span class="muted">у.${m.lvl}</span></div>
+        <div style="font-size:10px;color:var(--muted)">${w.name} · ${m.hp||100}HP</div>
+      </div>
+    </div>`;
+  });
+  el.innerHTML=html;
+}
+function cancelWait(){
+  waitingForOpponent = false;
+  myCreatedRoom = null;
+  renderRooms();
 }
 function joinRoom(i){
   const r=roomsList[i]; if(!r)return;
   const md=ROOM_MODES[roomMode];
   if(S.roster.length<md.units){toast("Нужно бойцов: "+md.units+" — найми ещё");return;}
   if(r.stake>S.credits){toast("Не хватает на ставку ("+r.stake+")");return;}
+  if(waitingForOpponent && myCreatedRoom){
+    waitingForOpponent = false;
+    myCreatedRoom = null;
+    if(waitingTimerInterval) clearInterval(waitingTimerInterval);
+  }
   startRoomBattle(r.stake, r.naked, r.host, r.rating);
 }
 /* отряд соперника генерируется из тех же классов с похожей силой */
@@ -2480,19 +2526,12 @@ function renderWalletInfo(){
   if(!conn || !conn.walletAddress){
     el.innerHTML = `
       <div class="muted" style="margin-bottom:10px">Подключи <b>AN Wallet</b> для он-чейн операций.</div>
-      <div style="text-align:center;margin-bottom:10px">
-        <div class="btn primary grow" onclick="walletDeepLink()" style="width:100%">Открыть AN Wallet</div>
-        <div id="walletDLStatus" style="margin-top:6px"></div>
-      </div>
-      <div style="border-top:1px solid var(--line);padding-top:8px;margin-bottom:6px;text-align:center">
-        <span class="muted" style="font-size:11px">или введи имя кошелька</span>
-      </div>
       <div class="row" style="margin-bottom:6px">
         <input id="walletNameInput" type="text" placeholder="Имя кошелька" autocomplete="off"
           style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.4);color:var(--sand);font-size:13px;outline:none">
       </div>
       <div class="row">
-        <div class="btn grow" onclick="walletConnectByName()">Войти по имени</div>
+        <div class="btn primary grow" onclick="walletConnectByName()">Войти</div>
       </div>
       <div id="walletLoadStatus" style="margin-top:8px;text-align:center"></div>`;
   }else{
@@ -2521,35 +2560,6 @@ function renderWalletInfo(){
         <div class="btn small grow" onclick="walletRefreshBalance()">🔄 Обновить</div>
         <div class="btn small grow danger" onclick="walletDisconnect()">Отключить</div>
       </div>`;
-  }
-}
-
-async function walletDeepLink(){
-  const st = document.getElementById("walletDLStatus");
-  const btnEl = document.querySelector('[onclick="walletDeepLink()"]');
-  if(!st) return;
-  if(btnEl) btnEl.disabled=true;
-  st.innerHTML='<div style="font-size:11px;color:var(--sand)">Создание сессии...</div>';
-  try{
-    const session = await window.anWallet.connectDeepLink();
-    st.innerHTML=`
-      <div style="font-size:11px;color:var(--sand);margin-bottom:6px">Нажми кнопку — откроется AN Wallet</div>
-      <a href="${session.deepLink}" target="_blank" rel="noopener"
-         style="display:inline-block;padding:10px 16px;background:var(--green);color:#000;font-weight:700;border-radius:8px;text-decoration:none;font-size:13px">
-        Открыть AN Wallet
-      </a>
-      <div style="margin-top:6px;font-size:10px;color:var(--muted)">Одобрь подключение</div>`;
-    if(btnEl) btnEl.style.display="none";
-
-    const conn = await window.anWallet.waitHello(
-      session.sessionId, session.description, session.clientDhSecret, session.createdAt
-    );
-    toast("✅ "+conn.walletName);
-    renderWalletInfo();
-  }catch(e){
-    st.innerHTML=`<div style="color:var(--red);font-size:12px">${e.message||e}</div>
-      <div class="btn small" onclick="walletDeepLink()">Попробовать снова</div>`;
-    if(btnEl){btnEl.disabled=false;btnEl.style.display="";}
   }
 }
 
@@ -5445,9 +5455,6 @@ window.anWallet = {
     const sdk = await loadSdk();
     log('connectByName:', walletName);
 
-    const check = await sdk.Wallet.prototype.check_name_availability.call ?
-      null : new sdk.Wallet(ENDPOINTS, null, AN_API, APP_ID);
-
     let wallet;
     try{
       wallet = new sdk.Wallet(ENDPOINTS, null, AN_API, APP_ID);
@@ -5479,55 +5486,6 @@ window.anWallet = {
     const conn = {
       walletName, walletAddress: addr,
       balances, endpoint: ENDPOINTS[0],
-      connectedAt: Date.now(),
-    };
-    storeSession(conn);
-    return conn;
-  },
-
-  /* Deep-link подключение через AN Wallet ( BeeConnect ) */
-  async connectDeepLink(){
-    const sdk = await loadSdk();
-    const bee = new sdk.BeeConnect();
-    log('create_shared_key_session, APP_ID:', APP_ID);
-    const session = bee.create_shared_key_session(APP_ID, 300, null);
-    bee.free();
-    log('Сессия:', session.session_id);
-    return {
-      deepLink: session.deep_link,
-      sessionId: session.session_id,
-      description: session.description,
-      sessionStateJson: session.session_state_json,
-      clientDhSecret: session.client_dh_secret,
-      createdAt: session.created_at,
-    };
-  },
-
-  async waitHello(sessionId, description, clientDhSecret, createdAt){
-    const sdk = await loadSdk();
-    const bee = new sdk.BeeConnect();
-    log('wait_wallet_hello...');
-    const t0 = Date.now();
-    const hello = await bee.wait_wallet_hello(
-      ENDPOINTS, sessionId, description, clientDhSecret, createdAt, 180, 1000
-    );
-    bee.free();
-    log('wallet_hello за', Math.round((Date.now()-t0)/1000)+'с', hello);
-
-    const addr = hello.wallet_address;
-    const wallet = new sdk.Wallet(ENDPOINTS, null, AN_API, APP_ID);
-    const b = await wallet.get_multifactor_balances({ multifactor_address: addr });
-    const balances = parseBalances(b);
-    wallet.free();
-
-    const conn = {
-      walletName: hello.wallet_name || '',
-      walletAddress: addr,
-      balances,
-      sessionId, description,
-      sessionStateJson: hello.session_state_json,
-      clientDhSecret, createdAt,
-      endpoint: ENDPOINTS[0],
       connectedAt: Date.now(),
     };
     storeSession(conn);
