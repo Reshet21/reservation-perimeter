@@ -1266,8 +1266,11 @@ async function splashConnect(){
   }catch(e){
     splashLog('ОШИБКА: ' + (e.message || e));
     console.error('[RP-Wallet] error:', e);
-    toast("❌ "+(e.message||e));
-    status.innerHTML = `<div class="muted" style="color:var(--red)">${e.message||e}</div>
+    const errMsg = e.message || String(e) || 'Неизвестная ошибка';
+    toast("❌ "+errMsg);
+    status.innerHTML = `
+      <div class="muted" style="color:var(--red);font-size:12px;margin:8px 0">${errMsg}</div>
+      <div style="font-size:10px;font-family:monospace;background:rgba(0,0,0,.5);padding:6px;border-radius:6px;color:#f88;max-height:80px;overflow-y:auto;text-align:left">${String(e.stack||e)}</div>
       <div style="margin-top:8px;display:flex;gap:6px;justify-content:center">
         <div class="btn small" onclick="splashConnect()">Попробовать снова</div>
       </div>`;
@@ -5434,36 +5437,42 @@ window.anWallet = {
 
   async waitHello(sessionId, description, clientDhSecret, createdAt) {
     const sdk = await loadBeeSdk();
-    const ep = await findWorkingEndpoint();
-    log('wait_wallet_hello → эндпоинт:', ep);
-    log('Параметры:', { sessionId, description: description?.slice(0,40), createdAt: Number(createdAt) });
+    // Пробуем оба эндпоинта — кошелёк может быть на mainnet или shellnet
+    const eps = ['https://mainnet.ackinacki.org', 'https://shellnet.ackinacki.org'];
+    log('wait_wallet_hello → эндпоинты:', eps);
+    log('Параметры:', { sessionId, description: description?.slice(0,60), createdAt: Number(createdAt) });
 
-    const poll = new sdk.BeeConnect();
-    try {
-      log('Ожидание wallet_hello (до 10 мин)...');
-      const t0 = Date.now();
-      const hello = await poll.wait_wallet_hello(
-        [ep], sessionId, description, clientDhSecret, createdAt, 300, 3000
-      );
-      log('wallet_hello получен за', Math.round((Date.now()-t0)/1000), 'сек:', {
-        walletName: hello.wallet_name,
-        walletAddress: hello.wallet_address,
-        profileAddress: hello.profile_address,
-      });
-      const conn = {
-        walletName: hello.wallet_name,
-        walletAddress: hello.wallet_address,
-        profileAddress: hello.profile_address,
-        sessionId, description,
-        sessionStateJson: hello.session_state_json,
-        clientDhSecret, createdAt,
-        endpoint: ep,
-      };
-      storeSession(conn);
-      return conn;
-    } finally {
-      poll.free();
+    let lastErr = null;
+    for (const ep of eps) {
+      const poll = new sdk.BeeConnect();
+      try {
+        log('Пробую', ep, '...');
+        const t0 = Date.now();
+        const hello = await poll.wait_wallet_hello(
+          [ep], sessionId, description, clientDhSecret, createdAt, 60, 5000
+        );
+        log('✓ wallet_hello за', Math.round((Date.now()-t0)/1000), 'сек на', ep);
+        log('wallet_name:', hello.wallet_name, 'address:', hello.wallet_address);
+        const conn = {
+          walletName: hello.wallet_name,
+          walletAddress: hello.wallet_address,
+          profileAddress: hello.profile_address,
+          sessionId, description,
+          sessionStateJson: hello.session_state_json,
+          clientDhSecret, createdAt,
+          endpoint: ep,
+        };
+        storeSession(conn);
+        poll.free();
+        return conn;
+      } catch(e) {
+        log('✗', ep, 'ошибка:', e.message || e);
+        lastErr = e;
+      } finally {
+        poll.free();
+      }
     }
+    throw lastErr || new Error('Не удалось подключиться ни к одному эндпоинту');
   },
 
   async disconnect(conn) {
