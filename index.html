@@ -288,13 +288,25 @@
     <div id="splashWalletBox" style="width:100%;max-width:340px">
       <div class="card" style="text-align:left">
         <h3>🔑 Подключи кошелёк</h3>
-        <div class="muted" style="margin:6px 0">Введи имя своего <b>AN Wallet</b> (никнейм кошелька). Адрес и баланс подтянутся автоматически.</div>
-        <div style="margin-top:10px">
+        <div class="muted" style="margin:6px 0">Подключи <b>AN Wallet</b> для входа в Зону.</div>
+
+        <div id="splashDLBox" style="margin-top:12px;text-align:center">
+          <div id="splashDLQR" style="display:none"></div>
+          <div class="btn primary grow" id="splashBtnDL" onclick="splashDeepLink()" style="width:100%">
+            Открыть AN Wallet
+          </div>
+          <div id="splashDLStatus" style="margin-top:8px"></div>
+        </div>
+
+        <div style="margin:12px 0 8px;border-top:1px solid var(--line);padding-top:10px;text-align:center">
+          <span class="muted" style="font-size:11px">или введи имя кошелька вручную</span>
+        </div>
+        <div>
           <input id="splashWalletName" type="text" placeholder="МойWallet123" autocomplete="off"
             style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.4);color:var(--sand);font-size:14px;outline:none;box-sizing:border-box">
         </div>
         <div class="row" style="margin-top:10px">
-          <div class="btn primary grow" id="splashBtnConnect" onclick="splashConnect()">Войти →</div>
+          <div class="btn grow" id="splashBtnConnect" onclick="splashManualConnect()" style="width:100%">Войти по имени →</div>
         </div>
         <div id="splashStatus" style="margin-top:10px;text-align:center"></div>
       </div>
@@ -1221,11 +1233,50 @@ function renderSplash(){
     btn.onclick = ()=>show("scr-hub");
     return;
   }
-  btn.textContent = "Войти →";
-  btn.onclick = splashConnect;
+  btn.textContent = "Войти по имени →";
+  btn.onclick = splashManualConnect;
   status.innerHTML = "";
 }
-async function splashConnect(){
+
+let splashPollTimer = null;
+
+async function splashDeepLink(){
+  const btn = document.getElementById("splashBtnDL");
+  const st = document.getElementById("splashDLStatus");
+  const qr = document.getElementById("splashDLQR");
+  if(!btn||!st) return;
+  btn.disabled=true;
+  btn.textContent="⏳ Подключение...";
+  st.innerHTML='<div style="font-size:11px;color:var(--sand)">Создание сессии...</div>';
+  try{
+    if(!window.anWallet) await waitForWallet();
+    const session = await window.anWallet.connectDeepLink();
+    log('Deep link session:', session);
+
+    st.innerHTML=`
+      <div style="font-size:11px;color:var(--sand);margin-bottom:8px">Нажми кнопку ниже — откроется AN Wallet</div>
+      <a href="${session.deepLink}" target="_blank" rel="noopener"
+         style="display:inline-block;padding:12px 20px;background:var(--green);color:#000;font-weight:700;border-radius:8px;text-decoration:none;font-size:14px">
+        Открыть AN Wallet
+      </a>
+      <div style="margin-top:8px;font-size:10px;color:var(--muted)">Одобрь подключение в кошельке</div>`;
+    btn.style.display="none";
+
+    const conn = await window.anWallet.waitHello(
+      session.sessionId, session.description, session.clientDhSecret, session.createdAt
+    );
+    showWalletResult(conn, "scr-hub");
+  }catch(e){
+    logErr('DeepLink error:', e);
+    st.innerHTML=`<div style="color:var(--red);font-size:12px;margin:6px 0">${e.message||e}</div>
+      <div class="btn small" onclick="splashDeepLink()">Попробовать снова</div>`;
+    btn.disabled=false;
+    btn.textContent="Открыть AN Wallet";
+    btn.style.display="";
+  }
+}
+
+async function splashManualConnect(){
   const btn = document.getElementById("splashBtnConnect");
   const status = document.getElementById("splashStatus");
   const nameInput = document.getElementById("splashWalletName");
@@ -1235,58 +1286,62 @@ async function splashConnect(){
     status.innerHTML='<div style="color:var(--red);font-size:12px">Введи имя кошелька</div>';
     return;
   }
-  btn.disabled = true;
-  btn.textContent = "⏳ Подключение...";
-  status.innerHTML = '<div style="font-size:11px;color:var(--sand)">Подключение к блокчейну...</div>';
+  btn.disabled=true;
+  btn.textContent="⏳ Подключение...";
+  status.innerHTML='<div style="font-size:11px;color:var(--sand)">Проверка кошелька...</div>';
   try{
-    if(!window.anWallet){
-      await new Promise((res,rej)=>{
-        const c=()=>{if(window.anWallet&&window.anWallet.connectByName){res();}else{setTimeout(c,500);}};
-        c(); setTimeout(()=>rej(new Error("SDK не загрузился. Проверь интернет.")),60000);
-      });
-    }
-    status.innerHTML = '<div style="font-size:11px;color:var(--sand)">Резолв адреса: '+walletName+'...</div>';
+    if(!window.anWallet) await waitForWallet();
     const conn = await window.anWallet.connectByName(walletName);
-    const bal = conn.balances || {};
-    status.innerHTML = `
-      <div style="background:rgba(0,80,0,.15);border:1px solid rgba(0,200,0,.2);border-radius:10px;padding:12px;margin-top:8px;text-align:left">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-          <span style="color:var(--green);font-size:14px">✓</span>
-          <span style="color:var(--sand);font-size:13px;font-weight:600">${conn.walletName}</span>
-        </div>
-        <div style="font-size:10px;color:var(--muted);font-family:monospace;word-break:break-all;margin-bottom:8px">${conn.walletAddress}</div>
-        <div style="display:flex;gap:6px">
-          <div style="flex:1;background:rgba(0,0,0,.3);padding:6px;border-radius:6px;text-align:center">
-            <div style="font-size:9px;color:var(--muted)">NACKL</div>
-            <div style="font-size:13px;font-weight:700;color:var(--sand)">${bal.nackl||'0'}</div>
-          </div>
-          <div style="flex:1;background:rgba(0,0,0,.3);padding:6px;border-radius:6px;text-align:center">
-            <div style="font-size:9px;color:var(--muted)">SHELL</div>
-            <div style="font-size:13px;font-weight:700;color:var(--sand)">${bal.shell||'0'}</div>
-          </div>
-          <div style="flex:1;background:rgba(0,0,0,.3);padding:6px;border-radius:6px;text-align:center">
-            <div style="font-size:9px;color:var(--muted)">USDC</div>
-            <div style="font-size:13px;font-weight:700;color:var(--sand)">${bal.usdc||'0'}</div>
-          </div>
-        </div>
-      </div>`;
-    btn.textContent = "进入 ИГРУ →";
-    btn.disabled = false;
-    btn.onclick = ()=>show("scr-hub");
-    nameInput.style.display = "none";
+    showWalletResult(conn, "scr-hub");
   }catch(e){
-    console.error('[RP-Wallet] error:', e);
-    const errMsg = e.message || String(e) || 'Неизвестная ошибка';
-    toast("❌ "+errMsg);
-    status.innerHTML = `
-      <div class="muted" style="color:var(--red);font-size:12px;margin:8px 0">${errMsg}</div>
-      <div style="margin-top:8px">
-        <div class="btn small" onclick="splashConnect()">Попробовать снова</div>
-      </div>`;
+    logErr('Manual error:', e);
+    const msg = e.message||String(e)||'Ошибка';
+    status.innerHTML=`<div style="color:var(--red);font-size:12px;margin:6px 0">${msg}</div>
+      <div class="btn small" onclick="splashManualConnect()">Попробовать снова</div>`;
   }finally{
-    btn.disabled = false;
-    btn.textContent = "Войти →";
+    btn.disabled=false;
+    btn.textContent="Войти по имени →";
   }
+}
+
+function showWalletResult(conn, nextScreen){
+  const status = document.getElementById("splashStatus");
+  const btn = document.getElementById("splashBtnConnect");
+  const nameInput = document.getElementById("splashWalletName");
+  const bal = conn.balances||{};
+  status.innerHTML=`
+    <div style="background:rgba(0,80,0,.15);border:1px solid rgba(0,200,0,.2);border-radius:10px;padding:12px;margin-top:8px;text-align:left">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <span style="color:var(--green);font-size:14px">✓</span>
+        <span style="color:var(--sand);font-size:13px;font-weight:600">${conn.walletName}</span>
+      </div>
+      <div style="font-size:10px;color:var(--muted);font-family:monospace;word-break:break-all;margin-bottom:8px">${conn.walletAddress}</div>
+      <div style="display:flex;gap:6px">
+        <div style="flex:1;background:rgba(0,0,0,.3);padding:6px;border-radius:6px;text-align:center">
+          <div style="font-size:9px;color:var(--muted)">NACKL</div>
+          <div style="font-size:13px;font-weight:700;color:var(--sand)">${bal.nackl||'0'}</div>
+        </div>
+        <div style="flex:1;background:rgba(0,0,0,.3);padding:6px;border-radius:6px;text-align:center">
+          <div style="font-size:9px;color:var(--muted)">SHELL</div>
+          <div style="font-size:13px;font-weight:700;color:var(--sand)">${bal.shell||'0'}</div>
+        </div>
+        <div style="flex:1;background:rgba(0,0,0,.3);padding:6px;border-radius:6px;text-align:center">
+          <div style="font-size:9px;color:var(--muted)">USDC</div>
+          <div style="font-size:13px;font-weight:700;color:var(--sand)">${bal.usdc||'0'}</div>
+        </div>
+      </div>
+    </div>`;
+  btn.textContent="进入 ИГРУ →";
+  btn.disabled=false;
+  btn.onclick=()=>show(nextScreen);
+  if(nameInput) nameInput.style.display="none";
+}
+
+function waitForWallet(){
+  return new Promise((res,rej)=>{
+    const c=()=>{if(window.anWallet&&window.anWallet.connectByName){res();}else setTimeout(c,500);};
+    c(); setTimeout(()=>rej(new Error("SDK не загрузился. Проверь интернет.")),60000);
+  });
 }
 
 /* ---------- HUB ---------- */
@@ -2425,12 +2480,19 @@ function renderWalletInfo(){
   if(!conn || !conn.walletAddress){
     el.innerHTML = `
       <div class="muted" style="margin-bottom:10px">Подключи <b>AN Wallet</b> для он-чейн операций.</div>
+      <div style="text-align:center;margin-bottom:10px">
+        <div class="btn primary grow" onclick="walletDeepLink()" style="width:100%">Открыть AN Wallet</div>
+        <div id="walletDLStatus" style="margin-top:6px"></div>
+      </div>
+      <div style="border-top:1px solid var(--line);padding-top:8px;margin-bottom:6px;text-align:center">
+        <span class="muted" style="font-size:11px">или введи имя кошелька</span>
+      </div>
       <div class="row" style="margin-bottom:6px">
         <input id="walletNameInput" type="text" placeholder="Имя кошелька" autocomplete="off"
           style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.4);color:var(--sand);font-size:13px;outline:none">
       </div>
       <div class="row">
-        <div class="btn primary grow" onclick="walletConnectByName()">Войти</div>
+        <div class="btn grow" onclick="walletConnectByName()">Войти по имени</div>
       </div>
       <div id="walletLoadStatus" style="margin-top:8px;text-align:center"></div>`;
   }else{
@@ -2456,8 +2518,38 @@ function renderWalletInfo(){
         </div>
       </div>
       <div class="row" style="margin-top:6px">
+        <div class="btn small grow" onclick="walletRefreshBalance()">🔄 Обновить</div>
         <div class="btn small grow danger" onclick="walletDisconnect()">Отключить</div>
       </div>`;
+  }
+}
+
+async function walletDeepLink(){
+  const st = document.getElementById("walletDLStatus");
+  const btnEl = document.querySelector('[onclick="walletDeepLink()"]');
+  if(!st) return;
+  if(btnEl) btnEl.disabled=true;
+  st.innerHTML='<div style="font-size:11px;color:var(--sand)">Создание сессии...</div>';
+  try{
+    const session = await window.anWallet.connectDeepLink();
+    st.innerHTML=`
+      <div style="font-size:11px;color:var(--sand);margin-bottom:6px">Нажми кнопку — откроется AN Wallet</div>
+      <a href="${session.deepLink}" target="_blank" rel="noopener"
+         style="display:inline-block;padding:10px 16px;background:var(--green);color:#000;font-weight:700;border-radius:8px;text-decoration:none;font-size:13px">
+        Открыть AN Wallet
+      </a>
+      <div style="margin-top:6px;font-size:10px;color:var(--muted)">Одобрь подключение</div>`;
+    if(btnEl) btnEl.style.display="none";
+
+    const conn = await window.anWallet.waitHello(
+      session.sessionId, session.description, session.clientDhSecret, session.createdAt
+    );
+    toast("✅ "+conn.walletName);
+    renderWalletInfo();
+  }catch(e){
+    st.innerHTML=`<div style="color:var(--red);font-size:12px">${e.message||e}</div>
+      <div class="btn small" onclick="walletDeepLink()">Попробовать снова</div>`;
+    if(btnEl){btnEl.disabled=false;btnEl.style.display="";}
   }
 }
 
@@ -5296,7 +5388,7 @@ if("serviceWorker"in navigator){
 </script>
 
 <!-- =========================================================
-     AN WALLET — Bee SDK (WASM) подключение по имени кошелька
+     AN WALLET — Bee SDK (WASM) подключение к блокчейну
      ========================================================= -->
 <script type="module">
 const BEE_SDK_URL = 'https://unpkg.com/@teamgosh/bee-sdk@5.1.1/bee_sdk.js';
@@ -5304,125 +5396,160 @@ const BEE_WASM_URL = 'https://unpkg.com/@teamgosh/bee-sdk@5.1.1/bee_sdk_bg.wasm'
 const SESSION_KEY = 'rp-wallet-session';
 const AN_API = 'https://app-backend-dev.ackinacki.org/api';
 const APP_ID = '0x0000000000000000000000000000000000000000000000000000000000000026';
-const ENDPOINTS = [
-  'https://mainnet.ackinacki.org',
-  'https://shellnet.ackinacki.org',
-];
+const ENDPOINTS = ['https://mainnet.ackinacki.org'];
 
 let sdkMod = null;
 let sdkReady = false;
 
-function log(...args) { console.log('[RP-Wallet]', ...args); }
-function logErr(...args) { console.error('[RP-Wallet]', ...args); }
+function log(...a){ console.log('[RP]', ...a); }
+function logErr(...a){ console.error('[RP]', ...a); }
 
-async function loadSdk() {
-  if (sdkReady) return sdkMod;
-  log('Загрузка Bee SDK WASM...');
-  const t0 = Date.now();
+async function loadSdk(){
+  if(sdkReady) return sdkMod;
+  log('Загрузка SDK...');
+  const t0=Date.now();
   const mod = await import(BEE_SDK_URL);
   await mod.default({ module_or_path: BEE_WASM_URL });
   sdkMod = mod;
   sdkReady = true;
-  log('SDK загружен за', Date.now()-t0, 'мс');
+  log('SDK OK', Date.now()-t0+'мс');
   return mod;
 }
 
-function getStoredSession() {
-  try { const r = localStorage.getItem(SESSION_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
+function getStoredSession(){
+  try{ const r=localStorage.getItem(SESSION_KEY); return r?JSON.parse(r):null; }catch{return null;}
 }
-function storeSession(conn) {
-  if (conn) localStorage.setItem(SESSION_KEY, JSON.stringify(conn));
+function storeSession(c){
+  if(c) localStorage.setItem(SESSION_KEY, JSON.stringify(c));
   else localStorage.removeItem(SESSION_KEY);
 }
 
-async function findEndpoint() {
-  for (const ep of ENDPOINTS) {
-    try {
-      const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 5000);
-      const r = await fetch(ep+'/graphql', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({query:'{ blockchain { info { version } } }'}),
-        signal: ctrl.signal
-      });
-      clearTimeout(tid);
-      if (r.ok) { log('Эндпоинт OK:', ep); return ep; }
-    } catch(e) { log('Эндпоинт недоступен:', ep); }
+function parseBalances(b){
+  const out={ nackl:'0', shell:'0', usdc:'0' };
+  if(b && b.ecc){
+    out.nackl = (BigInt(b.ecc['1']||'0')/1000000000n).toString();
+    out.shell = (BigInt(b.ecc['2']||'0')/1000000000n).toString();
+    out.usdc  = (BigInt(b.ecc['3']||'0')/1000000000n).toString();
   }
-  return ENDPOINTS[0];
+  if(b && b.native) out.shell = (BigInt(b.native)/1000000000n).toString();
+  return out;
 }
 
+/* ─── public API ─── */
 window.anWallet = {
-  sdkReady: () => sdkReady,
+  sdkReady: ()=>sdkReady,
   getSession: getStoredSession,
 
-  async connectByName(walletName) {
+  /* Подключение по имени кошелька — проверяет что кошелёк СУЩЕСТВУЕТ */
+  async connectByName(walletName){
     const sdk = await loadSdk();
-    const ep = await findEndpoint();
+    log('connectByName:', walletName);
 
-    log('Резолвим адрес по имени:', walletName);
-    const minerAddress = await sdk.get_miner_address_by_wallet_name({
-      client_config: { network: { endpoints: [ep] } },
-      wallet_name: walletName,
-    });
-    log('Адрес кошелька:', minerAddress);
+    const check = await sdk.Wallet.prototype.check_name_availability.call ?
+      null : new sdk.Wallet(ENDPOINTS, null, AN_API, APP_ID);
 
-    if (!minerAddress || minerAddress === '0'.repeat(64)) {
-      throw new Error('Кошелёк "' + walletName + '" не найден. Проверь имя.');
+    let wallet;
+    try{
+      wallet = new sdk.Wallet(ENDPOINTS, null, AN_API, APP_ID);
+    }catch(e){
+      logErr('Wallet create failed:', e);
+      throw new Error('Не удалось подключиться к блокчейну');
     }
 
-    const wallet = new sdk.Wallet([ep], null, AN_API, APP_ID);
-    const balances = { nackl: '0', shell: '0', usdc: '0' };
-    try {
-      const b = await wallet.get_multifactor_balances({ multifactor_address: minerAddress });
-      log('Raw balances:', b);
-      if (b.ecc) {
-        balances.nackl = (BigInt(b.ecc['1'] || '0') / 1000000000n).toString();
-        balances.shell = (BigInt(b.ecc['2'] || '0') / 1000000000n).toString();
-        balances.usdc = (BigInt(b.ecc['3'] || '0') / 1000000000n).toString();
-      }
-      if (b.native) {
-        balances.shell = (BigInt(b.native) / 1000000000n).toString();
-      }
-      log('Балансы:', balances);
-    } catch(e) { logErr('Ошибка баланса:', e.message); }
+    const nameInfo = await wallet.check_name_availability(walletName);
+    log('check_name_availability:', nameInfo);
+
+    if(nameInfo.is_available){
+      wallet.free();
+      throw new Error('Кошелёк "'+walletName+'" не найден. Проверь имя в AN Wallet.');
+    }
+
+    const addr = nameInfo.multifactor_address;
+    if(!addr){
+      wallet.free();
+      throw new Error('Адрес кошелька не найден');
+    }
+    log('Адрес:', addr);
+
+    const b = await wallet.get_multifactor_balances({ multifactor_address: addr });
+    const balances = parseBalances(b);
+    log('Балансы:', balances);
     wallet.free();
 
     const conn = {
-      walletName: walletName,
-      walletAddress: minerAddress,
-      balances: balances,
-      endpoint: ep,
+      walletName, walletAddress: addr,
+      balances, endpoint: ENDPOINTS[0],
       connectedAt: Date.now(),
     };
     storeSession(conn);
     return conn;
   },
 
-  async disconnect() {
+  /* Deep-link подключение через AN Wallet ( BeeConnect ) */
+  async connectDeepLink(){
+    const sdk = await loadSdk();
+    const bee = new sdk.BeeConnect();
+    log('create_shared_key_session, APP_ID:', APP_ID);
+    const session = bee.create_shared_key_session(APP_ID, 300, null);
+    bee.free();
+    log('Сессия:', session.session_id);
+    return {
+      deepLink: session.deep_link,
+      sessionId: session.session_id,
+      description: session.description,
+      sessionStateJson: session.session_state_json,
+      clientDhSecret: session.client_dh_secret,
+      createdAt: session.created_at,
+    };
+  },
+
+  async waitHello(sessionId, description, clientDhSecret, createdAt){
+    const sdk = await loadSdk();
+    const bee = new sdk.BeeConnect();
+    log('wait_wallet_hello...');
+    const t0 = Date.now();
+    const hello = await bee.wait_wallet_hello(
+      ENDPOINTS, sessionId, description, clientDhSecret, createdAt, 180, 1000
+    );
+    bee.free();
+    log('wallet_hello за', Math.round((Date.now()-t0)/1000)+'с', hello);
+
+    const addr = hello.wallet_address;
+    const wallet = new sdk.Wallet(ENDPOINTS, null, AN_API, APP_ID);
+    const b = await wallet.get_multifactor_balances({ multifactor_address: addr });
+    const balances = parseBalances(b);
+    wallet.free();
+
+    const conn = {
+      walletName: hello.wallet_name || '',
+      walletAddress: addr,
+      balances,
+      sessionId, description,
+      sessionStateJson: hello.session_state_json,
+      clientDhSecret, createdAt,
+      endpoint: ENDPOINTS[0],
+      connectedAt: Date.now(),
+    };
+    storeSession(conn);
+    return conn;
+  },
+
+  async disconnect(){
     storeSession(null);
   },
 
-  async getBalance(walletAddress) {
+  async getBalance(walletAddress){
     const sdk = await loadSdk();
-    const ep = await findEndpoint();
-    const wallet = new sdk.Wallet([ep], null, AN_API, APP_ID);
-    try {
+    const wallet = new sdk.Wallet(ENDPOINTS, null, AN_API, APP_ID);
+    try{
       const b = await wallet.get_multifactor_balances({ multifactor_address: walletAddress });
-      const balances = { nackl: '0', shell: '0', usdc: '0' };
-      if (b.ecc) {
-        balances.nackl = (BigInt(b.ecc['1'] || '0') / 1000000000n).toString();
-        balances.shell = (BigInt(b.ecc['2'] || '0') / 1000000000n).toString();
-        balances.usdc = (BigInt(b.ecc['3'] || '0') / 1000000000n).toString();
-      }
-      if (b.native) balances.shell = (BigInt(b.native) / 1000000000n).toString();
-      return balances;
-    } catch { return { nackl: '0', shell: '0', usdc: '0' }; }
-    finally { wallet.free(); }
+      return parseBalances(b);
+    }catch{return {nackl:'0',shell:'0',usdc:'0'};}
+    finally{wallet.free();}
   }
 };
 
-log('Модуль загружен, window.anWallet готов');
+log('Модуль загружен');
 </script>
 
 </body>
