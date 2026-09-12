@@ -1,5 +1,5 @@
 /* Reservation: Perimeter service worker — офлайн-кэш для PWA */
-const CACHE = "reservation-perimeter-v13";
+const CACHE = "reservation-perimeter-v14";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {

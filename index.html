@@ -1066,7 +1066,8 @@ const NAMES = ["Хмурый","Гвоздь","Ворон","Сайга","Штыр
 const DOGNAMES = ["Рекс","Пуля","Шайтан","Гром","Зола"];
 
 /* ---------- СОСТОЯНИЕ / СОХРАНЕНИЕ ---------- */
-const SAVE_KEY = "tio_nacki_save_v1";
+const SAVE_KEY_BASE = "tio_nacki_save_v1";
+let currentSaveKey = SAVE_KEY_BASE;
 let S = null;
 function blankSkills(){ return {light:0,auto:0,heavy:0,sniper:0,melee:0}; }
 function defaultSave(){
@@ -1132,14 +1133,17 @@ function migrate(s){ // совместимость со старыми сейв�
   if(s.snd===undefined)s.snd=true;                            // v7: звук
   return s;
 }
+function setSaveKeyForWallet(addr){
+  currentSaveKey = addr ? SAVE_KEY_BASE + "_wa_" + addr.slice(0,16) : SAVE_KEY_BASE;
+}
 function load(){
-  try{ const r=localStorage.getItem(SAVE_KEY); if(r){S=migrate(JSON.parse(r));return;} }catch(e){}
+  try{ const r=localStorage.getItem(currentSaveKey); if(r){S=migrate(JSON.parse(r));return;} }catch(e){}
   S = defaultSave();
 }
-function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
+function save(){ try{ localStorage.setItem(currentSaveKey, JSON.stringify(S)); }catch(e){} }
 function resetSave(){
   if(!confirm("Точно сбросить весь прогресс?"))return;
-  localStorage.removeItem(SAVE_KEY); S=defaultSave(); save();
+  localStorage.removeItem(currentSaveKey); S=defaultSave(); save();
   localStorage.removeItem('rp-wallet-session');
   show("scr-splash");
   toast("Прогресс сброшен");
@@ -1259,6 +1263,10 @@ function showWalletResult(conn, nextScreen){
   const btn = document.getElementById("splashBtnConnect");
   const nameInput = document.getElementById("splashWalletName");
   const bal = conn.balances||{};
+
+  setSaveKeyForWallet(conn.walletAddress);
+  load();
+
   status.innerHTML=`
     <div style="background:rgba(0,80,0,.15);border:1px solid rgba(0,200,0,.2);border-radius:10px;padding:12px;margin-top:8px;text-align:left">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
@@ -2572,6 +2580,8 @@ async function walletConnectByName(){
   if(status) status.innerHTML='<div style="font-size:11px;color:var(--sand)">Подключение...</div>';
   try{
     const conn = await window.anWallet.connectByName(name);
+    setSaveKeyForWallet(conn.walletAddress);
+    load();
     toast("✅ "+conn.walletName);
     renderWalletInfo();
   }catch(e){
@@ -2581,7 +2591,10 @@ async function walletConnectByName(){
 
 async function walletDisconnect(){
   if(!confirm("Отключить кошелёк?"))return;
+  save();
   window.anWallet.disconnect();
+  currentSaveKey = SAVE_KEY_BASE;
+  load();
   renderWalletInfo();
   toast("Кошелёк отключён");
 }
@@ -5384,12 +5397,20 @@ function drawDust(w,h){
 }
 
 /* ---------- ИНИЦИАЛИЗАЦИЯ ---------- */
-load();save();
-if(hasWallet()){
-  show("scr-hub");
-}else{
-  show("scr-splash");
-}
+(function(){
+  try{
+    const conn = window.anWallet && window.anWallet.getSession && window.anWallet.getSession();
+    if(conn && conn.walletAddress){
+      setSaveKeyForWallet(conn.walletAddress);
+    }
+  }catch(e){}
+  load();save();
+  if(hasWallet()){
+    show("scr-hub");
+  }else{
+    show("scr-splash");
+  }
+})();
 requestAnimationFrame(draw);
 window.addEventListener("orientationchange",()=>setTimeout(resize,300));
 if("serviceWorker"in navigator){
