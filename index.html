@@ -1197,29 +1197,42 @@ function renderSplash(){
   btn.onclick = splashConnect;
   status.innerHTML = "";
 }
+function splashLog(msg){
+  const el = document.getElementById("splashDebug");
+  if(el){
+    const t = new Date().toLocaleTimeString();
+    el.innerHTML += `<div>${t} ${msg}</div>`;
+    el.scrollTop = el.scrollHeight;
+  }
+}
 async function splashConnect(){
   const btn = document.getElementById("splashBtnConnect");
   const status = document.getElementById("splashStatus");
   if(!btn || !status) return;
   btn.disabled = true;
   btn.textContent = "⏳ Загрузка SDK (8 MB)...";
-  status.innerHTML = '<div style="font-size:11px;color:var(--sand)">Загружается криптографический модуль...</div>';
+  status.innerHTML = '<div style="font-size:11px;color:var(--sand)">Загружается криптографический модуль...</div><div id="splashDebug" style="margin-top:8px;max-height:120px;overflow-y:auto;font-size:10px;font-family:monospace;background:rgba(0,0,0,.5);padding:6px;border-radius:6px;text-align:left;color:#8fbc8f"></div>';
+  splashLog('Начинаю загрузку SDK...');
   if(!window.anWallet){
     try{
       await new Promise((res,rej)=>{
         const c=()=>{if(window.anWallet&&window.anWallet.connect){res();}else{setTimeout(c,500);}};
-        c(); setTimeout(()=>rej(new Error("SDK не загрузился. Проверь интернет.")),60000);
+        c(); setTimeout(()=>rej(new Error("SDK не загрузился (60 сек). Проверь интернет.")),60000);
       });
     }catch(e){
+      splashLog('ОШИБКА: '+e.message);
       btn.disabled=false; btn.textContent="🔗 Подключить AN Wallet";
       status.innerHTML='<div class="muted" style="color:var(--red)">'+e.message+'</div>';
       return;
     }
   }
-  status.innerHTML = '';
+  splashLog('SDK загружен ✓');
+  status.innerHTML += '';
   try{
+    splashLog('Создаю сессию...');
     const session = await window.anWallet.connect();
-    console.log('[AN Wallet] session created:', session.sessionId);
+    splashLog('Сессия создана ✓');
+    splashLog('SessionID: '+session.sessionId?.slice(0,16)+'...');
     btn.style.display = "none";
     status.innerHTML = `
       <div style="background:#fff;display:inline-block;padding:12px;border-radius:12px;margin:8px 0">
@@ -1237,17 +1250,22 @@ async function splashConnect(){
       </div>
       <div style="margin-top:10px;display:flex;gap:6px;justify-content:center">
         <div class="btn small danger" onclick="splashCancel()">Отмена</div>
-      </div>`;
+      </div>
+      <div id="splashDebug" style="margin-top:8px;max-height:100px;overflow-y:auto;font-size:10px;font-family:monospace;background:rgba(0,0,0,.5);padding:6px;border-radius:6px;text-align:left;color:#8fbc8f"></div>`;
+    splashLog('Ожидание wallet_hello...');
+    splashLog('Эндпоинт: mainnet / shellnet (авто)');
     const token = ++splashWaitToken;
     const conn = await window.anWallet.waitHello(
       session.sessionId, session.description,
       session.clientDhSecret, session.createdAt
     );
     if(token !== splashWaitToken) return;
-    toast("✅ Кошелёк подключён: " + (conn.walletName||conn.walletAddress.slice(0,8)));
+    splashLog('✓ Подключено: ' + (conn.walletName || conn.walletAddress?.slice(0,12)));
+    toast("✅ Кошелёк подключён!");
     show("scr-hub");
   }catch(e){
-    console.error('[AN Wallet] waitHello error:', e);
+    splashLog('ОШИБКА: ' + (e.message || e));
+    console.error('[RP-Wallet] error:', e);
     toast("❌ "+(e.message||e));
     status.innerHTML = `<div class="muted" style="color:var(--red)">${e.message||e}</div>
       <div style="margin-top:8px;display:flex;gap:6px;justify-content:center">
@@ -5314,30 +5332,37 @@ if("serviceWorker"in navigator){
 <script type="module">
 const BEE_SDK_URL = 'https://unpkg.com/@teamgosh/bee-sdk@5.1.1/bee_sdk.js';
 const BEE_WASM_URL = 'https://unpkg.com/@teamgosh/bee-sdk@5.1.1/bee_sdk_bg.wasm';
-const AN_ENDPOINTS = ['https://mainnet.ackinacki.org'];
-const AN_API = 'https://app-backend-dev.ackinacki.org/api';
-const APP_ID = '0x0000000000000000000000000000000000000000000000000000000000000026';
 const SESSION_KEY = 'rp-wallet-session';
+const AN_API = 'https://app-backend-dev.ackinacki.org/api';
+// Свой APP_ID для Reservation: Perimeter (не Acki Rivals!)
+const APP_ID = '0x0000000000000000000000000000000000000000000000000000000000525050';
+// Пробуем mainnet, потом shellnet — какой доступен
+const ENDPOINTS = [
+  'https://mainnet.ackinacki.org',
+  'https://shellnet.ackinacki.org',
+];
 
 let sdkMod = null;
-let beeConn = null;
-let sdkLoading = false;
 let sdkReady = false;
 let sdkError = null;
 
+function log(...args) { console.log('[RP-Wallet]', ...args); }
+function logErr(...args) { console.error('[RP-Wallet]', ...args); }
+
 async function loadBeeSdk() {
-  if (sdkReady) return;
-  if (sdkLoading) return;
-  sdkLoading = true;
+  if (sdkReady) return sdkMod;
+  log('Загрузка Bee SDK WASM (8MB)...');
+  const t0 = Date.now();
   try {
     const mod = await import(BEE_SDK_URL);
     await mod.default({ module_or_path: BEE_WASM_URL });
     sdkMod = mod;
-    beeConn = new mod.BeeConnect();
     sdkReady = true;
+    log('SDK загружен за', Date.now()-t0, 'мс');
+    return mod;
   } catch(e) {
-    sdkLoading = false;
     sdkError = e.message || String(e);
+    logErr('Ошибка загрузки SDK:', sdkError);
     throw e;
   }
 }
@@ -5348,21 +5373,55 @@ function getStoredSession() {
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
-
 function storeSession(conn) {
   if (conn) localStorage.setItem(SESSION_KEY, JSON.stringify(conn));
   else localStorage.removeItem(SESSION_KEY);
 }
 
+async function checkEndpoint(ep) {
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 5000);
+    const r = await fetch(ep + '/graphql', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({query:'{ blockchain { info { version } } }'}),
+      signal: ctrl.signal
+    });
+    clearTimeout(tid);
+    const ok = r.ok;
+    log('Эндпоинт', ep, ok ? '✓ доступен' : '✗ статус ' + r.status);
+    return ok;
+  } catch(e) {
+    log('Эндпоинт', ep, '✗ недоступен:', e.message);
+    return false;
+  }
+}
+
+async function findWorkingEndpoint() {
+  for (const ep of ENDPOINTS) {
+    if (await checkEndpoint(ep)) return ep;
+  }
+  return ENDPOINTS[0]; // fallback
+}
+
 window.anWallet = {
   sdkReady: () => sdkReady,
   sdkError: () => sdkError,
-  loading: () => sdkLoading,
   getSession: getStoredSession,
 
   async connect() {
-    await loadBeeSdk();
-    const session = beeConn.create_shared_key_session(APP_ID, 300, null);
+    const sdk = await loadBeeSdk();
+    const bee = new sdk.BeeConnect();
+    log('Создаю сессию, APP_ID:', APP_ID);
+    const session = bee.create_shared_key_session(APP_ID, 300, null);
+    log('Сессия создана:', {
+      sessionId: session.session_id,
+      description: session.description,
+      deepLink: session.deep_link?.slice(0, 80) + '...',
+      createdAt: Number(session.created_at),
+    });
+    bee.free();
     return {
       deepLink: session.deep_link,
       sessionId: session.session_id,
@@ -5374,41 +5433,58 @@ window.anWallet = {
   },
 
   async waitHello(sessionId, description, clientDhSecret, createdAt) {
-    const poll = new sdkMod.BeeConnect();
-    console.log('[AN Wallet] wait_wallet_hello starting, sessionId:', sessionId);
-    const hello = await poll.wait_wallet_hello(
-      AN_ENDPOINTS, sessionId, description, clientDhSecret, createdAt, 300, 2000
-    );
-    console.log('[AN Wallet] wait_wallet_hello got:', hello);
-    poll.free();
-    const conn = {
-      walletName: hello.wallet_name,
-      walletAddress: hello.wallet_address,
-      profileAddress: hello.profile_address,
-      sessionId: sessionId,
-      description: description,
-      sessionStateJson: hello.session_state_json,
-      clientDhSecret: clientDhSecret,
-      createdAt: createdAt,
-    };
-    storeSession(conn);
-    return conn;
+    const sdk = await loadBeeSdk();
+    const ep = await findWorkingEndpoint();
+    log('wait_wallet_hello → эндпоинт:', ep);
+    log('Параметры:', { sessionId, description: description?.slice(0,40), createdAt: Number(createdAt) });
+
+    const poll = new sdk.BeeConnect();
+    try {
+      log('Ожидание wallet_hello (до 10 мин)...');
+      const t0 = Date.now();
+      const hello = await poll.wait_wallet_hello(
+        [ep], sessionId, description, clientDhSecret, createdAt, 300, 3000
+      );
+      log('wallet_hello получен за', Math.round((Date.now()-t0)/1000), 'сек:', {
+        walletName: hello.wallet_name,
+        walletAddress: hello.wallet_address,
+        profileAddress: hello.profile_address,
+      });
+      const conn = {
+        walletName: hello.wallet_name,
+        walletAddress: hello.wallet_address,
+        profileAddress: hello.profile_address,
+        sessionId, description,
+        sessionStateJson: hello.session_state_json,
+        clientDhSecret, createdAt,
+        endpoint: ep,
+      };
+      storeSession(conn);
+      return conn;
+    } finally {
+      poll.free();
+    }
   },
 
   async disconnect(conn) {
     storeSession(null);
+    if (!conn) return;
     try {
-      await loadBeeSdk();
-      await beeConn.disconnect_session(
-        AN_ENDPOINTS, conn.sessionId, conn.description,
+      const sdk = await loadBeeSdk();
+      const bee = new sdk.BeeConnect();
+      await bee.disconnect_session(
+        ENDPOINTS, conn.sessionId, conn.description,
         conn.sessionStateJson, 'user_requested', 10, 1000
       );
-    } catch(e) { console.warn('disconnect (blockchain) failed:', e); }
+      bee.free();
+      log('Отключено');
+    } catch(e) { logErr('disconnect failed:', e); }
   },
 
   async getBalance(walletAddress) {
-    await loadBeeSdk();
-    const wallet = new sdkMod.Wallet(AN_ENDPOINTS, null, AN_API, APP_ID);
+    const sdk = await loadBeeSdk();
+    const ep = await findWorkingEndpoint();
+    const wallet = new sdk.Wallet([ep], null, AN_API, APP_ID);
     try {
       const b = await wallet.get_multifactor_balances({ multifactor_address: walletAddress });
       const raw = (b.ecc && b.ecc['1']) || '0';
@@ -5418,7 +5494,7 @@ window.anWallet = {
   }
 };
 
-console.log('[AN Wallet] SDK module loaded, window.anWallet ready');
+log('Модуль загружен, window.anWallet готов');
 </script>
 
 </body>
