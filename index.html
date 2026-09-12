@@ -5437,42 +5437,98 @@ window.anWallet = {
 
   async waitHello(sessionId, description, clientDhSecret, createdAt) {
     const sdk = await loadBeeSdk();
-    // Пробуем оба эндпоинта — кошелёк может быть на mainnet или shellnet
     const eps = ['https://mainnet.ackinacki.org', 'https://shellnet.ackinacki.org'];
-    log('wait_wallet_hello → эндпоинты:', eps);
-    log('Параметры:', { sessionId, description: description?.slice(0,60), createdAt: Number(createdAt) });
 
-    let lastErr = null;
+    // Шаг 1: Резолвим адрес профиля
+    let profileAddress = null;
+    let workingEp = null;
     for (const ep of eps) {
-      const poll = new sdk.BeeConnect();
       try {
-        log('Пробую', ep, '...');
-        const t0 = Date.now();
-        const hello = await poll.wait_wallet_hello(
-          [ep], sessionId, description, clientDhSecret, createdAt, 60, 5000
-        );
-        log('✓ wallet_hello за', Math.round((Date.now()-t0)/1000), 'сек на', ep);
-        log('wallet_name:', hello.wallet_name, 'address:', hello.wallet_address);
-        const conn = {
-          walletName: hello.wallet_name,
-          walletAddress: hello.wallet_address,
-          profileAddress: hello.profile_address,
-          sessionId, description,
-          sessionStateJson: hello.session_state_json,
-          clientDhSecret, createdAt,
-          endpoint: ep,
-        };
-        storeSession(conn);
-        poll.free();
-        return conn;
+        const bee = new sdk.BeeConnect();
+        profileAddress = await bee.resolve_profile_address([ep], description);
+        bee.free();
+        if (profileAddress && profileAddress.trim()) {
+          workingEp = ep;
+          log('Профиль найден:', profileAddress, 'на', ep);
+          break;
+        }
       } catch(e) {
-        log('✗', ep, 'ошибка:', e.message || e);
-        lastErr = e;
-      } finally {
-        poll.free();
+        log('resolve_profile_address:', ep, e.message);
       }
     }
-    throw lastErr || new Error('Не удалось подключиться ни к одному эндпоинту');
+    if (!workingEp) throw new Error('Не удалось найти эндпоинт. Проверь интернет.');
+
+    // Шаг 2: Проверяем развёрнут ли профиль
+    const bee2 = new sdk.BeeConnect();
+    const deployed = await bee2.is_session_profile_deployed([workingEp], description);
+    bee2.free();
+    log('Профиль развёрнут:', deployed);
+
+    if (!deployed) {
+      // Ждём развёртывания (кошелёк может деплоить медленно)
+      log('Ожидание развёртывания профиля...');
+      for (let i = 0; i < 30; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        const b = new sdk.BeeConnect();
+        const ok = await b.is_session_profile_deployed([workingEp], description);
+        b.free();
+        if (ok) { log('✓ Профиль развёрнут через', (i+1)*2, 'сек'); break; }
+        if (i % 5 === 4) log('Ждём... (' + ((i+1)*2) + ' сек)');
+      }
+      // Перепроверяем
+      const b3 = new sdk.BeeConnect();
+      const finalCheck = await b3.is_session_profile_deployed([workingEp], description);
+      b3.free();
+      if (!finalCheck) throw new Error('Профиль не развёрнут. Кошелёк не подтвердил подключение.');
+    }
+
+    // Шаг 3: Поллим сообщения вручную
+    log('Поллинг сообщений на профиле...');
+    const stateJson = JSON.parse(JSON.stringify({
+      encryption_root: '', my_dh_secret: clientDhSecret,
+      peer_dh_public: '', signing_public: '', signing_secret: '',
+      created_at: Number(createdAt), expires_at: 0,
+    }));
+
+    for (let attempt = 0; attempt < 60; attempt++) {
+      await new Promise(r => setTimeout(r, 3000));
+      try {
+        const b = new sdk.BeeConnect();
+        const result = await b.query_connect_session_messages({
+          session_id: sessionId,
+          description: description,
+          created_at_from: createdAt,
+          limit: 10,
+        });
+        b.free();
+
+        if (result && result.messages && result.messages.length > 0) {
+          log('Найдено сообщений:', result.messages.length);
+          for (const msg of result.messages) {
+            const typeName = msg.msg_type || msg.type || 'unknown';
+            log('  Тип:', typeName, 'от:', msg.wallet_name || msg.wallet_address || '?');
+            if (typeName === 'wallet_hello' || typeName === 'hello') {
+              log('✓ wallet_hello найден!');
+              const conn = {
+                walletName: msg.wallet_name || '',
+                walletAddress: msg.wallet_address || '',
+                profileAddress: result.profile_address || profileAddress,
+                sessionId, description,
+                sessionStateJson: result.updated_session_state_json || JSON.stringify(stateJson),
+                clientDhSecret, createdAt,
+                endpoint: workingEp,
+              };
+              storeSession(conn);
+              return conn;
+            }
+          }
+        }
+        if (attempt % 5 === 4) log('Сообщений пока нет... попытка', attempt+1);
+      } catch(e) {
+        log('Ошибка поллинга:', e.message);
+      }
+    }
+    throw new Error('Таймаут: кошелёк не ответил за 3 минуты. Попробуй подключить заново.');
   },
 
   async disconnect(conn) {
