@@ -319,6 +319,31 @@
       <div style="font-size:36px">🧿</div></div>
       <div class="statline" id="hubStats"></div>
     </div>
+    <div class="card" id="hubWalletCard" style="display:none">
+      <div class="row" style="align-items:center;margin-bottom:6px">
+        <span style="font-size:11px;color:var(--green)">●</span>
+        <span style="font-size:12px;color:var(--sand);margin-left:4px" id="hubWalletName"></span>
+        <span class="grow"></span>
+        <span style="font-size:10px;color:var(--muted);font-family:monospace" id="hubWalletAddr"></span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="flex:1;min-width:80px;background:rgba(0,0,0,.3);padding:8px;border-radius:8px;text-align:center">
+          <div style="font-size:10px;color:var(--muted)">NACKL</div>
+          <div style="font-size:16px;font-weight:700;color:var(--sand)" id="hubBalNackl">0</div>
+        </div>
+        <div style="flex:1;min-width:80px;background:rgba(0,0,0,.3);padding:8px;border-radius:8px;text-align:center">
+          <div style="font-size:10px;color:var(--muted)">SHELL</div>
+          <div style="font-size:16px;font-weight:700;color:var(--sand)" id="hubBalShell">0</div>
+        </div>
+        <div style="flex:1;min-width:80px;background:rgba(0,0,0,.3);padding:8px;border-radius:8px;text-align:center">
+          <div style="font-size:10px;color:var(--muted)">USDC</div>
+          <div style="font-size:16px;font-weight:700;color:var(--sand)" id="hubBalUsdc">0</div>
+        </div>
+      </div>
+      <div style="margin-top:6px;text-align:right">
+        <span style="font-size:10px;color:var(--blue);cursor:pointer" onclick="hubRefreshWallet()">🔄 обновить</span>
+      </div>
+    </div>
     <div class="hero" onclick="openMissions()">
       <div class="brackets"><i></i><i></i><i></i><i></i></div>
       <div class="kick">КАМПАНИЯ · PvE · 5 ОПЕРАЦИЙ</div>
@@ -337,7 +362,7 @@
       <div class="tile" onclick="openMarket()"><div class="ico">🏪</div><b>РЫНОК</b><div>Барахолка · мои лоты</div></div>
       <div class="tile" style="grid-column:1/-1;display:flex;align-items:center;gap:12px" onclick="openProfile()">
         <div class="ico" style="margin-bottom:0">⛓️</div>
-        <div style="flex:1"><b>ACKI NACKI</b><div id="hubWalletStatus">Кошелёк и он-чейн</div></div>
+        <div style="flex:1"><b>ACKI NACKI</b><div>Кошелёк и он-чейн</div></div>
         <div style="color:var(--dim);font-size:18px">›</div>
       </div>
     </div>
@@ -1211,19 +1236,44 @@ async function splashConnect(){
     return;
   }
   btn.disabled = true;
-  btn.textContent = "⏳ Загрузка SDK...";
+  btn.textContent = "⏳ Подключение...";
   status.innerHTML = '<div style="font-size:11px;color:var(--sand)">Подключение к блокчейну...</div>';
   try{
     if(!window.anWallet){
       await new Promise((res,rej)=>{
-        const c=()=>{if(window.anWallet&&window.anWallet.connectByAddress){res();}else{setTimeout(c,500);}};
+        const c=()=>{if(window.anWallet&&window.anWallet.connectByName){res();}else{setTimeout(c,500);}};
         c(); setTimeout(()=>rej(new Error("SDK не загрузился. Проверь интернет.")),60000);
       });
     }
     status.innerHTML = '<div style="font-size:11px;color:var(--sand)">Резолв адреса: '+walletName+'...</div>';
     const conn = await window.anWallet.connectByName(walletName);
-    toast("✅ Кошелёк: " + conn.walletName);
-    show("scr-hub");
+    const bal = conn.balances || {};
+    status.innerHTML = `
+      <div style="background:rgba(0,80,0,.15);border:1px solid rgba(0,200,0,.2);border-radius:10px;padding:12px;margin-top:8px;text-align:left">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+          <span style="color:var(--green);font-size:14px">✓</span>
+          <span style="color:var(--sand);font-size:13px;font-weight:600">${conn.walletName}</span>
+        </div>
+        <div style="font-size:10px;color:var(--muted);font-family:monospace;word-break:break-all;margin-bottom:8px">${conn.walletAddress}</div>
+        <div style="display:flex;gap:6px">
+          <div style="flex:1;background:rgba(0,0,0,.3);padding:6px;border-radius:6px;text-align:center">
+            <div style="font-size:9px;color:var(--muted)">NACKL</div>
+            <div style="font-size:13px;font-weight:700;color:var(--sand)">${bal.nackl||'0'}</div>
+          </div>
+          <div style="flex:1;background:rgba(0,0,0,.3);padding:6px;border-radius:6px;text-align:center">
+            <div style="font-size:9px;color:var(--muted)">SHELL</div>
+            <div style="font-size:13px;font-weight:700;color:var(--sand)">${bal.shell||'0'}</div>
+          </div>
+          <div style="flex:1;background:rgba(0,0,0,.3);padding:6px;border-radius:6px;text-align:center">
+            <div style="font-size:9px;color:var(--muted)">USDC</div>
+            <div style="font-size:13px;font-weight:700;color:var(--sand)">${bal.usdc||'0'}</div>
+          </div>
+        </div>
+      </div>`;
+    btn.textContent = "进入 ИГРУ →";
+    btn.disabled = false;
+    btn.onclick = ()=>show("scr-hub");
+    nameInput.style.display = "none";
   }catch(e){
     console.error('[RP-Wallet] error:', e);
     const errMsg = e.message || String(e) || 'Неизвестная ошибка';
@@ -1249,15 +1299,34 @@ function renderHub(){
      <span class="tag">Побед: <b>${S.wins}</b></span>
      <span class="tag">Поражений: <b>${S.losses}</b></span>
      <span class="tag">Отряд: <b>${S.roster.length}</b></span>`;
-  const ws = document.getElementById("hubWalletStatus");
-  if(ws){
-    try{
-      const conn = (window.anWallet && window.anWallet.getSession) ? window.anWallet.getSession() : null;
-      ws.textContent = conn
-        ? "AN Wallet: ✅ " + conn.walletName
-        : "Подключить AN Wallet";
-    }catch(e){ ws.textContent = "Подключить AN Wallet"; }
-  }
+  const wc = document.getElementById("hubWalletCard");
+  try{
+    const conn = (window.anWallet && window.anWallet.getSession) ? window.anWallet.getSession() : null;
+    if(conn && conn.walletAddress){
+      wc.style.display = "";
+      document.getElementById("hubWalletName").textContent = conn.walletName;
+      document.getElementById("hubWalletAddr").textContent = conn.walletAddress.slice(0,10)+"...";
+      const bal = conn.balances || {};
+      document.getElementById("hubBalNackl").textContent = bal.nackl || "0";
+      document.getElementById("hubBalShell").textContent = bal.shell || "0";
+      document.getElementById("hubBalUsdc").textContent = bal.usdc || "0";
+    } else {
+      wc.style.display = "none";
+    }
+  }catch(e){ wc.style.display = "none"; }
+}
+async function hubRefreshWallet(){
+  try{
+    const conn = window.anWallet.getSession();
+    if(!conn) return;
+    const bal = await window.anWallet.getBalance(conn.walletAddress);
+    conn.balances = bal;
+    localStorage.setItem('rp-wallet-session', JSON.stringify(conn));
+    document.getElementById("hubBalNackl").textContent = bal.nackl || "0";
+    document.getElementById("hubBalShell").textContent = bal.shell || "0";
+    document.getElementById("hubBalUsdc").textContent = bal.usdc || "0";
+    toast("🔄 Баланс обновлён");
+  }catch(e){ toast("❌ Ошибка обновления"); }
 }
 
 /* ---------- МИССИИ ---------- */
@@ -2365,17 +2434,28 @@ function renderWalletInfo(){
       </div>
       <div id="walletLoadStatus" style="margin-top:8px;text-align:center"></div>`;
   }else{
+    const bal = conn.balances || {};
     el.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <span class="wallet-badge on">● Подключён</span>
         <span style="font-size:13px;color:var(--sand)">${conn.walletName}</span>
       </div>
-      <div style="font-size:13px;margin-bottom:4px">Адрес:</div>
-      <div class="wallet-addr" onclick="navigator.clipboard.writeText('${conn.walletAddress}');toast('📋 Скопировано')">${conn.walletAddress}</div>
-      <div id="walletBalance" class="statline" style="margin-top:8px">
-        <span class="tag">Баланс: <b>${conn.balance||'...'}</b></span>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:monospace;word-break:break-all">${conn.walletAddress}</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <div style="flex:1;background:rgba(0,0,0,.3);padding:6px;border-radius:6px;text-align:center">
+          <div style="font-size:9px;color:var(--muted)">NACKL</div>
+          <div style="font-size:14px;font-weight:700;color:var(--sand)">${bal.nackl||'0'}</div>
+        </div>
+        <div style="flex:1;background:rgba(0,0,0,.3);padding:6px;border-radius:6px;text-align:center">
+          <div style="font-size:9px;color:var(--muted)">SHELL</div>
+          <div style="font-size:14px;font-weight:700;color:var(--sand)">${bal.shell||'0'}</div>
+        </div>
+        <div style="flex:1;background:rgba(0,0,0,.3);padding:6px;border-radius:6px;text-align:center">
+          <div style="font-size:9px;color:var(--muted)">USDC</div>
+          <div style="font-size:14px;font-weight:700;color:var(--sand)">${bal.usdc||'0'}</div>
+        </div>
       </div>
-      <div class="row" style="margin-top:10px">
+      <div class="row" style="margin-top:6px">
         <div class="btn small grow danger" onclick="walletDisconnect()">Отключить</div>
       </div>`;
   }
@@ -2405,18 +2485,15 @@ async function walletDisconnect(){
 }
 
 async function walletRefreshBalance(){
-  const el = document.getElementById("walletBalance");
   const conn = window.anWallet.getSession();
-  if(!conn||!el)return;
-  el.innerHTML = `<span class="tag">Баланс: <b>⏳</b></span>`;
+  if(!conn) return;
   try{
     const bal = await window.anWallet.getBalance(conn.walletAddress);
-    conn.balance = bal;
-    storeSession(conn);
-    el.innerHTML = `<span class="tag">NACKL: <b>${bal||'0'}</b></span>`;
-  }catch(e){
-    el.innerHTML = `<span class="tag">Баланс: <b style="color:var(--red)">ошибка</b></span>`;
-  }
+    conn.balances = bal;
+    localStorage.setItem('rp-wallet-session', JSON.stringify(conn));
+    renderWalletInfo();
+    toast("🔄 Баланс обновлён");
+  }catch(e){ toast("❌ Ошибка"); }
 }
 
 /* =========================================================
@@ -5295,19 +5372,26 @@ window.anWallet = {
     }
 
     const wallet = new sdk.Wallet([ep], null, AN_API, APP_ID);
-    let balance = '0';
+    const balances = { nackl: '0', shell: '0', usdc: '0' };
     try {
       const b = await wallet.get_multifactor_balances({ multifactor_address: minerAddress });
-      const raw = (b.ecc && b.ecc['1']) || '0';
-      balance = (BigInt(raw) / 1000000000n).toString();
-      log('Баланс NACKL:', balance);
+      log('Raw balances:', b);
+      if (b.ecc) {
+        balances.nackl = (BigInt(b.ecc['1'] || '0') / 1000000000n).toString();
+        balances.shell = (BigInt(b.ecc['2'] || '0') / 1000000000n).toString();
+        balances.usdc = (BigInt(b.ecc['3'] || '0') / 1000000000n).toString();
+      }
+      if (b.native) {
+        balances.shell = (BigInt(b.native) / 1000000000n).toString();
+      }
+      log('Балансы:', balances);
     } catch(e) { logErr('Ошибка баланса:', e.message); }
     wallet.free();
 
     const conn = {
       walletName: walletName,
       walletAddress: minerAddress,
-      balance: balance,
+      balances: balances,
       endpoint: ep,
       connectedAt: Date.now(),
     };
@@ -5325,9 +5409,15 @@ window.anWallet = {
     const wallet = new sdk.Wallet([ep], null, AN_API, APP_ID);
     try {
       const b = await wallet.get_multifactor_balances({ multifactor_address: walletAddress });
-      const raw = (b.ecc && b.ecc['1']) || '0';
-      return (BigInt(raw) / 1000000000n).toString();
-    } catch { return null; }
+      const balances = { nackl: '0', shell: '0', usdc: '0' };
+      if (b.ecc) {
+        balances.nackl = (BigInt(b.ecc['1'] || '0') / 1000000000n).toString();
+        balances.shell = (BigInt(b.ecc['2'] || '0') / 1000000000n).toString();
+        balances.usdc = (BigInt(b.ecc['3'] || '0') / 1000000000n).toString();
+      }
+      if (b.native) balances.shell = (BigInt(b.native) / 1000000000n).toString();
+      return balances;
+    } catch { return { nackl: '0', shell: '0', usdc: '0' }; }
     finally { wallet.free(); }
   }
 };
