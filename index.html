@@ -1267,6 +1267,11 @@ function showWalletResult(conn, nextScreen){
   setSaveKeyForWallet(conn.walletAddress);
   load();
 
+  if(!S.nick || S.nick.startsWith("Сталкер-")){
+    S.nick = conn.walletName || S.nick;
+    save();
+  }
+
   status.innerHTML=`
     <div style="background:rgba(0,80,0,.15);border:1px solid rgba(0,200,0,.2);border-radius:10px;padding:12px;margin-top:8px;text-align:left">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
@@ -1689,6 +1694,13 @@ const ROOM_MODES = {
 };
 let roomMode="1x1", roomsList=[];
 const RIVAL_NICKS=["Жекан","Молот","СерыйВолк","Затвор","Кудрявый","Стрелка","Болт","Хан","Леший","Цыган","Артист","Косой"];
+
+function getLocalRooms(){
+  try{ return JSON.parse(localStorage.getItem(currentSaveKey+"_rooms")||"[]"); }catch(e){ return []; }
+}
+function saveLocalRooms(arr){
+  localStorage.setItem(currentSaveKey+"_rooms", JSON.stringify(arr));
+}
 function genRooms(){
   const n=3+rnd(0,2);
   const list=[];
@@ -1699,9 +1711,14 @@ function genRooms(){
       host:pick(RIVAL_NICKS)+rnd(10,99),
       rating:Math.max(800,S.rating+spread),
       stake:pick([0,50,100,200,400]),
-      naked:Math.random()<0.25, // «голый» бой — без экипировки, как в жанровой классике!
+      naked:Math.random()<0.25,
+      isBot:true,
     });
   }
+  const local=getLocalRooms().filter(r=>Date.now()-r.createdAt<600000);
+  saveLocalRooms(local);
+  return list.concat(local);
+}
   return list;
 }
 function openRooms(){
@@ -1747,17 +1764,17 @@ function renderRooms(){
   </div>
   <h2 class="sub">Открытые комнаты</h2>`;
   roomsList.forEach((r,i)=>{
-    html+=`<div class="room">
-      <div class="rmode">${roomMode}</div>
-      <div class="rinfo"><b>${r.host}</b> ${r.naked?'<span class="tag">🚿 голый бой</span>':""}
+    const isBot = r.isBot;
+    html+=`<div class="room" style="${isBot?"":"border-left:2px solid var(--blue)"}">
+      <div class="rmode">${r.mode||roomMode}</div>
+      <div class="rinfo"><b>${r.host}</b> ${r.naked?'<span class="tag">🚿 голый бой</span>':""}${isBot?'<span class="tag">🤖</span>':'<span class="tag" style="background:rgba(0,100,200,.2);color:var(--blue)">игрок</span>'}
         <div class="muted">🏆 ${r.rating} · ставка ${r.stake?r.stake+" 💰":"без ставки"}</div></div>
       <div class="btn small primary" onclick="joinRoom(${i})">ВОЙТИ</div>
     </div>`;
   });
-  html+=`<div class="card" style="margin-top:10px"><h3>⛓️ Он-чейн арена</h3>
-    <div class="muted">Контракт <b>TIOArena</b>: создание комнаты блокирует ставку в эскроу,
-    результат боя подписывают оба игрока, победитель забирает банк.
-    Команды: <code>node sync.mjs room-create / room-join / room-result</code>.</div></div>`;
+  html+=`<div class="card" style="margin-top:10px"><h3>ℹ️ О PvP</h3>
+    <div class="muted" style="font-size:12px">Боты — ИИ на этом же устройстве. Реальные игроки — те, кто зашли под своими AN Wallet на этом же устройстве.
+    Кросс-девайс PvP будет доступен после деплоя контракта <b>PerimeterArena</b> на блокчейн.</div></div>`;
   el.innerHTML=html;
 }
 function setRoomMode(k){ roomMode=k; roomsList=genRooms(); renderRooms(); }
@@ -1781,12 +1798,17 @@ function waitInRoom(stake, naked){
   const md=ROOM_MODES[roomMode];
   waitingForOpponent = true;
   myCreatedRoom = {
+    id:"my_"+Date.now(),
     stake, naked, mode: roomMode,
     hostName: S.nick,
     hostRating: S.rating,
     units: md.units,
     createdAt: Date.now(),
+    isBot: false,
   };
+  const local=getLocalRooms();
+  local.push(myCreatedRoom);
+  saveLocalRooms(local);
   show("scr-rooms");
   renderWaitingRoom();
 }
@@ -1839,19 +1861,28 @@ function renderWaitingSquad(){
   el.innerHTML=html;
 }
 function cancelWait(){
+  if(myCreatedRoom){
+    const local=getLocalRooms().filter(r=>r.id!==myCreatedRoom.id);
+    saveLocalRooms(local);
+  }
   waitingForOpponent = false;
   myCreatedRoom = null;
+  if(waitingTimerInterval) clearInterval(waitingTimerInterval);
   renderRooms();
 }
 function joinRoom(i){
   const r=roomsList[i]; if(!r)return;
-  const md=ROOM_MODES[roomMode];
+  const md=ROOM_MODES[r.mode||roomMode];
   if(S.roster.length<md.units){toast("Нужно бойцов: "+md.units+" — найми ещё");return;}
   if(r.stake>S.credits){toast("Не хватает на ставку ("+r.stake+")");return;}
   if(waitingForOpponent && myCreatedRoom){
     waitingForOpponent = false;
     myCreatedRoom = null;
     if(waitingTimerInterval) clearInterval(waitingTimerInterval);
+  }
+  if(!r.isBot){
+    const local=getLocalRooms().filter(lr=>lr.id!==r.id);
+    saveLocalRooms(local);
   }
   startRoomBattle(r.stake, r.naked, r.host, r.rating);
 }
@@ -2582,6 +2613,10 @@ async function walletConnectByName(){
     const conn = await window.anWallet.connectByName(name);
     setSaveKeyForWallet(conn.walletAddress);
     load();
+    if(!S.nick || S.nick.startsWith("Сталкер-")){
+      S.nick = conn.walletName || S.nick;
+      save();
+    }
     toast("✅ "+conn.walletName);
     renderWalletInfo();
   }catch(e){
