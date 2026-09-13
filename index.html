@@ -1269,7 +1269,7 @@ function renderSplash(){
 }
 
 /* SPLASH state */
-let _pendingAuth = null; // { walletName, walletAddress, balances, deepLink, secret, miningPublic, minerAddress }
+let _pendingAuth = null;
 
 async function splashManualConnect(){
   const btn = document.getElementById("splashBtnConnect");
@@ -1282,58 +1282,23 @@ async function splashManualConnect(){
     return;
   }
   btn.disabled=true;
-  btn.textContent="⏳ Проверка...";
-  status.innerHTML='<div style="font-size:11px;color:var(--sand)">[1/4] Проверяю кошелёк...</div>';
+  btn.textContent="⏳ Подключение...";
+  status.innerHTML='<div style="font-size:11px;color:var(--sand)">[1/3] Проверяю кошелёк...</div>';
   try{
     if(!window.anWallet){ await waitForWallet(); }
     const info = await window.anWallet.connectByName(walletName);
-    status.innerHTML='<div style="font-size:11px;color:var(--sand)">[2/4] Генерирую ключи авторизации...</div>';
-    const keys = await window.anWallet.genDeepLink(walletName);
-    _pendingAuth = { walletName: info.walletName, walletAddress: info.walletAddress, balances: info.balances, deepLink: keys.deep_link, secret: keys.secret, miningPublic: keys.public, minerAddress: keys.minerAddress };
-    status.innerHTML=`
-      <div style="background:rgba(0,60,120,.15);border:1px solid rgba(0,100,200,.2);border-radius:10px;padding:14px;margin-top:8px;text-align:center">
-        <div style="font-size:12px;color:var(--sand);margin-bottom:10px">Найден: <b>${info.walletName}</b></div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Подтверди подключение в AN Wallet</div>
-        <a href="${keys.deep_link}" id="splashDeepLink"
-           style="display:inline-block;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;margin-bottom:8px">
-          🔗 Открыть AN Wallet
-        </a>
-        <div style="font-size:10px;color:var(--dim);margin-top:6px">После подтверждения нажми «Готово»</div>
-        <div style="display:flex;gap:8px;margin-top:12px;justify-content:center">
-          <div class="btn small" onclick="splashConfirmAuth()" style="background:rgba(0,180,0,.2);border:1px solid rgba(0,200,0,.3)">✓ Готово</div>
-          <div class="btn small" onclick="splashCancelAuth()">✕ Отмена</div>
-        </div>
-      </div>`;
-    btn.style.display="none";
-    nameInput.style.display="none";
+    status.innerHTML='<div style="font-size:11px;color:var(--sand)">[2/3] Получаю баланс...</div>';
+    const balances = await window.anWallet.getBalance(info.walletAddress);
+    const conn = { walletName: info.walletName, walletAddress: info.walletAddress, balances, connectedAt: Date.now() };
+    storeSession(conn);
+    status.innerHTML='<div style="font-size:11px;color:var(--green)">[3/3] Готово!</div>';
+    setTimeout(()=> showWalletResult(conn, "scr-hub"), 400);
   }catch(e){
     const msg = (e && e.message) ? e.message : String(e);
     status.innerHTML='<div style="color:var(--red);font-size:11px;margin:6px 0">❌ '+msg+'</div><div class="btn small" onclick="splashManualConnect()">Попробовать снова</div>';
   }finally{
     btn.disabled=false;
     btn.textContent="Войти →";
-  }
-}
-
-async function splashConfirmAuth(){
-  const status = document.getElementById("splashStatus");
-  if(!_pendingAuth || !status) return;
-  if(!_pendingAuth.minerAddress){
-    status.innerHTML='<div style="color:var(--red);font-size:11px;margin:6px 0">❌ Контракт майнера не найден для этого кошелька. Убедись что кошелёк активирован в AN Wallet.</div><div class="btn small" onclick="splashCancelAuth()">Начать заново</div>';
-    return;
-  }
-  status.innerHTML='<div style="font-size:11px;color:var(--sand)">[3/4] Ожидаю подтверждения в блокчейне (~30 сек)...</div>';
-  try{
-    await window.anWallet.ensureAuthorized(_pendingAuth.minerAddress, _pendingAuth.miningPublic);
-    status.innerHTML='<div style="font-size:11px;color:var(--green)">[4/4] Авторизация подтверждена!</div>';
-    const balances = await window.anWallet.getBalance(_pendingAuth.walletAddress);
-    const conn = { walletName: _pendingAuth.walletName, walletAddress: _pendingAuth.walletAddress, balances, connectedAt: Date.now() };
-    storeSession(conn);
-    _pendingAuth = null;
-    setTimeout(()=> showWalletResult(conn, "scr-hub"), 600);
-  }catch(e){
-    const msg = (e && e.message) ? e.message : String(e);
-    status.innerHTML='<div style="color:var(--red);font-size:11px;margin:6px 0">❌ '+msg+'</div><div class="btn small" onclick="splashCancelAuth()">Начать заново</div>';
   }
 }
 
@@ -5671,33 +5636,9 @@ window.anWallet = {
     if(nameInfo.is_available){ wallet.free(); throw new Error('Кошелёк "'+walletName+'" не найден'); }
     const addr = nameInfo.multifactor_address;
     if(!addr){ wallet.free(); throw new Error('Адрес кошелька не найден'); }
-    const b = await wallet.get_multifactor_balances({ multifactor_address: addr });
-    const balances = parseBalances(b);
     wallet.free();
-    return { walletName, walletAddress: addr, balances };
+    return { walletName, walletAddress: addr };
   },
-
-  async genDeepLink(walletName){
-    const sdk = await loadSdk();
-    const keys = await sdk.gen_mining_keys(APP_ID);
-    let minerAddress = null;
-    try { minerAddress = await sdk.get_miner_address_by_wallet_name(walletName); } catch(e){}
-    return { deep_link: keys.deep_link, secret: keys.secret, public: keys.public, minerAddress };
-  },
-
-  async ensureAuthorized(minerAddress, expectedPublic){
-    const sdk = await loadSdk();
-    await sdk.ensure_mining_keys_propagated({
-      client_config: { network: { endpoints: ENDPOINTS } },
-      miner_address: minerAddress,
-      app_id: APP_ID,
-      expected_owner_public: expectedPublic,
-      max_attempts: 60,
-      interval_ms: 1500,
-    });
-  },
-
-  async disconnect(){ storeSession(null); },
 
   async getBalance(walletAddress){
     const sdk = await loadSdk();
@@ -5708,6 +5649,8 @@ window.anWallet = {
     }catch{return {nackl:'0',shell:'0',usdc:'0'};}
     finally{wallet.free();}
   },
+
+  async disconnect(){ storeSession(null); },
 
   reportBattleOffline(win, newRating, hash){
     const pending=JSON.parse(localStorage.getItem('rp-pending-txs')||'[]');
