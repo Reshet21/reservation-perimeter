@@ -1269,7 +1269,7 @@ function renderSplash(){
 }
 
 /* SPLASH state */
-let _pendingAuth = null; // { walletName, walletAddress, balances, deepLink, secret, miningPublic }
+let _pendingAuth = null; // { walletName, walletAddress, balances, deepLink, secret, miningPublic, minerAddress }
 
 async function splashManualConnect(){
   const btn = document.getElementById("splashBtnConnect");
@@ -1289,7 +1289,7 @@ async function splashManualConnect(){
     const info = await window.anWallet.connectByName(walletName);
     status.innerHTML='<div style="font-size:11px;color:var(--sand)">[2/4] Генерирую ключи авторизации...</div>';
     const keys = await window.anWallet.genDeepLink(walletName);
-    _pendingAuth = { walletName: info.walletName, walletAddress: info.walletAddress, balances: info.balances, deepLink: keys.deep_link, secret: keys.secret, miningPublic: keys.public };
+    _pendingAuth = { walletName: info.walletName, walletAddress: info.walletAddress, balances: info.balances, deepLink: keys.deep_link, secret: keys.secret, miningPublic: keys.public, minerAddress: keys.minerAddress };
     status.innerHTML=`
       <div style="background:rgba(0,60,120,.15);border:1px solid rgba(0,100,200,.2);border-radius:10px;padding:14px;margin-top:8px;text-align:center">
         <div style="font-size:12px;color:var(--sand);margin-bottom:10px">Найден: <b>${info.walletName}</b></div>
@@ -1317,21 +1317,23 @@ async function splashManualConnect(){
 
 async function splashConfirmAuth(){
   const status = document.getElementById("splashStatus");
-  const btn = document.getElementById("splashBtnConnect");
   if(!_pendingAuth || !status) return;
-  status.innerHTML='<div style="font-size:11px;color:var(--sand)">[3/4] Ожидаю подтверждения в блокчейне...</div>';
+  if(!_pendingAuth.minerAddress){
+    status.innerHTML='<div style="color:var(--red);font-size:11px;margin:6px 0">❌ Контракт майнера не найден для этого кошелька. Убедись что кошелёк активирован в AN Wallet.</div><div class="btn small" onclick="splashCancelAuth()">Начать заново</div>';
+    return;
+  }
+  status.innerHTML='<div style="font-size:11px;color:var(--sand)">[3/4] Ожидаю подтверждения в блокчейне (~30 сек)...</div>';
   try{
-    await window.anWallet.ensureAuthorized(_pendingAuth.walletAddress, _pendingAuth.miningPublic);
-    status.innerHTML='<div style="font-size:11px;color:var(--sand)">[4/4] Проверяю подпись...</div>';
-    await window.anWallet.addTap(Math.floor(Math.random()*1000), Math.floor(Math.random()*1000));
+    await window.anWallet.ensureAuthorized(_pendingAuth.minerAddress, _pendingAuth.miningPublic);
+    status.innerHTML='<div style="font-size:11px;color:var(--green)">[4/4] Авторизация подтверждена!</div>';
     const balances = await window.anWallet.getBalance(_pendingAuth.walletAddress);
     const conn = { walletName: _pendingAuth.walletName, walletAddress: _pendingAuth.walletAddress, balances, connectedAt: Date.now() };
     storeSession(conn);
     _pendingAuth = null;
-    showWalletResult(conn, "scr-hub");
+    setTimeout(()=> showWalletResult(conn, "scr-hub"), 600);
   }catch(e){
     const msg = (e && e.message) ? e.message : String(e);
-    status.innerHTML='<div style="color:var(--red);font-size:11px;margin:6px 0">❌ Ошибка: '+msg+'</div><div class="btn small" onclick="splashCancelAuth()">Начать заново</div>';
+    status.innerHTML='<div style="color:var(--red);font-size:11px;margin:6px 0">❌ '+msg+'</div><div class="btn small" onclick="splashCancelAuth()">Начать заново</div>';
   }
 }
 
@@ -5677,13 +5679,15 @@ window.anWallet = {
 
   async genDeepLink(walletName){
     const sdk = await loadSdk();
-    const result = await sdk.gen_mining_keys(APP_ID);
-    return { deep_link: result.deep_link, secret: result.secret, public: result.public };
+    const keys = await sdk.gen_mining_keys(APP_ID);
+    let minerAddress = null;
+    try { minerAddress = await sdk.get_miner_address_by_wallet_name(walletName); } catch(e){}
+    return { deep_link: keys.deep_link, secret: keys.secret, public: keys.public, minerAddress };
   },
 
   async ensureAuthorized(minerAddress, expectedPublic){
     const sdk = await loadSdk();
-    const result = await sdk.ensure_mining_keys_propagated({
+    await sdk.ensure_mining_keys_propagated({
       client_config: { network: { endpoints: ENDPOINTS } },
       miner_address: minerAddress,
       app_id: APP_ID,
@@ -5691,12 +5695,6 @@ window.anWallet = {
       max_attempts: 60,
       interval_ms: 1500,
     });
-    return result;
-  },
-
-  async addTap(x, y){
-    const sdk = await loadSdk();
-    return sdk.add_tap(x, y);
   },
 
   async disconnect(){ storeSession(null); },
