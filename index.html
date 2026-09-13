@@ -1269,11 +1269,10 @@ function renderSplash(){
 }
 
 async function splashManualConnect(){
-  console.log('[RP] splashManualConnect вызван');
   const btn = document.getElementById("splashBtnConnect");
   const status = document.getElementById("splashStatus");
   const nameInput = document.getElementById("splashWalletName");
-  if(!btn || !status || !nameInput) { console.log('[RP] Элементы не найдены'); return; }
+  if(!btn || !status || !nameInput) return;
   const walletName = nameInput.value.trim();
   if(!walletName){
     status.innerHTML='<div style="color:var(--red);font-size:12px">Введи имя кошелька</div>';
@@ -1281,22 +1280,19 @@ async function splashManualConnect(){
   }
   btn.disabled=true;
   btn.textContent="⏳ Подключение...";
-  status.innerHTML='<div style="font-size:11px;color:var(--sand)">Проверка кошелька...</div>';
+  status.innerHTML='<div style="font-size:11px;color:var(--sand)">[1/4] Проверка API...</div>';
   try{
-    console.log('[RP] anWallet:', typeof window.anWallet);
     if(!window.anWallet){
-      console.log('[RP] anWallet не найден, жду...');
+      status.innerHTML='<div style="font-size:11px;color:var(--amber)">[1/4] Жду загрузку модуля...</div>';
       await waitForWallet();
     }
-    console.log('[RP] Вызываю connectByName...');
+    status.innerHTML='<div style="font-size:11px;color:var(--sand)">[2/4] Подключение к блокчейну...</div>';
     const conn = await window.anWallet.connectByName(walletName);
-    console.log('[RP] Результат:', conn);
+    status.innerHTML='<div style="font-size:11px;color:var(--green)">[4/4] Готово!</div>';
     showWalletResult(conn, "scr-hub");
   }catch(e){
-    console.error('[RP] ОШИБКА:', e);
-    const msg = e.message||String(e)||'Ошибка';
-    status.innerHTML=`<div style="color:var(--red);font-size:12px;margin:6px 0">${msg}</div>
-      <div class="btn small" onclick="splashManualConnect()">Попробовать снова</div>`;
+    const msg = (e && e.message) ? e.message : String(e);
+    status.innerHTML='<div style="color:var(--red);font-size:11px;margin:6px 0">❌ '+msg+'</div><div class="btn small" onclick="splashManualConnect()">Попробовать снова</div>';
   }finally{
     btn.disabled=false;
     btn.textContent="Войти →";
