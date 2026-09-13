@@ -289,6 +289,7 @@
       <div class="card" style="text-align:left">
         <h3>🔑 Подключи кошелёк</h3>
         <div class="muted" style="margin:6px 0">Введи имя своего <b>AN Wallet</b> для входа в Зону.</div>
+        <div id="splashSdkStatus" style="margin:8px 0;font-size:11px;color:var(--dim)"></div>
         <div style="margin-top:10px">
           <input id="splashWalletName" type="text" placeholder="МойWallet123" autocomplete="off"
             style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.4);color:var(--sand);font-size:14px;outline:none;box-sizing:border-box">
@@ -451,6 +452,17 @@
     </div>
 
     <div class="card">
+      <h3>🔐 Игровой ключ</h3>
+      <div class="muted" style="margin:6px 0">Ed25519 ключ для подписания транзакций на блокчейне.
+        Хранится локально в IndexedDB. <b>Не потеряй seed!</b></div>
+      <div id="gameKeyInfo"></div>
+      <div class="row" style="margin-top:8px">
+        <div class="btn small grow" onclick="showGameKey()">👁 Показать ключ</div>
+        <div class="btn small grow" onclick="exportGameKey()">💾 Экспорт</div>
+      </div>
+    </div>
+
+    <div class="card">
       <h3>⛓️ Acki Nacki (Shellnet)</h3>
       <div class="muted" style="margin:6px 0">Контракт <b>PerimeterProfiles</b> в тестовой сети Shellnet.
         Укажи адрес задеплоенного контракта для он-чейн синхронизации.</div>
@@ -467,6 +479,15 @@
       </div>
       <div class="muted" id="chainStatus" style="margin-top:8px">Статус: офлайн</div>
       <textarea id="payloadBox" style="display:none;margin-top:8px" readonly></textarea>
+    </div>
+
+    <div class="card">
+      <h3>📋 Ожидающие транзакции</h3>
+      <div id="pendingTxsInfo"></div>
+      <div class="row" style="margin-top:8px">
+        <div class="btn small grow" onclick="refreshPendingTxs()">🔄 Обновить</div>
+        <div class="btn small grow danger" onclick="clearPendingTxs()">🗑 Очистить</div>
+      </div>
     </div>
 
     <div class="card">
@@ -1218,6 +1239,7 @@ function genericModal(html){
 function renderSplash(){
   const status = document.getElementById("splashStatus");
   const btn = document.getElementById("splashBtnConnect");
+  const sdkStatus = document.getElementById("splashSdkStatus");
   if(!status || !btn) return;
   if(hasWallet()){
     status.innerHTML = '<div style="color:var(--green);font-size:13px">✅ Кошелёк подключён</div>';
@@ -1228,13 +1250,30 @@ function renderSplash(){
   btn.textContent = "Войти →";
   btn.onclick = splashManualConnect;
   status.innerHTML = "";
+  // Показываем статус загрузки SDK
+  if(sdkStatus){
+    if(window.anWallet && window.anWallet.sdkReady && window.anWallet.sdkReady()){
+      sdkStatus.innerHTML = '<span style="color:var(--green)">● SDK загружен</span>';
+    }else{
+      sdkStatus.innerHTML = '<span style="color:var(--amber)">⏳ Загрузка SDK блокчейна...</span>';
+      // Периодически проверяем
+      const check = setInterval(()=>{
+        if(window.anWallet && window.anWallet.sdkReady && window.anWallet.sdkReady()){
+          sdkStatus.innerHTML = '<span style="color:var(--green)">● SDK загружен</span>';
+          clearInterval(check);
+        }
+      }, 1000);
+      setTimeout(()=>clearInterval(check), 30000);
+    }
+  }
 }
 
 async function splashManualConnect(){
+  console.log('[RP] splashManualConnect вызван');
   const btn = document.getElementById("splashBtnConnect");
   const status = document.getElementById("splashStatus");
   const nameInput = document.getElementById("splashWalletName");
-  if(!btn || !status || !nameInput) return;
+  if(!btn || !status || !nameInput) { console.log('[RP] Элементы не найдены'); return; }
   const walletName = nameInput.value.trim();
   if(!walletName){
     status.innerHTML='<div style="color:var(--red);font-size:12px">Введи имя кошелька</div>';
@@ -1244,11 +1283,17 @@ async function splashManualConnect(){
   btn.textContent="⏳ Подключение...";
   status.innerHTML='<div style="font-size:11px;color:var(--sand)">Проверка кошелька...</div>';
   try{
-    if(!window.anWallet) await waitForWallet();
+    console.log('[RP] anWallet:', typeof window.anWallet);
+    if(!window.anWallet){
+      console.log('[RP] anWallet не найден, жду...');
+      await waitForWallet();
+    }
+    console.log('[RP] Вызываю connectByName...');
     const conn = await window.anWallet.connectByName(walletName);
+    console.log('[RP] Результат:', conn);
     showWalletResult(conn, "scr-hub");
   }catch(e){
-    logErr('Manual error:', e);
+    console.error('[RP] ОШИБКА:', e);
     const msg = e.message||String(e)||'Ошибка';
     status.innerHTML=`<div style="color:var(--red);font-size:12px;margin:6px 0">${msg}</div>
       <div class="btn small" onclick="splashManualConnect()">Попробовать снова</div>`;
@@ -2496,6 +2541,8 @@ function openProfile(){
      <span class="tag">Боёв <b>${S.battles}</b></span>
      <span class="tag">W/L <b>${S.wins}/${S.losses}</b></span>`;
   renderWalletInfo();
+  renderGameKeyInfo();
+  refreshPendingTxs();
   show("scr-profile");
 }
 function saveNick(){
@@ -2644,6 +2691,83 @@ async function walletRefreshBalance(){
     renderWalletInfo();
     toast("🔄 Баланс обновлён");
   }catch(e){ toast("❌ Ошибка"); }
+}
+
+/* ---------- ИГРОВОЙ КЛЮЧ ---------- */
+function renderGameKeyInfo(){
+  const el = document.getElementById("gameKeyInfo");
+  if(!el) return;
+  const pk = window.anWallet.getPublicKey();
+  if(!pk){
+    el.innerHTML = '<div class="muted">Ключ не сгенерирован. Подключи кошелёк для генерации ключа.</div>';
+    return;
+  }
+  el.innerHTML = `
+    <div style="font-family:monospace;font-size:11px;color:var(--amber);word-break:break-all;
+      background:rgba(255,196,107,.08);padding:8px 10px;border-radius:10px;margin-top:6px;
+      border:1px solid rgba(255,196,107,.15)">
+      <div style="font-size:10px;color:var(--dim);margin-bottom:4px">Публичный ключ (player ID):</div>
+      ${pk}
+    </div>
+    <div class="muted" style="margin-top:6px;font-size:11px">
+      Приватный ключ хранится в IndexedDB и не покидает браузер.
+    </div>`;
+}
+
+function showGameKey(){
+  const el = document.getElementById("gameKeyInfo");
+  if(!el) return;
+  const pk = window.anWallet.getPublicKey();
+  if(!pk){ toast("Ключ не сгенерирован"); return; }
+  el.innerHTML = `
+    <div style="font-family:monospace;font-size:10px;color:var(--sand);word-break:break-all;
+      background:rgba(0,0,0,.4);padding:10px;border-radius:10px;border:1px solid var(--line);margin-top:6px">
+      <div><b style="color:var(--amber)">Публичный ключ:</b><br>${pk}</div>
+    </div>
+    <div class="muted" style="margin-top:6px;font-size:11px">
+      Приватный ключ (seed) хранится в IndexedDB. Для экспорта используй бэкап данных браузера.
+    </div>`;
+}
+
+function exportGameKey(){
+  const keys = window.anWallet.exportKeys();
+  if(!keys || !keys.publicKey){ toast("Ключ не сгенерирован"); return; }
+  const data = JSON.stringify(keys, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'rp-key-' + (keys.walletName || 'backup') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast("💾 Экспортировано");
+}
+
+function refreshPendingTxs(){
+  const el = document.getElementById("pendingTxsInfo");
+  if(!el) return;
+  const txs = window.anWallet.getPendingTxs();
+  if(!txs.length){
+    el.innerHTML = '<div class="muted">Нет ожидающих транзакций</div>';
+    return;
+  }
+  el.innerHTML = txs.map((tx) => {
+    const age = Math.floor((Date.now() - (tx.ts||tx.timestamp||0)) / 60000);
+    const fn = tx.fn || tx.payload?.function || 'unknown';
+    return `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)">
+      <div style="flex:1;font-size:12px">
+        <div style="color:var(--sand)">${fn}</div>
+        <div class="muted">${age} мин назад</div>
+      </div>
+      <div style="font-size:10px;color:var(--dim)">⏳</div>
+    </div>`;
+  }).join("");
+}
+
+function clearPendingTxs(){
+  window.anWallet.clearPendingTxs();
+  refreshPendingTxs();
+  toast("🗑 Очищено");
 }
 
 /* =========================================================
@@ -5454,40 +5578,44 @@ if("serviceWorker"in navigator){
 </script>
 
 <!-- =========================================================
-     AN WALLET — Bee SDK (WASM) подключение к блокчейну
+     AN WALLET — Bee SDK (WASM) + ключи + GraphQL
      ========================================================= -->
-<script type="module">
+<script>
 const BEE_SDK_URL = 'https://unpkg.com/@teamgosh/bee-sdk@5.1.1/bee_sdk.js';
 const BEE_WASM_URL = 'https://unpkg.com/@teamgosh/bee-sdk@5.1.1/bee_sdk_bg.wasm';
 const SESSION_KEY = 'rp-wallet-session';
 const AN_API = 'https://app-backend-dev.ackinacki.org/api';
 const APP_ID = '0x0000000000000000000000000000000000000000000000000000000000000026';
 const ENDPOINTS = ['https://mainnet.ackinacki.org'];
+const KEYS_DB = 'rp-wallet-keys';
 
 let sdkMod = null;
 let sdkReady = false;
+let _signingKey = null;
+let _signingAlgo = null;
+let _publicKeyHex = null;
 
 function log(...a){ console.log('[RP]', ...a); }
 function logErr(...a){ console.error('[RP]', ...a); }
+function bytesToHex(bytes){ return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+function hexToBytes(hex){ hex=hex.replace(/^0x/,''); const b=new Uint8Array(hex.length/2); for(let i=0;i<hex.length;i+=2)b[i/2]=parseInt(hex.substr(i,2),16); return b; }
 
 async function loadSdk(){
   if(sdkReady) return sdkMod;
-  log('Загрузка SDK...');
+  console.log('[RP] Загрузка SDK...', BEE_SDK_URL);
   const t0=Date.now();
-  const mod = await import(BEE_SDK_URL);
-  await mod.default({ module_or_path: BEE_WASM_URL });
-  sdkMod = mod;
-  sdkReady = true;
-  log('SDK OK', Date.now()-t0+'мс');
-  return mod;
-}
-
-function getStoredSession(){
-  try{ const r=localStorage.getItem(SESSION_KEY); return r?JSON.parse(r):null; }catch{return null;}
-}
-function storeSession(c){
-  if(c) localStorage.setItem(SESSION_KEY, JSON.stringify(c));
-  else localStorage.removeItem(SESSION_KEY);
+  try{
+    const mod = await import(BEE_SDK_URL);
+    console.log('[RP] import OK, загружаю WASM...');
+    await mod.default({ module_or_path: BEE_WASM_URL });
+    sdkMod = mod;
+    sdkReady = true;
+    console.log('[RP] SDK OK', Date.now()-t0+'мс');
+    return mod;
+  }catch(e){
+    console.error('[RP] loadSdk ОШИБКА:', e);
+    throw e;
+  }
 }
 
 function parseBalances(b){
@@ -5501,56 +5629,108 @@ function parseBalances(b){
   return out;
 }
 
-/* ─── public API ─── */
+function getStoredSession(){
+  try{ const r=localStorage.getItem(SESSION_KEY); return r?JSON.parse(r):null; }catch{return null;}
+}
+function storeSession(c){
+  if(c) localStorage.setItem(SESSION_KEY, JSON.stringify(c));
+  else localStorage.removeItem(SESSION_KEY);
+}
+
+/* ─── Ed25519 ключи ─── */
+let _keysDb = null;
+async function openKeysDb(){
+  if(_keysDb) return _keysDb;
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open(KEYS_DB,1);
+    req.onupgradeneeded=e=>{ const db=e.target.result; if(!db.objectStoreNames.contains('k'))db.createObjectStore('k'); };
+    req.onsuccess=e=>{ _keysDb=e.target.result; res(_keysDb); };
+    req.onerror=()=>rej(req.error);
+  });
+}
+async function idbGet(key){ const db=await openKeysDb(); return new Promise((r,j)=>{ const tx=db.transaction('k','readonly'); const req=tx.objectStore('k').get(key); req.onsuccess=()=>r(req.result); req.onerror=()=>j(req.error); }); }
+async function idbSet(key,val){ const db=await openKeysDb(); return new Promise((r,j)=>{ const tx=db.transaction('k','readwrite'); const req=tx.objectStore('k').put(val,key); req.onsuccess=()=>r(); req.onerror=()=>j(req.error); }); }
+
+async function generateGameKeys(){
+  try {
+    const kp = await crypto.subtle.generateKey({name:'Ed25519'},true,['sign','verify']);
+    const pub = new Uint8Array(await crypto.subtle.exportKey('raw',kp.publicKey));
+    _publicKeyHex = bytesToHex(pub);
+    const pkcs8 = new Uint8Array(await crypto.subtle.exportKey('pkcs8',kp.privateKey));
+    const seed = pkcs8.slice(pkcs8.length-32);
+    const skHex = bytesToHex(seed);
+    _signingKey = kp.privateKey;
+    _signingAlgo = 'Ed25519';
+    log('Ключи сгенерированы:', _publicKeyHex.slice(0,16));
+    return skHex;
+  } catch(e) {
+    log('Ed25519 недоступен, пробуем ECDSA...');
+    const kp = await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);
+    const pub = new Uint8Array(await crypto.subtle.exportKey('raw',kp.publicKey));
+    _publicKeyHex = bytesToHex(pub);
+    const sk = new Uint8Array(await crypto.subtle.exportKey('pkcs8',kp.privateKey));
+    const skHex = bytesToHex(sk);
+    _signingKey = kp.privateKey;
+    _signingAlgo = 'ECDSA';
+    log('ECDSA ключи:', _publicKeyHex.slice(0,16));
+    return skHex;
+  }
+}
+
+async function restoreGameKeys(skHex){
+  const raw = hexToBytes(skHex);
+  try {
+    if(raw.length===32){
+      const hdr=new Uint8Array([0x30,0x2e,0x02,0x01,0x00,0x30,0x05,0x06,0x03,0x2b,0x65,0x70,0x04,0x22,0x04,0x20]);
+      const pkcs8=new Uint8Array(hdr.length+raw.length); pkcs8.set(hdr); pkcs8.set(raw,hdr.length);
+      const k=await crypto.subtle.importKey('pkcs8',pkcs8,{name:'Ed25519'},true,['sign']);
+      const pub=new Uint8Array(await crypto.subtle.exportKey('raw',k.publicKey));
+      _publicKeyHex=bytesToHex(pub); _signingKey=k; _signingAlgo='Ed25519';
+      return;
+    }
+  }catch(e){}
+  try {
+    const k=await crypto.subtle.importKey('pkcs8',raw,{name:'ECDSA',namedCurve:'P-256'},true,['sign']);
+    const pub=new Uint8Array(await crypto.subtle.exportKey('raw',k.publicKey));
+    _publicKeyHex=bytesToHex(pub); _signingKey=k; _signingAlgo='ECDSA';
+  }catch(e){ logErr('Ключи не восстановлены',e); }
+}
+
+/* ─── public API — РЕГИСТИРУЕТСЯ СРАЗУ ─── */
 window.anWallet = {
   sdkReady: ()=>sdkReady,
   getSession: getStoredSession,
+  getPublicKey: ()=> _publicKeyHex ? '0x'+_publicKeyHex : null,
 
-  /* Подключение по имени кошелька — проверяет что кошелёк СУЩЕСТВУЕТ */
   async connectByName(walletName){
     const sdk = await loadSdk();
     log('connectByName:', walletName);
-
     let wallet;
-    try{
-      wallet = new sdk.Wallet(ENDPOINTS, null, AN_API, APP_ID);
-    }catch(e){
-      logErr('Wallet create failed:', e);
-      throw new Error('Не удалось подключиться к блокчейну');
-    }
-
+    try{ wallet = new sdk.Wallet(ENDPOINTS, null, AN_API, APP_ID); }
+    catch(e){ throw new Error('Не удалось подключиться к блокчейну'); }
     const nameInfo = await wallet.check_name_availability(walletName);
-    log('check_name_availability:', nameInfo);
-
-    if(nameInfo.is_available){
-      wallet.free();
-      throw new Error('Кошелёк "'+walletName+'" не найден. Проверь имя в AN Wallet.');
-    }
-
+    if(nameInfo.is_available){ wallet.free(); throw new Error('Кошелёк "'+walletName+'" не найден. Проверь имя в AN Wallet.'); }
     const addr = nameInfo.multifactor_address;
-    if(!addr){
-      wallet.free();
-      throw new Error('Адрес кошелька не найден');
-    }
-    log('Адрес:', addr);
-
+    if(!addr){ wallet.free(); throw new Error('Адрес кошелька не найден'); }
     const b = await wallet.get_multifactor_balances({ multifactor_address: addr });
     const balances = parseBalances(b);
-    log('Балансы:', balances);
     wallet.free();
 
-    const conn = {
-      walletName, walletAddress: addr,
-      balances, endpoint: ENDPOINTS[0],
-      connectedAt: Date.now(),
-    };
+    let stored = null;
+    try { stored = await idbGet(addr); } catch(e){}
+    if(!stored || !stored.sk){
+      const sk = await generateGameKeys();
+      try { await idbSet(addr, { pk: _publicKeyHex, sk }); } catch(e){}
+    } else {
+      await restoreGameKeys(stored.sk);
+    }
+
+    const conn = { walletName, walletAddress: addr, balances, endpoint: ENDPOINTS[0], connectedAt: Date.now(), publicKey: _publicKeyHex };
     storeSession(conn);
     return conn;
   },
 
-  async disconnect(){
-    storeSession(null);
-  },
+  async disconnect(){ storeSession(null); _signingKey=null; _publicKeyHex=null; },
 
   async getBalance(walletAddress){
     const sdk = await loadSdk();
@@ -5560,10 +5740,25 @@ window.anWallet = {
       return parseBalances(b);
     }catch{return {nackl:'0',shell:'0',usdc:'0'};}
     finally{wallet.free();}
-  }
+  },
+
+  reportBattleOffline(win, newRating, hash){
+    const pending=JSON.parse(localStorage.getItem('rp-pending-txs')||'[]');
+    pending.push({fn:'reportBattle',input:{win,newRating,hash:String(hash)},pk:_publicKeyHex,ts:Date.now()});
+    localStorage.setItem('rp-pending-txs',JSON.stringify(pending));
+    return {ok:true};
+  },
+  getPendingTxs(){ try{return JSON.parse(localStorage.getItem('rp-pending-txs')||'[]');}catch{return[];} },
+  clearPendingTxs(){ localStorage.removeItem('rp-pending-txs'); },
+
+  exportKeys(){
+    const s=getStoredSession();
+    return { publicKey:_publicKeyHex, walletName:s?s.walletName:null, walletAddress:s?s.walletAddress:null };
+  },
 };
 
-log('Модуль загружен');
+log('anWallet API зарегистрирован');
+console.log('[RP] window.anWallet =', typeof window.anWallet);
 </script>
 
 </body>
