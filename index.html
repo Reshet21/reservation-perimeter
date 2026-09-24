@@ -1795,7 +1795,7 @@ function renderSquadPick(){
     const beltStr=(m.cls==="dog")?"":` · 💉${m.belt.medkit} 💣${m.belt.grenade}`;
     return `<div class="pickrow ${sel?"sel":""}" onclick="togglePick('${m.id}')">
       <div class="e">${CLASSES[m.cls].emoji}</div>
-      <div class="grow"><b>${m.name}</b> <span class="muted">ур.${m.level} ${CLASSES[m.cls].name}</span>
+      <div class="grow"><b>${m.name}</b> <span class="muted">${tr("ур.","lvl ")}${m.level} ${CLASSES[m.cls].name}</span>
       <div class="muted">${w.emoji}${w.name} (${skillRank(sk)} ${sk})${m.weapon2?` +${WEAPONS[m.weapon2].emoji}`:""} · HP ${st.hp} · ОД ${st.ap}${beltStr}</div>
       <div style="margin-top:3px">${overBadge(mercLoad(m),carryLimit(m))}</div></div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
@@ -1844,11 +1844,11 @@ function openBarracks(){
     const sk=m.skills[w.skill]||0;
     return `<div class="card">
       <div class="row"><div style="font-size:30px">${c.emoji}</div>
-        <div class="grow"><h3>${m.name} <span class="muted">ур.${m.level}</span></h3>
+        <div class="grow"><h3>${m.name} <span class="muted">${tr("ур.","lvl ")}${m.level}</span></h3>
         <div class="muted">${c.name} — ${c.desc}</div></div></div>
       <div class="statline">
-        <span class="tag">HP <b>${st.hp}</b></span><span class="tag">ОД <b>${st.ap}</b></span>
-        <span class="tag">Точн <b>${st.acc}+${skillAccBonus(sk)}</b></span><span class="tag">Броня <b>-${st.armor}</b></span>
+        <span class="tag">HP <b>${st.hp}</b></span><span class="tag">${tr("ОД","AP")} <b>${st.ap}</b></span>
+        <span class="tag">Точн <b>${st.acc}+${skillAccBonus(sk)}</b></span><span class="tag">${tr("Броня","Armor")} <b>-${st.armor}</b></span>
         <span class="tag">👁 Зрение <b>${st.sight}</b></span>
         <span class="tag">XP <b>${m.xp}/${xpNeed(m.level)}</b></span>
       </div>
@@ -1882,11 +1882,11 @@ function openEquip(mid){
   document.getElementById("eqTitle").textContent="🎒 "+m.name.toUpperCase();
   let html=`<div class="card">
     <div class="row"><div style="font-size:34px">${c.emoji}</div>
-      <div class="grow"><h3>${m.name} <span class="muted">ур.${m.level}${m.level>=MAX_LEVEL?" (MAX)":""} · ${c.name}</span></h3>
+      <div class="grow"><h3>${m.name} <span class="muted">${tr("ур.","lvl ")}${m.level}${m.level>=MAX_LEVEL?tr(" (MAX)"," (MAX)"):""} · ${c.name}</span></h3>
       <div class="statline">
-        <span class="tag">HP <b>${st.hp}</b></span><span class="tag">ОД <b>${st.ap}</b></span>
-        <span class="tag">Точн <b>${st.acc}</b></span><span class="tag">👁 <b>${st.sight}</b></span>
-        <span class="tag">Броня <b>-${st.armor}</b></span>
+        <span class="tag">HP <b>${st.hp}</b></span><span class="tag">${tr("ОД","AP")} <b>${st.ap}</b></span>
+        <span class="tag">${tr("Точн","Acc")} <b>${st.acc}</b></span><span class="tag">👁 <b>${st.sight}</b></span>
+        <span class="tag">${tr("Броня","Armor")} <b>-${st.armor}</b></span>
       </div>
       ${weightBar(mercLoad(m), carryLimit(m))}
       </div></div>
@@ -1904,33 +1904,33 @@ function openEquip(mid){
     gearSlotsHtml+=`<div class="slot" onclick="pickArmorModal('${s}')">
       ${id?svgIcon("armor",id):emptySlotSvg(s)}
       <div><div class="sl">${isDog?"Попона 🐕":sd.emoji+" "+sd.name}</div>
-      <div class="sn">${a?a.name:"— пусто —"}</div>
-      <div class="sd">${a?"Защита -"+a.red+(a.slot==="all"?" · комбез":"")+` · ⚖️${itemWt("armor",id)}`:"не защищён"}</div></div>
+      <div class="sn">${a?a.name:tr("— пусто —","— empty —")}</div>
+      <div class="sd">${a?tr("Защита","Armor")+" -"+a.red+(a.slot==="all"?tr(" · комбез"," · suit"):"")+` · ⚖️${itemWt("armor",id)}`:tr("не защищён","unprotected")}</div></div>
     </div>`;
   });
-  html+=`<div class="card"><h3>⚙️ Снаряжение</h3>
+  html+=`<div class="card"><h3>${tr("⚙️ Снаряжение","⚙️ Gear")}</h3>
     <div class="slotrow">
       <div class="slot" ${natural?"":`onclick="pickWeaponModal('main')"`}>
         ${svgIcon("weapon",m.weapon)}
-        <div><div class="sl">Основное</div><div class="sn">${w.name}</div>
+        <div><div class="sl">${tr("Основное","Primary")}</div><div class="sn">${w.name}</div>
         <div class="sd">${w.dmg[0]}–${w.dmg[1]}${w.shots>1?"×"+w.shots:""} · ${w.ap}ОД · ⚖️${itemWt("weapon",m.weapon)}</div></div>
       </div>
       ${(m.cls!=="dog"&&m.cls!=="mutant")?`
       <div class="slot" onclick="pickWeaponModal('second')">
         ${w2?svgIcon("weapon",m.weapon2):`<svg viewBox="0 0 48 48" style="opacity:.3"><rect x="9" y="14" width="30" height="20" rx="4" fill="none" stroke="#8a7a5c" stroke-width="2" stroke-dasharray="5 4"/><text x="24" y="29" text-anchor="middle" font-size="14" fill="#8a7a5c">+</text></svg>`}
-        <div><div class="sl">Запасное · 🔁2ОД</div><div class="sn">${w2?w2.name:"— пусто —"}</div>
+        <div><div class="sl">${tr("Запасное · 🔁2ОД","Spare · 🔁2AP")}</div><div class="sn">${w2?w2.name:tr("— пусто —","— empty —")}</div>
         ${w2?`<div class="sd">${w2.dmg[0]}–${w2.dmg[1]}${w2.shots>1?"×"+w2.shots:""} · ${w2.ap}ОД · ⚖️${itemWt("weapon",m.weapon2)}</div>`:""}</div>
       </div>`:""}
     </div>
     <div class="slotrow">
       ${gearSlotsHtml}
     </div>
-    <div class="muted" style="margin-top:6px">Итоговая защита: <b>−${st.armor}</b>. Комбез закрывает голову, тело и ноги одним предметом.</div>
+    <div class="muted" style="margin-top:6px">${tr("Итоговая защита:","Total armor:")} <b>−${st.armor}</b>. ${tr("Комбез закрывает голову, тело и ноги одним предметом.","A suit covers head, body and legs with one item.")}</div>
     ${natural?`<div class="muted" style="margin-top:6px">${w.name} — естественное оружие, снять нельзя.</div>`:""}
   </div>`;
 
   /* --- слот: импланты --- */
-  html+=`<div class="card"><h3>🧠 Импланты <span class="muted">(${m.implants.length}/2)</span></h3>`;
+  html+=`<div class="card"><h3>${tr("🧠 Импланты","🧠 Implants")} <span class="muted">(${m.implants.length}/2)</span></h3>`;
   m.implants.forEach((k,i)=>{
     html+=`<div class="row" style="margin-top:6px"><div style="width:30px">${svgIcon("implant",k)}</div>
       <div class="grow">${IMPLANTS[k].name} <span class="muted">${IMPLANTS[k].desc} · ⚖️${itemWt("implant",k)}</span></div>
@@ -1944,17 +1944,17 @@ function openEquip(mid){
         <div class="btn small primary" onclick="eqImp('${k}')">Установить</div></div>`;
   });
   if(!m.implants.length&&!Object.keys(IMPLANTS).some(k=>(S.inv.implants[k]||0)>0))
-    html+=`<div class="muted" style="margin-top:4px">Импланты продаются в магазине.</div>`;
+    html+=`<div class="muted" style="margin-top:4px">${tr("Импланты продаются в магазине.","Implants are sold at the shop.")}</div>`;
   html+=`</div>`;
 
   /* --- пояс: личные расходники бойца --- */
   if(m.cls!=="dog"){
-    html+=`<div class="card"><h3>🧰 Пояс <span class="muted">(в бой идёт только то, что на поясе)</span></h3>`;
+    html+=`<div class="card"><h3>${tr("🧰 Пояс","🧰 Belt")} <span class="muted">${tr("(в бой идёт только то, что на поясе)","(only belt goes to battle)")}</span></h3>`;
     [["medkit","Аптечка"],["grenade","Граната"]].forEach(([k,n])=>{
       const onBelt=m.belt[k]||0, store=S.inv[k]||0;
       html+=`<div class="row" style="margin-top:8px">
         <div style="width:30px">${svgIcon("cons",k)}</div>
-        <div class="grow">${n} <span class="muted">на поясе ×${onBelt} (макс ${BELT_MAX[k]}) · склад ×${store} · ⚖️${itemWt("cons",k)}/шт</span></div>
+        <div class="grow">${n} <span class="muted">${tr("на поясе","on belt")} ×${onBelt} (${tr("макс","max")} ${BELT_MAX[k]}) · ${tr("склад","stock")} ×${store} · ⚖️${itemWt("cons",k)}/${tr("шт","pcs")}</span></div>
         <div class="btn small ${store>0&&onBelt<BELT_MAX[k]?"primary":""}" onclick="beltAdd('${k}')">+</div>
         <div class="btn small" onclick="beltRemove('${k}')">−</div>
       </div>`;
@@ -1968,20 +1968,20 @@ function openEquip(mid){
     if(!m.ammo)m.ammo={};
     if(!S.inv.ammo)S.inv.ammo={};
     const cals=[...new Set([m.weapon,m.weapon2].map(gunSpec).filter(Boolean).map(g=>g.ammo))];
-    html+=`<div class="card"><h3>🔸 Патроны <span class="muted">(с собой в бой)</span></h3>`;
-    if(!cals.length)html+=`<div class="muted">Безоружному патроны не нужны.</div>`;
+    html+=`<div class="card"><h3>${tr("🔸 Патроны","🔸 Ammo")} <span class="muted">${tr("(с собой в бой)","(carried to battle)")}</span></h3>`;
+    if(!cals.length)html+=`<div class="muted">${tr("Безоружному патроны не нужны.","Unarmed needs no ammo.")}</div>`;
     cals.forEach(t=>{
       const g1=gunSpec(m.weapon), g2=gunSpec(m.weapon2);
       const perShot=(m.weapon&&g1&&g1.ammo===t?g1.mag:0)+(m.weapon2&&g2&&g2.ammo===t?g2.mag:0);
       const have=m.ammo[t]||0, store=S.inv.ammo[t]||0;
       html+=`<div class="row" style="margin-top:8px">
         <div style="width:30px">${svgIcon("ammo",t)}</div>
-        <div class="grow">${ammoName(t)} <span class="muted">с собой ×${have} · склад ×${store} · ⚖️${wtFmt(have*AMMO[t].wpr)}</span></div>
+        <div class="grow">${ammoName(t)} <span class="muted">${tr("с собой","carried")} ×${have} · ${tr("склад","stock")} ×${store} · ⚖️${wtFmt(have*AMMO[t].wpr)}</span></div>
         <div class="btn small ${store>0?"primary":""}" onclick="ammoTake('${t}',${perShot||30})">+${perShot||30}</div>
         <div class="btn small" onclick="ammoBack('${t}')">−</div>
       </div>`;
     });
-    html+=`<div class="muted" style="margin-top:6px">Перед боем запас добирается автоматически (2 магазина на ствол, если влезет по весу).</div></div>`;
+    html+=`<div class="muted" style="margin-top:6px">${tr("Перед боем запас добирается автоматически (2 магазина на ствол, если влезет по весу).","Stock tops up automatically before battle (2 mags per gun, if weight allows).")}</div></div>`;
   }
   document.getElementById("eqBody").innerHTML=html;
   show("scr-equip");
@@ -1992,20 +1992,20 @@ function ammoTake(t,qty){
   if(!m.ammo)m.ammo={};
   if(!S.inv.ammo)S.inv.ammo={};
   const avail=S.inv.ammo[t]||0;
-  if(avail<=0){toast("На складе нет "+ammoName(t));return;}
+  if(avail<=0){toast(tr("На складе нет ","No stock: ")+ammoName(t));return;}
   let take=Math.min(qty||30,avail);
   const free=carryLimit(m)-mercLoad(m);
   take=Math.min(take,Math.floor(free/((AMMO[t]||{}).wpr||1)));
-  if(take<=0){toast(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level})`);return;}
+  if(take<=0){toast(tr(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level})`,`Overloaded! Limit ${carryLimit(m)} (lvl ${m.level})`));return;}
   m.ammo[t]=(m.ammo[t]||0)+take; S.inv.ammo[t]-=take;
-  save(); eqRefresh(m.id); toast(`+${take} ${ammoName(t)}`);
+  save(); eqRefresh(m.id); toast(tr(`+${take} ${ammoName(t)}`,`+${take} ${ammoName(t)}`));
 }
 function ammoBack(t){
   const m=eqM(); if(!m||!m.ammo)return;
-  if(!(m.ammo[t]>0)){toast("При себе нет");return;}
+  if(!(m.ammo[t]>0)){toast(tr("При себе нет","None carried"));return;}
   if(!S.inv.ammo)S.inv.ammo={};
   S.inv.ammo[t]=(S.inv.ammo[t]||0)+m.ammo[t]; m.ammo[t]=0;
-  save(); eqRefresh(m.id); toast("Патроны на складе");
+  save(); eqRefresh(m.id); toast(tr("Патроны на складе","Ammo on stock"));
 }
 /* модалки выбора из склада — карточками */
 function pickWeaponModal(slot){
@@ -2068,63 +2068,63 @@ function eqRefresh(mid){ if(eqBack==="inv")openInvSel(mid); else openEquip(mid);
 function toStore(wid){ if(wid&&!WEAPONS[wid].natural)S.inv.weapons[wid]=(S.inv.weapons[wid]||0)+1; }
 function eqMain(wid){
   const m=eqM(); if(!m)return;
-  if(!(S.inv.weapons[wid]>0)){toast("Нет на складе");return;}
-  if(isListed("weapon",wid)&&S.inv.weapons[wid]<=listedCount("weapon",wid)){toast("Выставлено на продажу — сними с торгов");return;}
+  if(!(S.inv.weapons[wid]>0)){toast(tr("Нет на складе","Not on stock"));return;}
+  if(isListed("weapon",wid)&&S.inv.weapons[wid]<=listedCount("weapon",wid)){toast(tr("Выставлено на продажу — сними с торгов","Listed for sale — delist first"));return;}
   /* проверка веса: снимаемое уходит, новое приходит */
   const old=m.weapon; m.weapon=wid;
-  if(mercLoad(m)>carryLimit(m)){ m.weapon=old; toast(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level}) — сними что-нибудь`); return; }
+  if(mercLoad(m)>carryLimit(m)){ m.weapon=old; toast(tr(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level}) — сними что-нибудь`,`Overloaded! Limit ${carryLimit(m)} (lvl ${m.level}) — drop something`)); return; }
   m.weapon=old;
   S.inv.weapons[wid]--;
   toStore(m.weapon);
-  m.weapon=wid; save(); eqRefresh(m.id); toast("Оружие в руках");
+  m.weapon=wid; save(); eqRefresh(m.id); toast(tr("Оружие в руках","Gun in hands"));
 }
 function eqSecond(wid){
   const m=eqM(); if(!m)return;
-  if(!(S.inv.weapons[wid]>0)){toast("Нет на складе");return;}
-  if(isListed("weapon",wid)&&S.inv.weapons[wid]<=listedCount("weapon",wid)){toast("Выставлено на продажу — сними с торгов");return;}
+  if(!(S.inv.weapons[wid]>0)){toast(tr("Нет на складе","Not on stock"));return;}
+  if(isListed("weapon",wid)&&S.inv.weapons[wid]<=listedCount("weapon",wid)){toast(tr("Выставлено на продажу — сними с торгов","Listed for sale — delist first"));return;}
   const old=m.weapon2; m.weapon2=wid;
-  if(mercLoad(m)>carryLimit(m)){ m.weapon2=old; toast(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level}) — сними что-нибудь`); return; }
+  if(mercLoad(m)>carryLimit(m)){ m.weapon2=old; toast(tr(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level}) — сними что-нибудь`,`Overloaded! Limit ${carryLimit(m)} (lvl ${m.level}) — drop something`)); return; }
   m.weapon2=old;
   S.inv.weapons[wid]--;
   toStore(m.weapon2);
-  m.weapon2=wid; save(); eqRefresh(m.id); toast("Запасное оружие готово");
+  m.weapon2=wid; save(); eqRefresh(m.id); toast(tr("Запасное оружие готово","Spare gun ready"));
 }
 function unequipMain(){
   const m=eqM(); if(!m||(WEAPONS[m.weapon].natural&&m.weapon!=="fists"))return;
-  if(m.weapon==="fists"){toast("Уже безоружен");return;}
+  if(m.weapon==="fists"){toast(tr("Уже безоружен","Already unarmed"));return;}
   toStore(m.weapon);
   /* можно остаться вообще без оружия — тогда в бой с кулаками */
-  if(m.weapon2){ m.weapon=m.weapon2; m.weapon2=null; toast("Снято — в руках запасное"); }
-  else { m.weapon="fists"; toast("Снято — боец дерётся кулаками 👊"); }
+  if(m.weapon2){ m.weapon=m.weapon2; m.weapon2=null; toast(tr("Снято — в руках запасное","Removed — spare in hands")); }
+  else { m.weapon="fists"; toast(tr("Снято — боец дерётся кулаками 👊","Removed — fighting barehanded 👊")); }
   save(); eqRefresh(m.id);
 }
 function unequipSecond(){
   const m=eqM(); if(!m||!m.weapon2)return;
   toStore(m.weapon2); m.weapon2=null;
-  save(); eqRefresh(m.id); toast("Снято на склад");
+  save(); eqRefresh(m.id); toast(tr("Снято на склад","Removed to stock"));
 }
 function eqArmor(aid,wantSlot){
   const m=eqM(); if(!m)return;
   const a=ARMORS[aid]; if(!a)return;
   /* собачья броня — только псу, человеческая — только людям/мутанту */
-  if(m.cls==="dog"&&!a.dog){toast("Псу нужна специальная попона (крафтится)");return;}
-  if(m.cls!=="dog"&&a.dog){toast("Это попона для пса");return;}
-  if(!(S.inv.armors[aid]>0)){toast("Нет на складе");return;}
-  if(isListed("armor",aid)&&S.inv.armors[aid]<=listedCount("armor",aid)){toast("Выставлено на продажу — сними с торгов");return;}
+  if(m.cls==="dog"&&!a.dog){toast(tr("Псу нужна специальная попона (крафтится)","Dog needs a special barding (craft it)"));return;}
+  if(m.cls!=="dog"&&a.dog){toast(tr("Это попона для пса","That is a dog barding"));return;}
+  if(!(S.inv.armors[aid]>0)){toast(tr("Нет на складе","Not on stock"));return;}
+  if(isListed("armor",aid)&&S.inv.armors[aid]<=listedCount("armor",aid)){toast(tr("Выставлено на продажу — сними с торгов","Listed for sale — delist first"));return;}
   /* комбез занимает все три слота, отдельный предмет — свой слот */
   const slots=a.slot==="all"?["head","body","legs"]:[wantSlot||a.slot];
-  if(a.slot!=="all"&&!m.gear.hasOwnProperty(slots[0])){toast("Такого слота нет");return;}
+  if(a.slot!=="all"&&!m.gear.hasOwnProperty(slots[0])){toast(tr("Такого слота нет","No such slot"));return;}
   /* проверка веса: снимаемое уходит, новое приходит */
   const oldGear={head:m.gear.head,body:m.gear.body,legs:m.gear.legs};
   slots.forEach(s=>{m.gear[s]=aid;});
   if(mercLoad(m)>carryLimit(m)){ m.gear.head=oldGear.head;m.gear.body=oldGear.body;m.gear.legs=oldGear.legs;
-    toast(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level}) — сними что-нибудь`); return; }
+    toast(tr(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level}) — сними что-нибудь`,`Overloaded! Limit ${carryLimit(m)} (lvl ${m.level}) — drop something`)); return; }
   m.gear.head=oldGear.head;m.gear.body=oldGear.body;m.gear.legs=oldGear.legs;
   slots.forEach(s=>{ if(m.gear[s])S.inv.armors[m.gear[s]]=(S.inv.armors[m.gear[s]]||0)+1; });
   S.inv.armors[aid]--;
   slots.forEach(s=>{m.gear[s]=aid;});
   save(); eqRefresh(m.id);
-  toast(a.dog?"Попона надета 🐕":a.slot==="all"?a.name+": всё тело закрыто":"Надето: "+a.name);
+  toast(a.dog?tr("Попона надета 🐕","Barding on 🐕"):a.slot==="all"?a.name+tr(": всё тело закрыто",": full body covered"):tr("Надето: ","Equipped: ")+a.name);
 }
 function unequipArmor(slot){
   const m=eqM(); if(!m)return;
@@ -2133,28 +2133,28 @@ function unequipArmor(slot){
   const slots=a.slot==="all"?["head","body","legs"]:[slot];
   slots.forEach(s=>{m.gear[s]=null;});
   S.inv.armors[id]=(S.inv.armors[id]||0)+1;
-  save(); eqRefresh(m.id); toast((a.slot==="all"?"Комбез снят: ":"Снято: ")+a.name);
+  save(); eqRefresh(m.id); toast((a.slot==="all"?tr("Комбез снят: ","Suit off: "):tr("Снято: ","Removed: "))+a.name);
 }
 function eqImp(k){
   const m=eqM(); if(!m||m.implants.length>=2)return;
   if(!(S.inv.implants[k]>0))return;
   m.implants.push(k);
-  if(mercLoad(m)>carryLimit(m)){ m.implants.pop(); toast(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level})`); return; }
-  S.inv.implants[k]--; save(); eqRefresh(m.id); toast("Имплант установлен");
+  if(mercLoad(m)>carryLimit(m)){ m.implants.pop(); toast(tr(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level})`,`Overloaded! Limit ${carryLimit(m)} (lvl ${m.level})`)); return; }
+  S.inv.implants[k]--; save(); eqRefresh(m.id); toast(tr("Имплант установлен","Implant installed"));
 }
 function removeImp(i){
   const m=eqM(); if(!m)return;
   const k=m.implants[i]; if(!k)return;
   m.implants.splice(i,1);
   S.inv.implants[k]=(S.inv.implants[k]||0)+1;
-  save(); eqRefresh(m.id); toast("Имплант снят");
+  save(); eqRefresh(m.id); toast(tr("Имплант снят","Implant removed"));
 }
 function beltAdd(k){
   const m=eqM(); if(!m)return;
-  if(!(S.inv[k]>0)){toast("Склад пуст — купи в магазине");return;}
-  if((m.belt[k]||0)>=BELT_MAX[k]){toast("Пояс полон");return;}
+  if(!(S.inv[k]>0)){toast(tr("Склад пуст — купи в магазине","Stock empty — buy at the shop"));return;}
+  if((m.belt[k]||0)>=BELT_MAX[k]){toast(tr("Пояс полон","Belt full"));return;}
   m.belt[k]=(m.belt[k]||0)+1;
-  if(mercLoad(m)>carryLimit(m)){ m.belt[k]--; toast(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level})`); return; }
+  if(mercLoad(m)>carryLimit(m)){ m.belt[k]--; toast(tr(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level})`,`Overloaded! Limit ${carryLimit(m)} (lvl ${m.level})`)); return; }
   S.inv[k]--;
   save(); eqRefresh(m.id);
 }
@@ -2200,16 +2200,16 @@ function renderInv(){
   let html=`<div class="card"><div class="row" style="gap:6px;flex-wrap:wrap">${chips}</div></div>`;
   html+=`<div class="card">
     <div class="row"><div style="font-size:34px">${c.emoji}</div>
-      <div class="grow"><h3>${esc(m.name)} <span class="muted">ур.${m.level}${m.level>=MAX_LEVEL?" (MAX)":""} · ${c.name}</span></h3>
+      <div class="grow"><h3>${esc(m.name)} <span class="muted">${tr("ур.","lvl ")}${m.level}${m.level>=MAX_LEVEL?tr(" (MAX)"," (MAX)"):""} · ${c.name}</span></h3>
       <div class="statline"><span class="tag">HP <b>${st.hp}</b></span>
-      <span class="tag">ОД <b>${st.ap}</b></span><span class="tag">Броня <b>-${st.armor}</b></span></div>
+      <span class="tag">ОД <b>${st.ap}</b></span><span class="tag">${tr("Броня","Armor")} <b>-${st.armor}</b></span></div>
       ${weightBar(load,lim)}
       ${overBadge(load,lim)}
-      ${load>lim?`<div style="color:var(--amber);font-size:12px;margin-top:6px">В бой с таким весом можно, но ОД будут порезаны на весь бой. Сними лишнее в случае чего.</div>`:""}
+      ${load>lim?`<div style="color:var(--amber);font-size:12px;margin-top:6px">${tr("В бой с таким весом можно, но ОД будут порезаны на весь бой. Сними лишнее в случае чего.","You can fight like this, but AP will be cut for the whole battle. Drop the excess if needed.")}</div>`:""}
       </div></div>
   </div>`;
   /* --- оружие --- */
-  html+=`<div class="card"><h3>🔫 Оружие</h3>`;
+  html+=`<div class="card"><h3>${tr("🔫 Оружие","🔫 Guns")}</h3>`;
   html+=invRow(w.emoji,w.name,
     `Основное · ${w.dmg[0]}–${w.dmg[1]}${w.shots>1?"×"+w.shots:""} · ${w.ap}ОД`,
     itemWt("weapon",m.weapon),
@@ -2229,7 +2229,7 @@ function renderInv(){
   }
   html+=`</div>`;
   /* --- броня --- */
-  html+=`<div class="card"><h3>🦺 Броня</h3>`;
+  html+=`<div class="card"><h3>${tr("🦺 Броня","🦺 Armor")}</h3>`;
   const slots=m.cls==="dog"?["body"]:["head","body","legs"];
   const seen=new Set(); let anyArmor=false;
   slots.forEach(s=>{
@@ -2247,8 +2247,8 @@ function renderInv(){
     <span class="btn small" style="margin-left:6px" onclick="eqBack='inv';pickArmorModal('${slots[0]}')">Надеть со склада</span></div>`;
   html+=`</div>`;
   /* --- импланты --- */
-  html+=`<div class="card"><h3>🧠 Импланты <span class="muted">(${m.implants.length}/2)</span></h3>`;
-  if(!m.implants.length)html+=`<div class="muted">Не установлены.</div>`;
+  html+=`<div class="card"><h3>${tr("🧠 Импланты","🧠 Implants")} <span class="muted">(${m.implants.length}/2)</span></h3>`;
+  if(!m.implants.length)html+=`<div class="muted">${tr("Не установлены.","None installed.")}</div>`;
   m.implants.forEach((k,i)=>{
     html+=invRow("🧬",IMPLANTS[k].name,IMPLANTS[k].desc,itemWt("implant",k),
       `<div class="btn small" onclick="removeImp(${i})">📦</div>
@@ -2257,13 +2257,13 @@ function renderInv(){
   html+=`</div>`;
   /* --- пояс --- */
   if(m.cls!=="dog"){
-    html+=`<div class="card"><h3>🧰 Пояс <span class="muted">(в бой идёт только пояс)</span></h3>`;
+    html+=`<div class="card"><h3>${tr("🧰 Пояс","🧰 Belt")} <span class="muted">${tr("(в бой идёт только пояс)","(only belt goes to battle)")}</span></h3>`;
     [["medkit","💉","Аптечка"],["grenade","💣","Граната"]].forEach(([k,em,nm])=>{
       const on=(m.belt[k]||0), store=S.inv[k]||0;
       html+=`<div class="row" style="padding:7px 0;border-bottom:1px solid var(--line)">
         <div style="font-size:24px;width:30px;text-align:center">${em}</div>
         <div class="grow"><b>${nm} ×${on}</b>
-          <div class="muted" style="font-size:11px">на поясе · склад ×${store} · ⚖️${itemWt("cons",k)}/шт</div></div>
+          <div class="muted" style="font-size:11px">${tr("на поясе","on belt")} · ${tr("склад","stock")} ×${store} · ⚖️${itemWt("cons",k)}/${tr("шт","pcs")}</div></div>
         <div style="display:flex;gap:6px;flex-shrink:0">
           ${store>0?`<div class="btn small primary" onclick="beltAdd('${k}')">＋</div>`:""}
           ${on>0?`<div class="btn small" onclick="beltRemove('${k}')">−</div>
@@ -2272,9 +2272,9 @@ function renderInv(){
     });
     html+=`</div>`;
   }else{
-    html+=`<div class="card"><div class="muted">🐕 Пёс пояс не носит — аптечку съедает сразу в бою.</div></div>`;
+    html+=`<div class="card"><div class="muted">${tr("🐕 Пёс пояс не носит — аптечку съедает сразу в бою.","🐕 Dogs wear no belt — they eat medkits right away in battle.")}</div></div>`;
   }
-  html+=`<div class="muted" style="margin:4px 2px;font-size:11px">📦 — снять на склад · 🗑 — выкинуть навсегда · 🔁 — заменить со склада</div>`;
+  html+=`<div class="muted" style="margin:4px 2px;font-size:11px">${tr("📦 — снять на склад · 🗑 — выкинуть навсегда · 🔁 — заменить со склада","📦 — stash · 🗑 — drop forever · 🔁 — swap from stock")}</div>`;
   document.getElementById("invBody").innerHTML=html;
   document.querySelectorAll(".crview").forEach(e=>e.textContent=S.credits);
 }
@@ -2282,36 +2282,36 @@ function c_emoji(r){ return (CLASSES[r.cls]||{}).emoji||"🪖"; }
 /* --- выкидывание (уничтожение) носимого --- */
 function invDropMain(){
   const m=invM(); if(!m)return;
-  if(m.weapon==="fists"){toast("Уже безоружен");return;}
+  if(m.weapon==="fists"){toast(tr("Уже безоружен","Already unarmed"));return;}
   if(WEAPONS[m.weapon].natural&&m.weapon!=="fists"){toast("Естественное оружие не выкинуть");return;}
-  if(!confirm(`Выкинуть ${WEAPONS[m.weapon].name} навсегда?`))return;
+  if(!confirm(tr(`Выкинуть ${WEAPONS[m.weapon].name} навсегда?`,`Drop ${WEAPONS[m.weapon].name} forever?`)))return;
   if(m.weapon2){ m.weapon=m.weapon2; m.weapon2=null; }
   else m.weapon="fists";
-  save(); renderInv(); toast("Выкинуто");
+  save(); renderInv(); toast(tr("Выкинуто","Dropped"));
 }
 function invDropSecond(){
   const m=invM(); if(!m||!m.weapon2)return;
-  if(!confirm(`Выкинуть ${WEAPONS[m.weapon2].name} навсегда?`))return;
-  m.weapon2=null; save(); renderInv(); toast("Выкинуто");
+  if(!confirm(tr(`Выкинуть ${WEAPONS[m.weapon2].name} навсегда?`,`Drop ${WEAPONS[m.weapon2].name} forever?`)))return;
+  m.weapon2=null; save(); renderInv(); toast(tr("Выкинуто","Dropped"));
 }
 function invDropArmor(slot){
   const m=invM(); if(!m)return;
   const id=m.gear[slot]; if(!id||!ARMORS[id])return;
   const a=ARMORS[id];
-  if(!confirm(`Выкинуть ${a.name} навсегда?`))return;
+  if(!confirm(tr(`Выкинуть ${a.name} навсегда?`,`Drop ${a.name} forever?`)))return;
   const slots=a.slot==="all"?["head","body","legs"]:[slot];
   slots.forEach(s=>{m.gear[s]=null;});
-  save(); renderInv(); toast("Выкинуто");
+  save(); renderInv(); toast(tr("Выкинуто","Dropped"));
 }
 function invDropImp(i){
   const m=invM(); if(!m)return;
   const k=m.implants[i]; if(!k)return;
-  if(!confirm(`Выкинуть ${IMPLANTS[k].name} навсегда?`))return;
-  m.implants.splice(i,1); save(); renderInv(); toast("Выкинуто");
+  if(!confirm(tr(`Выкинуть ${IMPLANTS[k].name} навсегда?`,`Drop ${IMPLANTS[k].name} forever?`)))return;
+  m.implants.splice(i,1); save(); renderInv(); toast(tr("Выкинуто","Dropped"));
 }
 function invDropBelt(k){
   const m=invM(); if(!m||!(m.belt[k]>0))return;
-  m.belt[k]--; save(); renderInv(); toast("Выкинуто");
+  m.belt[k]--; save(); renderInv(); toast(tr("Выкинуто","Dropped"));
 }
 
 /* =========================================================
@@ -2772,7 +2772,7 @@ function openWarehouse(){
     html+=`<div class="igrid">`+amkeys.map(k=>
       itemCard("ammo",k,{onclick:`sellAmmo('${k}')`,count:S.inv.ammo[k]})).join("")+`</div>
       <div class="muted" style="margin-bottom:8px">Тап по коробке — продать всё за полцены. Раздача в бой — в экипировке бойца.</div>`;
-  }else html+=`<div class="muted" style="margin-bottom:8px">Пусто. Патроны продаются в магазине и падают с ящиков.</div>`;
+  }else html+=`<div class="muted" style="margin-bottom:8px">${tr("Пусто. Патроны продаются в магазине и падают с ящиков.","Empty. Ammo is sold at the shop and drops from crates.")}</div>`;
   html+=`<h2 class="sub">⛏️ Материалы (для мастерской)</h2><div class="igrid">
     ${Object.keys(MATERIALS).map(k=>itemCard("mat",k,{count:S.mats[k]||0})).join("")}
   </div>`;
@@ -3123,7 +3123,7 @@ function buyAmmo(t){
   if(!S.inv.ammo)S.inv.ammo={};
   if(!spend(a.price))return;
   S.inv.ammo[t]=(S.inv.ammo[t]||0)+a.box;
-  save(); openShop(); toast(`${a.name} ×${a.box} — куплено`);
+  save(); openShop(); toast(tr(`${a.name} ×${a.box} — куплено`,`${a.name} ×${a.box} — bought`));
 }
 function sellAmmo(t){
   if(!S.inv.ammo||!(S.inv.ammo[t]>0))return;
