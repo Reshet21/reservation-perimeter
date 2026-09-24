@@ -738,8 +738,7 @@ function overBadge(load, limit){
   const col=o.tier===1?"var(--amber)":o.tier===2?"#ff9a52":"var(--red)";
   return `<span class="tag" style="color:${col}">🎒 ${o.name} <b>−${o.pen} ОД</b></span>`;
 }
-/* лимит переноски бойца: 16 + 2 за уровень (ур.1 → 16, ур.20 → 54) —
-   миниган и экзо-комбез таскают только прокачанные */
+/* лимит переноски бойца см. carryLimit ниже */
 /* лимит переноски: 750 + 55 за уровень (ур.1 → 750, ур.20 → 1795) */
 function carryLimit(m){ return 750 + 55*((m.level||1)-1); }
 /* текущий носимый вес: оружие + броня + импланты + пояс */
@@ -1399,7 +1398,7 @@ function gainSkill(u, amount){
   const nv=Math.min(100, old+amount);
   m.skills[g]=nv;
   if(Math.floor(old/25)<Math.floor(nv/25)){
-    blog(`📈 ${u.name}: навык «${SKILLS[g].name}» — ${skillRank(nv)} (${nv})!`);
+    blog(tr(`📈 ${u.name}: навык «${SKILLS[g].name}» — ${skillRank(nv)} (${nv})!`,`📈 ${u.name}: “${SKILLS[g].name}” skill — ${skillRank(nv)} (${nv})!`));
   }
 }
 
@@ -1502,6 +1501,10 @@ MISSIONS:{
   roadblock:{n:"Raider roadblock",d:"Raiders blocked the industrial zone on the way to the mines. Storm the post, crack the arsenals."},
   dunes:{n:"Wild field salt flats",d:"Vector caravans cross the desert. Raiders shoot from dry copses. Hot. Dangerous."},
   convoy:{n:"Vector convoy",d:"Machinegunners guard the cargo depots. Huge grounds, hangars and cover everywhere."}},
+ROOMS:{
+  "1x1":{n:"Duel",d:"1 fighter vs 1"},
+  "2x2":{n:"Pairs",d:"2 fighters vs 2"},
+  "4x4":{n:"Squad",d:"4 fighters vs 4"}},
 };
 /* подмена имен/описаний под язык (с бэкапом русских) */
 function applyDataLocale(){
@@ -1521,6 +1524,7 @@ function applyDataLocale(){
   swap(CLASSES,DN_EN.CLASSES); swap(SKILLS,DN_EN.SKILLS);
   swap(BIOMES,DN_EN.BIOMES); swap(SLOTS,DN_EN.SLOTS);
   swap(ENEMY_TYPES,DN_EN.ENEMIES); swap(MISSIONS_BY_ID(),DN_EN.MISSIONS);
+  swap(ROOM_MODES,DN_EN.ROOMS);
   if(en){ if(!SKILL_RANKS._ru)SKILL_RANKS._ru=SKILL_RANKS.slice(); DN_EN.SKILL_RANKS.forEach((r,i)=>SKILL_RANKS[i]=r); }
   else if(SKILL_RANKS._ru){ SKILL_RANKS._ru.forEach((r,i)=>SKILL_RANKS[i]=r); }
 }
@@ -2378,33 +2382,31 @@ function renderRooms(){
     html+=`<div class="card" style="border:1px solid var(--blue);margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:8px">
         <div style="font-size:24px">⏳</div>
-        <div style="flex:1"><b style="color:var(--blue)">Твоя комната</b>
-          <div class="muted" style="font-size:11px">${myCreatedRoom.mode} · ${myCreatedRoom.naked?"🚿 голый":myCreatedRoom.stake?"💰 "+myCreatedRoom.stake:"без ставки"}</div></div>
-        <div class="btn small danger" onclick="cancelWait()">Отмена</div>
+        <div style="flex:1"><b style="color:var(--blue)">${tr("Твоя комната","Your room")}</b>
+          <div class="muted" style="font-size:11px">${myCreatedRoom.mode} · ${myCreatedRoom.naked?tr("🚿 голый","🚿 naked"):myCreatedRoom.stake?"💰 "+myCreatedRoom.stake:tr("без ставки","no stake")}</div></div>
+        <div class="btn small danger" onclick="cancelWait()">${tr("Отмена","Cancel")}</div>
       </div>
     </div>`;
   }
-  html+=`<div class="card"><h3>${md.emoji} Режим «${md.name}»</h3>
-    <div class="muted">${md.desc}. Победа: +35 рейтинга и ставка соперника. Поражение: −20 и своя ставка.
-    В «голых» комнатах экипировка не действует — только базовые стволы, самые честные бои!</div>
+  html+=`<div class="card"><h3>${md.emoji} ${tr("Режим","Mode")} «${md.name}»</h3>
+    <div class="muted">${md.desc}. ${tr("Победа: +35 рейтинга и ставка соперника. Поражение: −20 и своя ставка.","Win: +35 rating and enemy stake. Loss: −20 and your stake.")}<br>${tr("В «голых» комнатах экипировка не действует — только базовые стволы, самые честные бои!","“Naked” rooms ignore gear — stock guns only, the fairest fights!")}</div>
   </div>
   <div class="row" style="margin-bottom:10px">
-    <div class="btn primary grow" onclick="createRoom()">➕ Создать комнату</div>
+    <div class="btn primary grow" onclick="createRoom()">${tr("➕ Создать комнату","➕ Create room")}</div>
     <div class="btn" onclick="roomsList=genRooms();renderRooms()">🔄</div>
   </div>
-  <h2 class="sub">Открытые комнаты</h2>`;
+  <h2 class="sub">${tr("Открытые комнаты","Open rooms")}</h2>`;
   roomsList.forEach((r,i)=>{
     const isBot = r.isBot;
     html+=`<div class="room" style="${isBot?"":"border-left:2px solid var(--blue)"}">
       <div class="rmode">${r.mode||roomMode}</div>
-      <div class="rinfo"><b>${r.host}</b> ${r.naked?'<span class="tag">🚿 голый бой</span>':""}${isBot?'<span class="tag">🤖</span>':'<span class="tag" style="background:rgba(0,100,200,.2);color:var(--blue)">игрок</span>'}
-        <div class="muted">🏆 ${r.rating} · ставка ${r.stake?r.stake+" 💰":"без ставки"}</div></div>
-      <div class="btn small primary" onclick="joinRoom(${i})">ВОЙТИ</div>
+      <div class="rinfo"><b>${r.host}</b> ${r.naked?`<span class="tag">${tr("🚿 голый бой","🚿 naked")}</span>`:""}${isBot?'<span class="tag">🤖</span>':`<span class="tag" style="background:rgba(0,100,200,.2);color:var(--blue)">${tr("игрок","player")}</span>`}
+        <div class="muted">🏆 ${r.rating} · ${tr("ставка","stake")} ${r.stake?r.stake+" 💰":tr("без ставки","no stake")}</div></div>
+      <div class="btn small primary" onclick="joinRoom(${i})">${tr("ВОЙТИ","JOIN")}</div>
     </div>`;
   });
   html+=`<div class="card" style="margin-top:10px"><h3>ℹ️ О PvP</h3>
-    <div class="muted" style="font-size:12px">Боты — ИИ на этом же устройстве. Реальные игроки — те, кто зашли под своими AN Wallet на этом же устройстве.
-    Кросс-девайс PvP будет доступен после деплоя контракта <b>PerimeterArena</b> на блокчейн.</div></div>`;
+    <div class="muted" style="font-size:12px">${tr("Боты — ИИ на этом же устройстве. Реальные игроки — те, кто зашли под своими AN Wallet на этом же устройстве.","Bots are AI on this device. Real players are those logged in with their AN Wallets on this device.")}<br>${tr("Кросс-девайс PvP будет доступен после деплоя контракта <b>PerimeterArena</b> на блокчейн.","Cross-device PvP unlocks after <b>PerimeterArena</b> contract deploy.")}</div></div>`;
   el.innerHTML=html;
 }
 function setRoomMode(k){ roomMode=k; roomsList=genRooms(); renderRooms(); }
@@ -2412,16 +2414,16 @@ let myCreatedRoom = null;
 let waitingForOpponent = false;
 function createRoom(){
   const md=ROOM_MODES[roomMode];
-  if(S.roster.length<md.units){toast("Нужно бойцов: "+md.units+" — найми ещё");return;}
-  genericModal(`<h2>➕ Комната ${roomMode}</h2>
-    <div class="muted">Ставка (спишется при поражении, выигрыш при победе):</div>
+  if(S.roster.length<md.units){toast(tr("Нужно бойцов: ","Fighters needed: ")+md.units+tr(" — найми ещё"," — hire more"));return;}
+  genericModal(`<h2>${tr("➕ Комната","➕ Room")} ${roomMode}</h2>
+    <div class="muted">${tr("Ставка (спишется при поражении, выигрыш при победе):","Stake (lost on defeat, won on victory):")}</div>
     <div class="row" style="margin-top:10px;flex-wrap:wrap;gap:6px">
       ${[0,50,100,200,400].map(s=>`<div class="btn small ${S.credits>=s?"":"disabled"}" 
-        onclick="closeModal('mGeneric');waitInRoom(${s},false)">${s?s+" 💰":"Без ставки"}</div>`).join("")}
+        onclick="closeModal('mGeneric');waitInRoom(${s},false)">${s?s+" 💰":tr("Без ставки","No stake")}</div>`).join("")}
     </div>
     <div class="row" style="margin-top:8px">
-      <div class="btn grow" onclick="closeModal('mGeneric');waitInRoom(0,true)">🚿 Голый бой</div>
-      <div class="btn grow" onclick="closeModal('mGeneric')">Отмена</div>
+      <div class="btn grow" onclick="closeModal('mGeneric');waitInRoom(0,true)">${tr("🚿 Голый бой","🚿 Naked fight")}</div>
+      <div class="btn grow" onclick="closeModal('mGeneric')">${tr("Отмена","Cancel")}</div>
     </div>`);
 }
 function waitInRoom(stake, naked){
@@ -2456,19 +2458,19 @@ function renderWaitingRoom(){
   el.innerHTML=`
     <div class="card" style="text-align:center;border:1px solid var(--blue)">
       <div style="font-size:48px;margin-bottom:12px">⏳</div>
-      <h3>Ожидание соперника</h3>
-      <div class="muted">${r.mode} · ${r.naked?"🚿 голый бой":r.stake?"💰 ставка "+r.stake:"без ставки"}</div>
+      <h3>${tr("Ожидание соперника","Waiting for opponent")}</h3>
+      <div class="muted">${r.mode} · ${r.naked?tr("🚿 голый бой","🚿 naked fight"):r.stake?tr("💰 ставка ","💰 stake ")+r.stake:tr("без ставки","no stake")}</div>
       <div style="margin:16px 0;font-size:14px;color:var(--sand)">
         ${min}:${sec<10?"0"+sec:sec}
       </div>
-      <div class="muted" style="font-size:12px;margin-bottom:12px">Соперник найдёт тебя в списке комнат</div>
+      <div class="muted" style="font-size:12px;margin-bottom:12px">${tr("Соперник найдёт тебя в списке комнат","An opponent will find you in the room list")}</div>
       <div style="display:flex;gap:8px;justify-content:center">
-        <div class="btn danger" onclick="cancelWait()">❌ Покинуть комнату</div>
+        <div class="btn danger" onclick="cancelWait()">${tr("❌ Покинуть комнату","❌ Leave room")}</div>
       </div>
     </div>
     <div class="card" style="margin-top:10px">
-      <h3>📋 Твои бойцы (${r.mode})</h3>
-      <div class="muted" style="font-size:12px;margin-bottom:8px">Подбери отряд, пока ждёшь</div>
+      <h3>${tr("📋 Твои бойцы","📋 Your fighters")} (${r.mode})</h3>
+      <div class="muted" style="font-size:12px;margin-bottom:8px">${tr("Подбери отряд, пока ждёшь","Pick your squad while waiting")}</div>
       <div id="waitingSquadList"></div>
     </div>`;
   renderWaitingSquad();
@@ -2503,7 +2505,7 @@ function cancelWait(){
 function joinRoom(i){
   const r=roomsList[i]; if(!r)return;
   const md=ROOM_MODES[r.mode||roomMode];
-  if(S.roster.length<md.units){toast("Нужно бойцов: "+md.units+" — найми ещё");return;}
+  if(S.roster.length<md.units){toast(tr("Нужно бойцов: ","Fighters needed: ")+md.units+tr(" — найми ещё"," — hire more"));return;}
   if(r.stake>S.credits){toast("Не хватает на ставку ("+r.stake+")");return;}
   if(waitingForOpponent && myCreatedRoom){
     waitingForOpponent = false;
@@ -2559,7 +2561,7 @@ function renderSquadPickPvp(){
 }
 function deployPvp(){
   const md=ROOM_MODES[pvpCtx.mode];
-  if(squadSel.length!==md.units){toast("Нужно ровно "+md.units+" бойц(а)");return;}
+  if(squadSel.length!==md.units){toast(tr("Нужно ровно ","Need exactly ")+md.units+tr(" бойц(а)"," fighter(s)"));return;}
   autoAmmo(S.roster.filter(m=>squadSel.includes(m.id)));
   closeModal("mSquad");
   document.getElementById("btnDeploy").setAttribute("onclick","deploySquad()");
@@ -2608,7 +2610,7 @@ function startPvpBattle(){
    loadMags();
    blog(`🎮 ${pvpCtx.mode} против ${hostName}${naked?" · 🚿":""}${stake?` · ставка ${stake}💰`:""}`);
   units.filter(u=>u.side==="p"&&u.over>0).forEach(u=>
-    blog(`🎒 ${u.name}: перегруз, ОД на весь бой −${u.over}`));
+    blog(tr(`🎒 ${u.name}: перегруз, ОД на весь бой −${u.over}`,`🎒 ${u.name}: overloaded, −${u.over} AP all battle`)));
   selectUnit(B.units.find(u=>u.side==="p"));
   show("scr-battle");
   resize();
@@ -2629,11 +2631,10 @@ function canCraft(r){
 }
 function openCraft(){
   const el=document.getElementById("craftBody");
-  let html=`<div class="card"><h3>🔧 Верстак</h3>
-    <div class="muted">Материалы добываются в бою — обыскивай трупы врагов (лут после победы).
-    Крафтовая броня не продаётся в магазине, а попоны для псов вообще больше нигде не достать!</div>
+  let html=`<div class="card"><h3>${tr("🔧 Верстак","🔧 Workbench")}</h3>
+    <div class="muted">${tr("Материалы добываются в бою — обыскивай трупы врагов (лут после победы).","Materials drop in battle — search enemy corpses (post-victory loot).")}<br>${tr("Крафтовая броня не продаётся в магазине, а попоны для псов вообще больше нигде не достать!","Crafted armor is not sold in shops, and dog bardings can't be found anywhere else!")}</div>
     <div style="margin-top:8px">${matBar()}</div></div>`;
-  const groups=[["armor","🦺 Броня и попоны"],["cons","🧪 Расходники"],["weapon","🗡️ Оружие"]];
+  const groups=[["armor",tr("🦺 Броня и попоны","🦺 Armor and bardings")],["cons",tr("🧪 Расходники","🧪 Consumables")],["weapon",tr("🗡️ Оружие","🗡️ Guns")]];
   groups.forEach(([g,title])=>{
     const list=RECIPES.filter(r=>r.type===g);
     if(!list.length)return;
@@ -2647,7 +2648,7 @@ function openCraft(){
         const have=S.mats[m]||0, need=r.mats[m];
         return `<span class="${have>=need?"ok":"no"}">${MATERIALS[m].name} ${have}/${need}</span>`;
       }).join(" · ");
-      const extra=isArm?`Защита -${def.red}${ARMORS[r.out].dog?" · 🐕 только для пса":""}`:
+      const extra=isArm?`${tr("Защита","Armor")} -${def.red}${ARMORS[r.out].dog?tr(" · 🐕 только для пса"," · 🐕 dogs only"):""}`:
                   isCons?def.desc:weaponDesc(def);
       html+=`<div class="recipe">${svgIcon(kind,r.out)}
         <div class="grow"><div class="rname">${def.name}</div>
@@ -2661,7 +2662,7 @@ function openCraft(){
 }
 function doCraft(rid){
   const r=RECIPES.find(x=>x.id===rid); if(!r)return;
-  if(!canCraft(r)){toast("Не хватает материалов или кредитов");return;}
+  if(!canCraft(r)){toast(tr("Не хватает материалов или кредитов","Not enough materials or credits"));return;}
   S.credits-=r.cost;
   for(const m in r.mats)S.mats[m]-=r.mats[m];
   if(r.type==="armor")S.inv.armors[r.out]=(S.inv.armors[r.out]||0)+1;
@@ -2669,7 +2670,7 @@ function doCraft(rid){
   else S.inv.weapons[r.out]=(S.inv.weapons[r.out]||0)+1;
   save(); openCraft();
   const def=r.type==="armor"?ARMORS[r.out]:r.type==="cons"?CONSUMABLES[r.out]:WEAPONS[r.out];
-  toast("⚒ Скрафчено: "+def.name);
+  toast(tr("⚒ Скрафчено: ","⚒ Crafted: ")+def.name);
 }
 /* лут с убитых врагов */
 function rollLoot(etypes){
@@ -2880,7 +2881,8 @@ function marketPayload(){
    ========================================================= */
 let marketTab="goods";
 let marketFilter="all";
-const MARKET_FILTERS=[["all","Все"],["weapon","🔫 Оружие"],["armor","🦺 Броня"],["implant","🧠 Импланты"],["cons","🧪 Расходники"]];
+let MARKET_FILTERS=null;
+function marketFilters(){ return [["all",tr("Все","All")],["weapon",tr("🔫 Оружие","🔫 Guns")],["armor",tr("🦺 Броня","🦺 Armor")],["implant",tr("🧠 Импланты","🧠 Implants")],["cons",tr("🧪 Расходники","🧪 Consumables")]]; }
 function setMarketFilter(f){ marketFilter=f; renderMarketList(); }
 /* детерминированный ГПСЧ — ассортимент одинаков весь день */
 function mulberry32(a){
@@ -2967,7 +2969,7 @@ function renderMarketList(){
     const st=S.market.stock;
     /* фильтр по типу предмета */
     let chips=`<div class="modetab" style="margin-bottom:8px">`+
-      MARKET_FILTERS.map(([k,n])=>
+      marketFilters().map(([k,n])=>
         `<div class="btn small ${marketFilter===k?"on":""}" onclick="setMarketFilter('${k}')">${n}</div>`).join("")+
       `</div>`;
     const offers=st.offers.filter(o=>!o.bought&&(marketFilter==="all"||o.type===marketFilter));
@@ -2982,12 +2984,12 @@ function renderMarketList(){
         " · Защита -"+it.red+(it.dog?" · 🐕 для пса":"")+(it.craft?" · крафт":"")+` · ⚖️${itemWt("armor",o.id)}`;
       else desc=(it.desc||"")+` · ⚖️${itemWt(o.type==="implant"?"implant":"cons",o.id)}`;
       const off=Math.round((1-o.price/o.base)*100);
-      const tags=(off>=10?`<span class="tag" style="border-color:rgba(74,222,128,.4);color:#86efac">🔥 Скидка −${off}%</span>`:"")+
-                 `<span class="tag">В магазине: <b>${o.base}💰</b></span>`;
+      const tags=(off>=10?`<span class="tag" style="border-color:rgba(74,222,128,.4);color:#86efac">${tr("🔥 Скидка","🔥 Sale")} −${off}%</span>`:"")+
+                 `<span class="tag">${tr("В магазине:","Shop:")} <b>${o.base}💰</b></span>`;
       html+=marketRow(icon,it.name,desc,tags,
         `<div class="btn small primary" style="flex-shrink:0" onclick="marketBuy(${i})">💰 ${o.price}</div>`);
     });
-    el.innerHTML=chips+(html||`<div class="card"><div class="muted">${marketFilter==="all"?"Товар завезут завтра.":"В этой категории сегодня ничего нет — загляни завтра."}</div></div>`);
+    el.innerHTML=chips+(html||`<div class="card"><div class="muted">${marketFilter==="all"?tr("Товар завезут завтра.","New goods tomorrow."):tr("В этой категории сегодня ничего нет — загляни завтра.","Nothing in this category today — check tomorrow.")}</div></div>`);
   }else{
     if(!S.market.listed.length){
       el.innerHTML=`<div class="card"><div class="muted">Лотов нет.<br><br>
@@ -3011,7 +3013,7 @@ function marketBuy(i){
   const st=S.market.stock; if(!st)return;
   const o=st.offers[i];
   if(!o||o.bought)return;
-  if(S.credits<o.price){toast("Не хватает кредитов");return;}
+  if(S.credits<o.price){toast(tr("Не хватает кредитов","Not enough credits"));return;}
   S.credits-=o.price;
   o.bought=true;
   if(o.type==="weapon")S.inv.weapons[o.id]=(S.inv.weapons[o.id]||0)+1;
@@ -3021,7 +3023,7 @@ function marketBuy(i){
   else S.inv.grenade++;
   sfx("crate");
   save();
-  toast("Куплено: "+itemName(o.type,o.id));
+  toast(tr("Куплено: ","Bought: ")+itemName(o.type,o.id));
   renderHub();openMarket();
 }
 async function marketSync(fromMarket){
@@ -3479,9 +3481,9 @@ function startBattle(mission, squadIds){
   logLines=[]; effects=[]; particles=[]; initDust();
   recomputeFog();
   loadMags();
-  blog(`⚔️ ${mission.name}. Найди противника — врагов не видно, пока не подойдёшь!`);
+  blog(tr(`⚔️ ${mission.name}. Найди противника — врагов не видно, пока не подойдёшь!`,`⚔️ ${mission.name}. Find the enemy — invisible until approached!`));
   units.filter(u=>u.side==="p"&&u.over>0).forEach(u=>
-    blog(`🎒 ${u.name}: перегруз, ОД на весь бой −${u.over}`));
+    blog(tr(`🎒 ${u.name}: перегруз, ОД на весь бой −${u.over}`,`🎒 ${u.name}: overloaded, −${u.over} AP all battle`)));
   selectUnit(B.units.find(u=>u.side==="p"));
   show("scr-battle");
   resize();
@@ -3655,7 +3657,7 @@ function recomputeFog(){
     if(e.side!=="e"||!e.alive)return;
     if(B.fog[e.y][e.x]===2 && !B.spotted.has(e)){
       B.spotted.add(e);
-      blog(`👁 Обнаружен ${e.emoji}${e.name}!`);
+      blog(tr(`👁 Обнаружен ${e.emoji}${e.name}!`,`👁 Spotted ${e.emoji}${e.name}!`));
       addEffect({type:"text",x:e.x,y:e.y,str:"👁",color:"#ffd27f",t:now()});
     }
   });
@@ -3786,7 +3788,7 @@ function applyDamage(def, dmg, srcName, info){
     doShake(6,320);
     punch={t:now()+210,mag:1};
     sfx("death");
-    blog(`☠ ${def.emoji}${def.name} погибает!`);
+    blog(tr(`☠ ${def.emoji}${def.name} погибает!`,`☠ ${def.emoji}${def.name} dies!`));
     B.log.push(`kill:${def.name}`);
     if(def.side==="e")B.kills++;
     else recomputeFog(); // погиб наблюдатель — обзор отряда сузился
@@ -3867,7 +3869,7 @@ function doAttack(att,def){
     }
   }else{
     addEffect({type:"text",x:def.x,y:def.y,str:"мимо",color:"#9ab",t:now()});
-    blog(`${att.emoji}${att.name} промахнулся по ${def.name}`);
+    blog(tr(`${att.emoji}${att.name} промахнулся по ${def.name}`,`${att.emoji}${att.name} misses ${def.name}`));
     B.log.push(`${att.name}>${def.name}:miss`);
     if(!w.melee)spawnGroundPuff(def.x,def.y); // фонтанчик у клетки цели
     if(w.splash){ // ракета мимо — взрыв в случайной соседней клетке
@@ -4127,7 +4129,7 @@ function useMedkit(){
   B.movePath=null;
   addEffect({type:"text",x:u.x,y:u.y,str:"+40",color:"#8fdc6a",t:now()});
   spawnSparks(u.x,u.y,"#8fdc6a",8);
-  blog(`💉 ${u.name} лечится`);
+  blog(tr(`💉 ${u.name} лечится`,`💉 ${u.name} healing`));
   updateHud();
 }
 function toggleGrenade(){
@@ -4155,7 +4157,7 @@ function swapWeapon(){
   u.mag=g?(u.mags[u.weapon]!==undefined?u.mags[u.weapon]:g.mag):0;
   B.movePath=null;
   const w=WEAPONS[u.weapon];
-  blog(`🔁 ${u.name} достаёт ${w.emoji}${w.name}`);
+  blog(tr(`🔁 ${u.name} достаёт ${w.emoji}${w.name}`,`🔁 ${u.name} draws ${w.emoji}${w.name}`));
   addEffect({type:"text",x:u.x,y:u.y,str:"🔁",color:"#cbb",t:now()});
   updateHud();
 }
@@ -4184,7 +4186,7 @@ function throwGrenade(c){
   spendBelt(sel,"grenade");sel.ap-=5;B.mode="normal";B.movePath=null;
   addEffect({type:"boom",x:c.x,y:c.y,t:now()});
   doShake(8,400);
-  blog(`💣 ${sel.name} бросает гранату!`);
+  blog(tr(`💣 ${sel.name} бросает гранату!`,`💣 ${sel.name} throws a grenade!`));
   B.units.forEach(u=>{
     if(!u.alive)return;
     if(Math.abs(u.x-c.x)<=1&&Math.abs(u.y-c.y)<=1){
@@ -4326,7 +4328,7 @@ function aiHeal(e,nearDist){
   e.hp=Math.min(e.maxhp,e.hp+40);
   addEffect({type:"text",x:e.x,y:e.y,str:"+40",color:"#4ade80",t:now()});
   spawnSparks(e.x,e.y,"#4ade80",8);
-  blog(`💉 ${e.name} лечится`);
+  blog(tr(`💉 ${e.name} лечится`,`💉 ${e.name} healing`));
   return true;
 }
 function aiStep(){
@@ -4374,7 +4376,7 @@ function aiStep(){
       if(e.ap>=3&&e.spare&&e.spare[eg.ammo]>0){
         const take=Math.min(eg.mag,e.spare[eg.ammo]);
         e.mag+=take;e.spare[eg.ammo]-=take;e.ap-=3;
-        blog(`🔄 ${e.name} перезаряжается`);
+        blog(tr(`🔄 ${e.name} перезаряжается`,`🔄 ${e.name} reloading`));
       }else e.ap=0;
       if(!B.over)B.aiTimer=setTimeout(aiStep,420);
       return;
