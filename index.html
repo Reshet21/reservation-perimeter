@@ -710,6 +710,21 @@ function itemWt(type,id){
   if(type==="implant") return 1;
   return 1;
 }
+/* ступени перегруза (как в оригинале): с собой в бой можно всё,
+   но каждые лишние кило режут ОД. Возврат: 0 нет, 1 лёгкий, 2 средний, 3 тяжёлый */
+function overInfo(load, limit){
+  if(load<=limit) return {tier:0, name:"", pen:0};
+  const r=load/Math.max(1,limit);
+  if(r<=1.25) return {tier:1, name:"лёгкий перегруз", pen:2};
+  if(r<=1.6)  return {tier:2, name:"средний перегруз", pen:4};
+  return {tier:3, name:"тяжёлый перегруз", pen:6};
+}
+function overBadge(load, limit){
+  const o=overInfo(load,limit);
+  if(!o.tier)return "";
+  const col=o.tier===1?"var(--amber)":o.tier===2?"#ff9a52":"var(--red)";
+  return `<span class="tag" style="color:${col}">🎒 ${o.name} <b>−${o.pen} ОД</b></span>`;
+}
 /* лимит переноски бойца: 16 + 2 за уровень (ур.1 → 16, ур.20 → 54) —
    миниган и экзо-комбез таскают только прокачанные */
 function carryLimit(m){ return 16 + 2*((m.level||1)-1); }
@@ -1582,7 +1597,8 @@ function renderSquadPick(){
     return `<div class="pickrow ${sel?"sel":""}" onclick="togglePick('${m.id}')">
       <div class="e">${CLASSES[m.cls].emoji}</div>
       <div class="grow"><b>${m.name}</b> <span class="muted">ур.${m.level} ${CLASSES[m.cls].name}</span>
-      <div class="muted">${w.emoji}${w.name} (${skillRank(sk)} ${sk})${m.weapon2?` +${WEAPONS[m.weapon2].emoji}`:""} · HP ${st.hp} · ОД ${st.ap}${beltStr}</div></div>
+      <div class="muted">${w.emoji}${w.name} (${skillRank(sk)} ${sk})${m.weapon2?` +${WEAPONS[m.weapon2].emoji}`:""} · HP ${st.hp} · ОД ${st.ap}${beltStr}</div>
+      <div style="margin-top:3px">${overBadge(mercLoad(m),carryLimit(m))}</div></div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
         <div>${sel?"✅":"⬜"}</div>
         <div class="btn small" onclick="event.stopPropagation();closeModal('mSquad');openEquip('${m.id}')">🎒</div>
@@ -1607,9 +1623,6 @@ function togglePick(id){
 }
 function deploySquad(){
   if(!squadSel.length){toast("Выбери хотя бы одного бойца");return;}
-  /* в бой не выпускаем перегруженных */
-  const over=S.roster.filter(m=>squadSel.includes(m.id)&&mercLoad(m)>carryLimit(m));
-  if(over.length){toast(`⚠️ Перегруз: ${over.map(m=>m.name).join(", ")} — разгрузи в инвентаре 🎒`);return;}
   closeModal("mSquad"); startBattle(chosenMission, squadSel);
 }
 
@@ -1950,7 +1963,8 @@ function renderInv(){
       <div class="statline"><span class="tag">HP <b>${st.hp}</b></span>
       <span class="tag">ОД <b>${st.ap}</b></span><span class="tag">Броня <b>-${st.armor}</b></span></div>
       ${weightBar(load,lim)}
-      ${load>lim?`<div style="color:var(--red);font-size:12px;margin-top:6px">⚠️ Перегруз! Сними или выкини что-нибудь — иначе в бой с таким весом нельзя.</div>`:""}
+      ${overBadge(load,lim)}
+      ${load>lim?`<div style="color:var(--amber);font-size:12px;margin-top:6px">В бой с таким весом можно, но ОД будут порезаны на весь бой. Сними лишнее в случае чего.</div>`:""}
       </div></div>
   </div>`;
   /* --- оружие --- */
@@ -2305,8 +2319,6 @@ function renderSquadPickPvp(){
 function deployPvp(){
   const md=ROOM_MODES[pvpCtx.mode];
   if(squadSel.length!==md.units){toast("Нужно ровно "+md.units+" бойц(а)");return;}
-  const over=S.roster.filter(m=>squadSel.includes(m.id)&&mercLoad(m)>carryLimit(m));
-  if(over.length){toast(`⚠️ Перегруз: ${over.map(m=>m.name).join(", ")} — разгрузи в инвентаре 🎒`);return;}
   closeModal("mSquad");
   document.getElementById("btnDeploy").setAttribute("onclick","deploySquad()");
   startPvpBattle();
@@ -2323,9 +2335,11 @@ function startPvpBattle(){
   squad.forEach((m,i)=>{
     const st=mercStats(m);
     const w=naked?CLASSES[m.cls].weapon:m.weapon;
+    const pen=naked?0:overInfo(mercLoad(m),carryLimit(m)).pen;
+    const bap=Math.max(4, st.ap-pen);
     units.push({side:"p",mercId:m.id,name:m.name,emoji:CLASSES[m.cls].emoji,
       cls:m.cls,look:m.look,x:pSpawns[i].x,y:pSpawns[i].y,
-      hp:st.hp,maxhp:st.hp,ap:st.ap,maxap:st.ap,acc:st.acc,lvl:m.level,
+      hp:st.hp,maxhp:st.hp,ap:bap,maxap:bap,acc:st.acc,lvl:m.level,over:pen,
       armor:naked?0:st.armor,
       weapon:w,weapon2:naked?null:m.weapon2,
       belt:naked?{medkit:0,grenade:0}:{medkit:m.belt.medkit||0,grenade:m.belt.grenade||0},
@@ -2348,6 +2362,8 @@ function startPvpBattle(){
   logLines=[];effects=[];particles=[];initDust();
   recomputeFog();
   blog(`🎮 ${pvpCtx.mode} против ${hostName}${naked?" · 🚿":""}${stake?` · ставка ${stake}💰`:""}`);
+  units.filter(u=>u.side==="p"&&u.over>0).forEach(u=>
+    blog(`🎒 ${u.name}: перегруз, ОД на весь бой −${u.over}`));
   selectUnit(B.units.find(u=>u.side==="p"));
   show("scr-battle");
   resize();
@@ -3151,9 +3167,13 @@ function startBattle(mission, squadIds){
   const pSpawns = freeCellsNear(map, 1, GRID-2, squad.length);
   squad.forEach((m,i)=>{
     const st=mercStats(m);
+    /* перегруз режет ОД на весь бой (ступени overInfo), минимум 4 ОД */
+    const pen=overInfo(mercLoad(m),carryLimit(m)).pen;
+    const bap=Math.max(4, st.ap-pen);
     units.push({side:"p", mercId:m.id, name:m.name, emoji:CLASSES[m.cls].emoji,
       cls:m.cls, look:m.look, x:pSpawns[i].x, y:pSpawns[i].y, hp:st.hp, maxhp:st.hp,
-      ap:st.ap, maxap:st.ap, acc:st.acc, armor:st.armor, lvl:m.level,
+      ap:bap, maxap:bap, acc:st.acc, armor:st.armor, lvl:m.level,
+      over:pen,
       weapon:m.weapon, weapon2:m.weapon2,
       belt:{medkit:m.belt.medkit||0, grenade:m.belt.grenade||0}, // личный пояс как в жанровой классике
       sight:st.sight, alive:true});
@@ -3176,6 +3196,8 @@ function startBattle(mission, squadIds){
   logLines=[]; effects=[]; particles=[]; initDust();
   recomputeFog();
   blog(`⚔️ ${mission.name}. Найди противника — врагов не видно, пока не подойдёшь!`);
+  units.filter(u=>u.side==="p"&&u.over>0).forEach(u=>
+    blog(`🎒 ${u.name}: перегруз, ОД на весь бой −${u.over}`));
   selectUnit(B.units.find(u=>u.side==="p"));
   show("scr-battle");
   resize();
@@ -4113,7 +4135,7 @@ function updateHud(){
   document.getElementById("medCnt").textContent=u?totalBelt(u,"medkit"):0;
   document.getElementById("grenCnt").textContent=u?totalBelt(u,"grenade"):0;
   document.getElementById("uiHint").innerHTML=
-    B.phase==="p"?`Ход ${B.turn}<br>твой`:`Ход ${B.turn}<br>враг…`;
+    B.phase==="p"?`Ход ${B.turn}<br>твой${u&&u.over>0?`<br><span style="color:var(--amber)">🎒−${u.over} ОД</span>`:""}`:`Ход ${B.turn}<br>враг…`;
   if(!u){return;}
   const w=WEAPONS[u.weapon];
   const sk=uSkill(u);
