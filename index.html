@@ -545,6 +545,7 @@
       <div class="btn" id="btnGren" onclick="toggleGrenade()">💣<span id="grenCnt"></span></div>
       <div class="btn" id="btnSwap" onclick="swapWeapon()">🔁</div>
       <div class="btn" id="btnReload" onclick="reloadUnit()">🔄<span id="magCnt"></span></div>
+      <div class="btn" onclick="battleInv()">🎒</div>
       <div class="btn" onclick="nextUnit()">👤</div>
       <div class="btn primary" onclick="endPlayerTurn()" data-tr="⏭ Ход|⏭ Turn">⏭ Ход</div>
       <div class="btn" style="flex:0 0 42px" id="btnSnd" onclick="toggleSnd()">🔊</div>
@@ -3913,6 +3914,8 @@ function doAttack(att,def){
   /* патроны: очередь короче остатка не стреляет, пустой магазин — щелчок */
   if(g){
     if((att.mag||0)<=0){
+      /* автофолбэк: запасной ствол с патронами → кулаки (если нечего) */
+      if(att.side==="p"&&autoFallback(att))return false;
       if(att.side==="p"){toast(tr("Пусто! Жми 🔄 для перезарядки","Empty! Press 🔄 to reload"));try{sfx("click");}catch(e){}}
       return false;
     }
@@ -4257,10 +4260,49 @@ function toggleGrenade(){
   updateHud();
 }
 /* смена оружия в бою — 2 ОД (заряженность каждого ствола сохраняется) */
+function spareMagOk(u,wid){
+  const w=WEAPONS[wid]; if(!w||w.melee)return true;
+  const g=gunSpec(wid); if(!g)return true;
+  const inMag=(u.mags&&u.mags[wid]!==undefined)?u.mags[wid]:g.mag;
+  if(inMag>0)return true;
+  return ((u.spare&&u.spare[g.ammo])||0)>0;
+}
+/* пустой магазин: сначала пробуем запасной ствол, потом кулаки (только люди) */
+function autoFallback(u){
+  if(u.weapon2&&spareMagOk(u,u.weapon2)){
+    if(u.ap<2){toast(tr("Нужно 2 ОД","Need 2 AP"));return true;}
+    swapWeapon();
+    toast(tr("Патроны кончились — достаю запасной ствол","Out of ammo — drawing spare gun"));
+    return true;
+  }
+  if(!u.weapon2&&u.cls==="human"&&u.weapon!=="fists"){
+    if(u.ap<2){toast(tr("Нужно 2 ОД","Need 2 AP"));return true;}
+    fistFallback(u);
+    return true;
+  }
+  return false;
+}
+/* убрать пустой ствол за спину, дальше — кулаки (2 ОД) */
+function fistFallback(u){
+  if(!u.mags)u.mags={};
+  u.mags[u.weapon]=u.mag||0;
+  u.weapon2=u.weapon; u.weapon="fists"; u.mag=0;
+  u.ap-=2; B.movePath=null;
+  sfx("reload");
+  blog(tr(`🔄 ${u.name} убирает пустой ствол — дальше кулаки 👊`,`🔄 ${u.name} slings the empty gun — fists 👊 from now`));
+  updateHud();
+}
 function swapWeapon(){
   if(!B||B.phase!=="p"||!B.sel||!B.sel.alive)return;
   const u=B.sel;
-  if(!u.weapon2){toast(tr("Нет запасного оружия","No spare weapon"));return;}
+  /* без запасного — на кулаки (только люди), ствол остаётся за спиной */
+  if(!u.weapon2){
+    if(u.cls!=="human"){toast(tr("Нет запасного оружия","No spare weapon"));return;}
+    if(u.weapon==="fists"){toast(tr("Уже кулаки","Already fists"));return;}
+    if(u.ap<2){toast(tr("Нужно 2 ОД","Need 2 AP"));return;}
+    fistFallback(u);
+    return;
+  }
   if(u.ap<2){toast(tr("Нужно 2 ОД","Need 2 AP"));return;}
   u.ap-=2;
   if(!u.mags)u.mags={};
@@ -4275,8 +4317,7 @@ function swapWeapon(){
   updateHud();
 }
 /* перезарядка в бою — 3 ОД, патроны из носимого запаса */
-function reloadUnit(){
-  if(!B||B.phase!=="p"||!B.sel||!B.sel.alive)return;
+function reloadUnit(){  if(!B||B.phase!=="p"||!B.sel||!B.sel.alive)return;
   const u=B.sel;
   const g=gunSpec(u.weapon);
   if(!g){toast(tr("Это оружие не требует патронов","This weapon needs no ammo"));return;}
@@ -4290,6 +4331,52 @@ function reloadUnit(){
   sfx("reload");
   blog(tr(`🔄 ${u.name} перезаряжается (+${take})`,`🔄 ${u.name} reloading (+${take})`));
   updateHud();
+}
+/* боевой инвентарь: что при себе (включая трофеи из ящиков) + действия */
+function battleInv(){
+  if(!B||B.over||B.phase!=="p"||!B.sel||!B.sel.alive)return;
+  const u=B.sel;
+  const w=WEAPONS[u.weapon], w2=u.weapon2?WEAPONS[u.weapon2]:null;
+  const g=gunSpec(u.weapon);
+  const med=(u.belt?u.belt.medkit||0:0)+(u.lootBelt?u.lootBelt.medkit||0:0);
+  const gr=(u.belt?u.belt.grenade||0:0)+(u.lootBelt?u.lootBelt.grenade||0:0);
+  const spares=Object.keys(u.spare||{}).filter(k=>(u.spare[k]||0)>0);
+  let html=`<h2>${tr("🎒 Боевой инвентарь","🎒 Battle loadout")}</h2>
+    <div class="muted" style="margin:4px 0">${esc(u.name)} · ${tr("несу","carrying")} ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)} · ${tr("ОД","AP")} ${u.ap}</div>
+    <div class="row" style="padding:7px 0;border-bottom:1px solid var(--line)">
+      <div style="font-size:24px">${w.emoji}</div>
+      <div class="grow"><b>${esc(w.name)}</b>
+        <div class="muted" style="font-size:11px">${tr("в руках","in hands")}${g?` · 🔸${u.mag||0}/${g.mag}`:""} · ⚖️${itemWt("weapon",u.weapon)}</div></div>
+      ${u.weapon2?`<div class="btn small" onclick="swapWeapon();battleInv()">🔁</div>`:""}
+      ${g?`<div class="btn small" onclick="reloadUnit();battleInv()">🔄</div>`:""}
+    </div>`;
+  if(w2){
+    const g2=gunSpec(u.weapon2);
+    html+=`<div class="row" style="padding:7px 0;border-bottom:1px solid var(--line)">
+      <div style="font-size:24px">${w2.emoji}</div>
+      <div class="grow"><b>${esc(w2.name)}</b>
+        <div class="muted" style="font-size:11px">${tr("за спиной","on back")}${g2?` · 🔸${(u.mags&&u.mags[u.weapon2]!==undefined)?u.mags[u.weapon2]:g2.mag}/${g2.mag}`:""} · ⚖️${itemWt("weapon",u.weapon2)}</div></div>
+      <div class="btn small" onclick="swapWeapon();battleInv()">🔁</div>
+    </div>`;
+  }
+  html+=`<div class="row" style="padding:7px 0;border-bottom:1px solid var(--line)">
+      <div style="font-size:24px">💉</div>
+      <div class="grow"><b>${tr("Аптечки","Medkits")} ×${med}</b></div>
+      ${med>0?`<div class="btn small" onclick="useMedkit();battleInv()">+</div>`:""}
+    </div>
+    <div class="row" style="padding:7px 0;border-bottom:1px solid var(--line)">
+      <div style="font-size:24px">💣</div>
+      <div class="grow"><b>${tr("Гранаты","Grenades")} ×${gr}</b></div>
+    </div>`;
+  spares.forEach(k=>{
+    html+=`<div class="row" style="padding:7px 0;border-bottom:1px solid var(--line)">
+      <div style="font-size:24px">🔸</div>
+      <div class="grow"><b>${esc(ammoName(k))} ×${u.spare[k]}</b></div>
+    </div>`;
+  });
+  if(!spares.length)html+=`<div class="muted" style="font-size:11px">${tr("Запасных патронов нет","No spare rounds")}</div>`;
+  html+=`<div class="btn grow" style="width:100%;margin-top:8px" onclick="closeModal('mGeneric')">${tr("Закрыть","Close")}</div>`;
+  genericModal(html);
 }
 function throwGrenade(c){
   const sel=B.sel;
