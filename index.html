@@ -672,6 +672,71 @@ function gearStr(m){
   const l=gearList(m);
   return l.length?l.map(a=>a.name).join(" + "):"без брони";
 }
+/* ---------- ВЕС (как в оригинале): у каждого предмета свой вес,
+   лимит переноски растёт с уровнем, максимальный уровень — 20 ---------- */
+const MAX_LEVEL = 20;
+const ITEM_WT = {
+  /* оружие */
+  fists:0, knife:1, machete:2, sledge:5,
+  glock:1, usp:1, deagle:2, uzi:2, mp5:3,
+  ak47:4, m16:4, fnfal:5, mossberg:4, spas:5,
+  m60:8, minigun:12, rpg:9, mosin:4, svd:5, barrett:8,
+  /* броня: голова */
+  bandana:1, kaska:1, rusthelm:2, titan:2, crysthelm:3,
+  /* броня: тело */
+  vest1:2, vest2:4, vest3:6, scrapvest:3, compvest:5, crystvest:7,
+  /* броня: ноги */
+  jeans:1, pads:2, leatherlegs:2, greaves:3, crystlegs:4,
+  /* комбезы */
+  overall:4, stalker:5, stormkmbz:6, exokmbes:8,
+  /* попоны */
+  dogvest1:2, dogvest2:3, dogvest3:4,
+  /* импланты и расходники */
+  imp_hp:1, imp_acc:1, imp_ap:1, medkit:1, grenade:1,
+};
+function itemWt(type,id){
+  if(id&&ITEM_WT[id]!==undefined) return ITEM_WT[id];
+  /* фолбэк по категории, если предмет не в таблице */
+  if(type==="weapon") return 3;
+  if(type==="armor") return 3;
+  if(type==="implant") return 1;
+  return 1;
+}
+/* лимит переноски бойца: 16 + 2 за уровень (ур.1 → 16, ур.20 → 54) —
+   миниган и экзо-комбез таскают только прокачанные */
+function carryLimit(m){ return 16 + 2*((m.level||1)-1); }
+/* текущий носимый вес: оружие + броня + импланты + пояс */
+function mercLoad(m){
+  let w = 0;
+  if(m.weapon) w += itemWt("weapon", m.weapon);
+  if(m.weapon2) w += itemWt("weapon", m.weapon2);
+  const seen = new Set();
+  ["head","body","legs"].forEach(s => {
+    const id = m.gear && m.gear[s];
+    if(id && !seen.has(id)){ seen.add(id); w += itemWt("armor", id); }
+  });
+  (m.implants||[]).forEach(k => { w += itemWt("implant", k); });
+  w += (m.belt ? (m.belt.medkit||0) + (m.belt.grenade||0) : 0);
+  return w;
+}
+/* вес боевого снаряжения юнита в бою: стволы + все расходники при себе */
+function unitBattleLoad(u){
+  let w = itemWt("weapon", u.weapon);
+  if(u.weapon2) w += itemWt("weapon", u.weapon2);
+  w += (u.belt ? (u.belt.medkit||0) + (u.belt.grenade||0) : 0);
+  w += (u.lootBelt ? (u.lootBelt.medkit||0) + (u.lootBelt.grenade||0) : 0);
+  return w;
+}
+function unitCarryLimit(u){ return 16 + 2*((u.lvl||1)-1); }
+/* шкала веса для карточек */
+function weightBar(load, limit){
+  const pct = Math.min(100, Math.round(100*load/Math.max(1,limit)));
+  const col = load > limit ? "var(--red)" : pct >= 85 ? "var(--amber)" : "var(--green)";
+  return `<div style="margin-top:6px"><div class="row" style="font-size:11px"><span>⚖️ Вес</span>
+    <span class="grow"></span><b style="color:${col}">${load}/${limit}</b></div>
+    <div style="height:6px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:3px">
+    <div style="height:6px;border-radius:3px;width:${pct}%;background:${col}"></div></div></div>`;
+}
 /* ---------- МАТЕРИАЛЫ ДЛЯ КРАФТА (падают с врагов, как лут в жанровой классике) ---------- */
 const MATERIALS = {
   scrap:  {name:"Металлолом",    tier:1},
@@ -1149,6 +1214,7 @@ function migrate(s){ // совместимость со старыми сейв�
       delete m.armor;
     }
     ["head","body","legs"].forEach(s=>{ if(m.gear[s]&&!ARMORS[m.gear[s]])m.gear[s]=null; });
+    if(m.level>MAX_LEVEL){m.level=MAX_LEVEL;m.xp=0;} /* кап уровня 20 */
   });
   if(!s.inv)s.inv={weapons:{},armors:{},implants:{},medkit:1,grenade:1};
   if(!s.market)s.market={listed:[], synced:false};            // v4: он-чейн торговля
@@ -1198,7 +1264,8 @@ function xpNeed(l){ return 100*l; }
 function grantXp(m, xp){
   m.xp += xp;
   let ups = 0;
-  while(m.xp >= xpNeed(m.level)){ m.xp -= xpNeed(m.level); m.level++; ups++; }
+  while(m.level < MAX_LEVEL && m.xp >= xpNeed(m.level)){ m.xp -= xpNeed(m.level); m.level++; ups++; }
+  if(m.level >= MAX_LEVEL) m.xp = 0; /* на капе опыт не копится */
   return ups;
 }
 /* навык юнита для его текущего оружия */
@@ -1590,12 +1657,14 @@ function openEquip(mid){
   document.getElementById("eqTitle").textContent="🎒 "+m.name.toUpperCase();
   let html=`<div class="card">
     <div class="row"><div style="font-size:34px">${c.emoji}</div>
-      <div class="grow"><h3>${m.name} <span class="muted">ур.${m.level} · ${c.name}</span></h3>
+      <div class="grow"><h3>${m.name} <span class="muted">ур.${m.level}${m.level>=MAX_LEVEL?" (MAX)":""} · ${c.name}</span></h3>
       <div class="statline">
         <span class="tag">HP <b>${st.hp}</b></span><span class="tag">ОД <b>${st.ap}</b></span>
         <span class="tag">Точн <b>${st.acc}</b></span><span class="tag">👁 <b>${st.sight}</b></span>
         <span class="tag">Броня <b>-${st.armor}</b></span>
-      </div></div></div>
+      </div>
+      ${weightBar(mercLoad(m), carryLimit(m))}
+      </div></div>
   </div>`;
 
   /* --- визуальные слоты экипировки --- */
@@ -1732,6 +1801,10 @@ function eqMain(wid){
   const m=eqM(); if(!m)return;
   if(!(S.inv.weapons[wid]>0)){toast("Нет на складе");return;}
   if(isListed("weapon",wid)&&S.inv.weapons[wid]<=listedCount("weapon",wid)){toast("Выставлено на продажу — сними с торгов");return;}
+  /* проверка веса: снимаемое уходит, новое приходит */
+  const old=m.weapon; m.weapon=wid;
+  if(mercLoad(m)>carryLimit(m)){ m.weapon=old; toast(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level}) — сними что-нибудь`); return; }
+  m.weapon=old;
   S.inv.weapons[wid]--;
   toStore(m.weapon);
   m.weapon=wid; save(); openEquip(m.id); toast("Оружие в руках");
@@ -1740,6 +1813,9 @@ function eqSecond(wid){
   const m=eqM(); if(!m)return;
   if(!(S.inv.weapons[wid]>0)){toast("Нет на складе");return;}
   if(isListed("weapon",wid)&&S.inv.weapons[wid]<=listedCount("weapon",wid)){toast("Выставлено на продажу — сними с торгов");return;}
+  const old=m.weapon2; m.weapon2=wid;
+  if(mercLoad(m)>carryLimit(m)){ m.weapon2=old; toast(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level}) — сними что-нибудь`); return; }
+  m.weapon2=old;
   S.inv.weapons[wid]--;
   toStore(m.weapon2);
   m.weapon2=wid; save(); openEquip(m.id); toast("Запасное оружие готово");
@@ -1769,6 +1845,12 @@ function eqArmor(aid,wantSlot){
   /* комбез занимает все три слота, отдельный предмет — свой слот */
   const slots=a.slot==="all"?["head","body","legs"]:[wantSlot||a.slot];
   if(a.slot!=="all"&&!m.gear.hasOwnProperty(slots[0])){toast("Такого слота нет");return;}
+  /* проверка веса: снимаемое уходит, новое приходит */
+  const oldGear={head:m.gear.head,body:m.gear.body,legs:m.gear.legs};
+  slots.forEach(s=>{m.gear[s]=aid;});
+  if(mercLoad(m)>carryLimit(m)){ m.gear.head=oldGear.head;m.gear.body=oldGear.body;m.gear.legs=oldGear.legs;
+    toast(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level}) — сними что-нибудь`); return; }
+  m.gear.head=oldGear.head;m.gear.body=oldGear.body;m.gear.legs=oldGear.legs;
   slots.forEach(s=>{ if(m.gear[s])S.inv.armors[m.gear[s]]=(S.inv.armors[m.gear[s]]||0)+1; });
   S.inv.armors[aid]--;
   slots.forEach(s=>{m.gear[s]=aid;});
@@ -1787,7 +1869,9 @@ function unequipArmor(slot){
 function eqImp(k){
   const m=eqM(); if(!m||m.implants.length>=2)return;
   if(!(S.inv.implants[k]>0))return;
-  S.inv.implants[k]--; m.implants.push(k); save(); openEquip(m.id); toast("Имплант установлен");
+  m.implants.push(k);
+  if(mercLoad(m)>carryLimit(m)){ m.implants.pop(); toast(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level})`); return; }
+  S.inv.implants[k]--; save(); openEquip(m.id); toast("Имплант установлен");
 }
 function removeImp(i){
   const m=eqM(); if(!m)return;
@@ -1800,7 +1884,9 @@ function beltAdd(k){
   const m=eqM(); if(!m)return;
   if(!(S.inv[k]>0)){toast("Склад пуст — купи в магазине");return;}
   if((m.belt[k]||0)>=BELT_MAX[k]){toast("Пояс полон");return;}
-  S.inv[k]--; m.belt[k]=(m.belt[k]||0)+1;
+  m.belt[k]=(m.belt[k]||0)+1;
+  if(mercLoad(m)>carryLimit(m)){ m.belt[k]--; toast(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level})`); return; }
+  S.inv[k]--;
   save(); openEquip(m.id);
 }
 function beltRemove(k){
@@ -2073,7 +2159,7 @@ function startPvpBattle(){
     const w=naked?CLASSES[m.cls].weapon:m.weapon;
     units.push({side:"p",mercId:m.id,name:m.name,emoji:CLASSES[m.cls].emoji,
       cls:m.cls,look:m.look,x:pSpawns[i].x,y:pSpawns[i].y,
-      hp:st.hp,maxhp:st.hp,ap:st.ap,maxap:st.ap,acc:st.acc,
+      hp:st.hp,maxhp:st.hp,ap:st.ap,maxap:st.ap,acc:st.acc,lvl:m.level,
       armor:naked?0:st.armor,
       weapon:w,weapon2:naked?null:m.weapon2,
       belt:naked?{medkit:0,grenade:0}:{medkit:m.belt.medkit||0,grenade:m.belt.grenade||0},
@@ -2091,7 +2177,7 @@ function startPvpBattle(){
       sight:c.sight,alive:true,xp:40+r.lvl*15,skl:r.skl,belt:{medkit:r.lvl>=3?1:0,grenade:r.cls==="human"?1:0},lastSeen:null});
   });
   B={mission:{name:`${pvpCtx.mode} против ${hostName}`,reward:0},units,turn:1,phase:"p",
-     sel:null,reach:null,mode:"normal",movePath:null,log:[],over:false,kills:0,aiTimer:null,map,
+     sel:null,reach:null,mode:"normal",movePath:null,crates:{},log:[],over:false,kills:0,aiTimer:null,map,
      fog:[],spotted:new Set(),pvp:{stake,hostName,naked}};
   logLines=[];effects=[];particles=[];initDust();
   recomputeFog();
@@ -2901,7 +2987,7 @@ function startBattle(mission, squadIds){
     const st=mercStats(m);
     units.push({side:"p", mercId:m.id, name:m.name, emoji:CLASSES[m.cls].emoji,
       cls:m.cls, look:m.look, x:pSpawns[i].x, y:pSpawns[i].y, hp:st.hp, maxhp:st.hp,
-      ap:st.ap, maxap:st.ap, acc:st.acc, armor:st.armor,
+      ap:st.ap, maxap:st.ap, acc:st.acc, armor:st.armor, lvl:m.level,
       weapon:m.weapon, weapon2:m.weapon2,
       belt:{medkit:m.belt.medkit||0, grenade:m.belt.grenade||0}, // личный пояс как в жанровой классике
       sight:st.sight, alive:true});
@@ -2918,7 +3004,7 @@ function startBattle(mission, squadIds){
       belt:{medkit:(ek==="stalker"||ek==="gunner")?1:0,grenade:(ek==="gunner"||ek==="raider")?1:0},
       lastSeen:null});
   });
-  B = { mission, units, turn:1, phase:"p", sel:null, reach:null, mode:"normal", movePath:null,
+  B = { mission, units, turn:1, phase:"p", sel:null, reach:null, mode:"normal", movePath:null, crates:{},
         log:[], over:false,
         kills:0, aiTimer:null, map, fog:[], spotted:new Set() };
   logLines=[]; effects=[]; particles=[]; initDust();
@@ -3330,6 +3416,12 @@ cv.addEventListener("click",ev=>{
     openCrate(sel,c.x,c.y);
     return;
   }
+  /* вскрытый ящик с остатками — порыться бесплатно */
+  if(B.map[c.y]&&B.map[c.y][c.x]===8&&B.fog[c.y][c.x]===2&&crateItems(c.x,c.y).length){
+    if(dist(sel,c)>1){toast("Подойди вплотную к ящику");return;}
+    openCrateModal(c.x,c.y);
+    return;
+  }
   const k=c.x+","+c.y;
   if(B.reach&&B.reach.cost[k]!==undefined&&!blocked(c.x,c.y)){
     if(c.x===sel.x&&c.y===sel.y){B.movePath=null;return;} /* тап по себе — снять превью */
@@ -3359,39 +3451,129 @@ cv.addEventListener("click",ev=>{
    ЛУТ-ЯЩИКИ В АНГАРАХ (как в жанровой классике):
    всё найденное — ТОЛЬКО на этот бой, из карты не выносится!
    ========================================================= */
+/* ящик вскрыт — внутри 2–3 предмета на выбор; остатки лежат до конца боя */
 function openCrate(u,x,y){
   u.ap-=3;
   B.movePath=null;
   B.map[y][x]=8; // вскрыт
-  const loot=rollCrate();
+  if(!B.crates)B.crates={};
+  const k=x+","+y;
+  const n=2+(Math.random()<0.4?1:0);
+  const items=[];
+  for(let i=0;i<n;i++)items.push(rollCrate());
+  B.crates[k]=items;
   spawnSparks(x,y,"#ffd27f",10);
   sfx("crate");
   addEffect({type:"text",x,y,str:"📦!",color:"#ffd27f",t:now()});
   if(!u.lootBelt)u.lootBelt={medkit:0,grenade:0};
-  if(loot.type==="medkit"){
-    if(u.cls==="dog"){ u.hp=Math.min(u.maxhp,u.hp+40); blog(`📦 ${u.name} нашёл аптечку и съел её (+40 HP)`); }
-    else{ u.lootBelt.medkit++; blog(`📦 ${u.name} нашёл <b>аптечку</b> (только на этот бой)`); }
-  }else if(loot.type==="grenade"){
-    if(u.cls==="dog"||u.cls==="mutant"){ blog(`📦 ${u.name} нашёл гранату, но не умеет ей пользоваться`); }
-    else{ u.lootBelt.grenade++; blog(`📦 ${u.name} нашёл <b>гранату</b> (только на этот бой)`); }
+  blog(`📦 ${u.name} вскрыл ящик — выбирай, что взять!`);
+  B.reach=reachable(u);
+  recomputeFog();
+  updateHud();
+  openCrateModal(x,y);
+}
+function crateItems(x,y){
+  if(!B||!B.crates)return [];
+  return B.crates[x+","+y]||[];
+}
+function crateDesc(it){
+  if(it.type==="medkit")return {emoji:CONSUMABLES.medkit.emoji||"💉",name:CONSUMABLES.medkit.name,sub:CONSUMABLES.medkit.desc+" · ⚖️"+itemWt("cons","medkit")};
+  if(it.type==="grenade")return {emoji:CONSUMABLES.grenade.emoji||"💣",name:CONSUMABLES.grenade.name,sub:CONSUMABLES.grenade.desc+" · ⚖️"+itemWt("cons","grenade")};
+  const w=WEAPONS[it.id];
+  return {emoji:w.emoji,name:w.name,sub:`${w.dmg[0]}–${w.dmg[1]}${w.shots>1?"×"+w.shots:""} · ${w.ap}ОД · ⚖️${itemWt("weapon",it.id)}`};
+}
+function openCrateModal(x,y){
+  const u=B.sel;
+  if(!u||!u.alive)return;
+  const items=crateItems(x,y);
+  const load=unitBattleLoad(u), lim=unitCarryLimit(u);
+  let html=`<h2>📦 Ящик</h2>
+    <div class="muted" style="margin:4px 0">${esc(u.name)} · несу ${load}/${lim} · трофей вынести из боя нельзя</div>
+    ${weightBar(load,lim)}`;
+  if(!items.length){
+    html+=`<div class="muted" style="margin:10px 0">Ящик пуст.</div>`;
   }else{
-    const w=WEAPONS[loot.id];
-    /* пёс и мутант не могут взять ствол */
-    if(!w.classes.includes(u.cls)){
-      blog(`📦 В ящике ${w.emoji}<b>${w.name}</b>, но ${u.name} не может это использовать`);
-    }else{
-      /* трофей: запоминаем родную экипировку при первом подборе */
-      if(!u.trophy){ u.origWeapon=u.weapon; u.origWeapon2=u.weapon2; }
-      /* родное основное прячем в запас (если слот пуст), трофей — в руки */
-      if(!u.weapon2 && !WEAPONS[u.weapon].natural && !u.trophy){ u.weapon2=u.weapon; }
-      u.weapon=loot.id;
-      u.trophy=true; // флаг: в руках трофей с карты
-      blog(`📦 ${u.name} взял трофей: ${w.emoji}<b>${w.name}</b>! (вынести из боя нельзя)`);
+    html+=items.map((it,i)=>{
+      const d=crateDesc(it);
+      let btn="";
+      if(it.type==="weapon"&&!WEAPONS[it.id].classes.includes(u.cls)){
+        btn=`<span class="muted" style="font-size:11px">не подходит</span>`;
+      }else if(it.type==="grenade"&&(u.cls==="dog"||u.cls==="mutant")){
+        btn=`<span class="muted" style="font-size:11px">не умеет</span>`;
+      }else{
+        btn=`<div class="btn small primary" onclick="crateTake(${x},${y},${i})">Взять</div>`;
+      }
+      return `<div class="row" style="padding:7px 0;border-bottom:1px solid var(--line)">
+        <div style="font-size:24px">${d.emoji}</div>
+        <div class="grow"><b>${esc(d.name)}</b><div class="muted" style="font-size:11px">${esc(d.sub)}</div></div>
+        ${btn}</div>`;
+    }).join("");
+    html+=`<div class="btn grow" style="width:100%;margin-top:8px" onclick="crateTakeAll(${x},${y})">Забрать всё подходящее</div>`;
+  }
+  html+=`<div class="btn grow" style="width:100%;margin-top:8px" onclick="closeModal('mGeneric')">Закрыть</div>`;
+  genericModal(html);
+}
+/* взять предмет из ящика: проверка веса и класса; взятый ствол надевается как трофей,
+   предыдущий трофей возвращается в ящик (обмен) */
+function crateTake(x,y,idx){
+  const u=B.sel;
+  if(!u||!u.alive)return;
+  const items=crateItems(x,y);
+  const it=items[idx];
+  if(!it)return;
+  if(!u.lootBelt)u.lootBelt={medkit:0,grenade:0};
+  if(it.type==="medkit"){
+    if(u.cls==="dog"){ items.splice(idx,1); u.hp=Math.min(u.maxhp,u.hp+40); blog(`📦 ${u.name} съел аптечку (+40 HP)`); }
+    else{
+      if(unitBattleLoad(u)+itemWt("cons","medkit")>unitCarryLimit(u)){toast(`Перегруз! Несу ${unitBattleLoad(u)}/${unitCarryLimit(u)}`);return;}
+      items.splice(idx,1); u.lootBelt.medkit++;
+      blog(`📦 ${u.name} взял <b>аптечку</b> (только на этот бой)`);
     }
+  }else if(it.type==="grenade"){
+    if(u.cls==="dog"||u.cls==="mutant"){toast("Не умеет пользоваться гранатами");return;}
+    if(unitBattleLoad(u)+itemWt("cons","grenade")>unitCarryLimit(u)){toast(`Перегруз! Несу ${unitBattleLoad(u)}/${unitCarryLimit(u)}`);return;}
+    items.splice(idx,1); u.lootBelt.grenade++;
+    blog(`📦 ${u.name} взял <b>гранату</b> (только на этот бой)`);
+  }else{
+    const w=WEAPONS[it.id];
+    if(!w.classes.includes(u.cls)){toast("Не может это использовать");return;}
+    if(unitBattleLoad(u)+itemWt("weapon",it.id)-(u.trophy?itemWt("weapon",u.weapon):0)>unitCarryLimit(u)){
+      toast(`Перегруз! Несу ${unitBattleLoad(u)}/${unitCarryLimit(u)}`);return;
+    }
+    items.splice(idx,1);
+    if(u.trophy){ items.push({type:"weapon",id:u.weapon}); blog(`📦 ${u.name} положил ${WEAPONS[u.weapon].name} обратно в ящик`); }
+    else{ u.origWeapon=u.weapon; u.origWeapon2=u.weapon2; }
+    if(!u.weapon2 && !WEAPONS[u.weapon].natural && !u.trophy){ u.weapon2=u.weapon; }
+    u.weapon=it.id;
+    u.trophy=true;
+    blog(`📦 ${u.name} взял трофей: ${w.emoji}<b>${w.name}</b>! (вынести из боя нельзя)`);
   }
   B.reach=reachable(u);
-  recomputeFog(); // вскрытый ящик ниже — открывает обзор
   updateHud();
+  openCrateModal(x,y);
+}
+function crateTakeAll(x,y){
+  const u=B.sel;
+  if(!u||!u.alive)return;
+  let took=0, guard=20;
+  while(crateItems(x,y).length&&guard-->0){
+    const idx=crateItems(x,y).findIndex(it=>{
+      if(it.type==="weapon")return WEAPONS[it.id].classes.includes(u.cls);
+      if(it.type==="grenade")return !(u.cls==="dog"||u.cls==="mutant");
+      return true;
+    });
+    if(idx<0)break;
+    const sig=crateSig(u,x,y);
+    crateTake(x,y,idx);
+    if(crateSig(u,x,y)===sig)break; /* отказ (перегруз) — дальше не влезет */
+    took++;
+  }
+  if(!took)toast("Ничего подходящего или перегруз");
+}
+function crateSig(u,x,y){
+  const n=crateItems(x,y).length;
+  const lb=(u.lootBelt?u.lootBelt.medkit||0:0)+":"+(u.lootBelt?u.lootBelt.grenade||0:0);
+  return n+"|"+u.weapon+"|"+u.hp+"|"+lb;
 }
 function totalBelt(u,k){ return (u.belt?u.belt[k]:0)+(u.lootBelt?u.lootBelt[k]:0); }
 function spendBelt(u,k){ /* сначала тратим найденное в бою */
