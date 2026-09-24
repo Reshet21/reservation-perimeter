@@ -2018,10 +2018,10 @@ function pickWeaponModal(slot){
         onclick:`closeModal('mGeneric');${slot==="main"?`eqMain('${k}')`:`eqSecond('${k}')`}`});
   });
   const canRemove=slot==="main"?!!m.weapon2:!!m.weapon2&&slot==="second";
-  genericModal(`<h2>${slot==="main"?"🔫 Основное оружие":"🔁 Запасное оружие"}</h2>
-    ${cards?`<div class="igrid">${cards}</div>`:`<div class="muted">На складе нет оружия. Купи в магазине или скрафти — человеку подходит ЛЮБОЕ оружие!</div>`}
+  genericModal(`<h2>${slot==="main"?tr("🔫 Основное оружие","🔫 Primary gun"):tr("🔁 Запасное оружие","🔁 Spare gun")}</h2>
+    ${cards?`<div class="igrid">${cards}</div>`:`<div class="muted">${tr("На складе нет оружия. Купи в магазине или скрафти — человеку подходит ЛЮБОЕ оружие!","No guns on stock. Buy at the shop or craft — humans fit ANY gun!")}</div>`}
     <div class="row" style="margin-top:8px">
-      <div class="btn grow" onclick="closeModal('mGeneric')">Закрыть</div>
+      <div class="btn grow" onclick="closeModal('mGeneric')">${tr("Закрыть","Close")}</div>
       ${slot==="main"&&m.weapon!=="fists"?`<div class="btn grow" onclick="closeModal('mGeneric');unequipMain()">📦 Снять ${m.weapon2?"(взять запасное)":"(кулаки 👊)"}</div>`:""}
       ${slot==="second"&&m.weapon2?`<div class="btn grow" onclick="closeModal('mGeneric');unequipSecond()">📦 Снять</div>`:""}
     </div>`);
@@ -2037,12 +2037,12 @@ function pickArmorModal(slot){
       cards+=itemCard("armor",k,{count:cnt,onclick:`closeModal('mGeneric');eqArmor('${k}','${slot}')`});
   });
   const sd=SLOTS[slot]||SLOTS.body;
-  genericModal(`<h2>${isDog?"🐕 Попона для пса":sd.emoji+" Броня: "+sd.name}</h2>
-    <div class="muted">Комбез «всё тело» тоже подходит — закроет все слоты сразу.</div>
+  genericModal(`<h2>${isDog?tr("🐕 Попона для пса","🐕 Dog barding"):sd.emoji+" "+tr("Броня: ","Armor: ")+sd.name}</h2>
+    <div class="muted">${tr("Комбез «всё тело» тоже подходит — закроет все слоты сразу.","A “full body” suit fits too — covers all slots at once.")}</div>
     ${cards?`<div class="igrid">${cards}</div>`:
-      `<div class="muted">${isDog?"Попоны крафтятся в мастерской из шкур мутантов!":"На складе пусто — купи в магазине или скрафти."}</div>`}
+      `<div class="muted">${isDog?tr("Попоны крафтятся в мастерской из шкур мутантов!","Bardings are crafted in the workshop from mutant hides!"):tr("На складе пусто — купи в магазине или скрафти.","Stock empty — buy at the shop or craft.")}</div>`}
     <div class="row" style="margin-top:8px">
-      <div class="btn grow" onclick="closeModal('mGeneric')">Закрыть</div>
+      <div class="btn grow" onclick="closeModal('mGeneric')">${tr("Закрыть","Close")}</div>
       ${m.gear[slot]?`<div class="btn grow danger" onclick="closeModal('mGeneric');unequipArmor('${slot}')">📦 Снять${ARMORS[m.gear[slot]].slot==="all"?" комбез":""}</div>`:""}
     </div>`);
 }
@@ -2058,7 +2058,7 @@ function listEquippable(m,slot){
         <div class="btn small primary" onclick="${slot==="main"?`eqMain('${k}')`:`eqSecond('${k}')`}">Взять</div></div>`;
     }
   });
-  if(!html)html=`<div class="muted" style="margin-top:6px">На складе нет подходящего оружия — загляни в магазин.</div>`;
+  if(!html)html=`<div class="muted" style="margin-top:6px">${tr("На складе нет подходящего оружия — загляни в магазин.","No fitting gun on stock — check the shop.")}</div>`;
   return html;
 }
 function eqM(){ return S.roster.find(x=>x.id===eqMercId); }
@@ -2726,7 +2726,7 @@ function openWarehouse(){
 
   /* оружие на складе */
   const wkeys=Object.keys(S.inv.weapons).filter(k=>S.inv.weapons[k]>0);
-  html+=`<h2 class="sub">🔫 Оружие на складе</h2>`;
+  html+=`<h2 class="sub">${tr("🔫 Оружие на складе","🔫 Guns on stock")}</h2>`;
   if(wkeys.length){
     html+=`<div class="igrid">`;
     wkeys.forEach(k=>{
@@ -2734,11 +2734,11 @@ function openWarehouse(){
         count:S.inv.weapons[k], listed:listedCount("weapon",k)>0});
     });
     html+=`</div>`;
-  }else html+=`<div class="muted" style="margin-bottom:8px">Пусто. Оружие, снятое с бойцов, попадает сюда.</div>`;
+  }else html+=`<div class="muted" style="margin-bottom:8px">${tr("Пусто. Оружие, снятое с бойцов, попадает сюда.","Empty. Guns removed from fighters land here.")}</div>`;
 
   /* броня */
   const akeys=Object.keys(S.inv.armors).filter(k=>S.inv.armors[k]>0);
-  html+=`<h2 class="sub">🦺 Броня и попоны</h2>`;
+  html+=`<h2 class="sub">${tr("🦺 Броня и попоны","🦺 Armor and bardings")}</h2>`;
   if(akeys.length){
     html+=`<div class="igrid">`;
     akeys.forEach(k=>{
@@ -2746,11 +2746,11 @@ function openWarehouse(){
         count:S.inv.armors[k], listed:listedCount("armor",k)>0});
     });
     html+=`</div>`;
-  }else html+=`<div class="muted" style="margin-bottom:8px">Пусто. Скрафти броню в мастерской!</div>`;
+  }else html+=`<div class="muted" style="margin-bottom:8px">${tr("Пусто. Скрафти броню в мастерской!","Empty. Craft armor in the workshop!")}</div>`;
 
   /* импланты */
   const ikeys=Object.keys(S.inv.implants).filter(k=>S.inv.implants[k]>0);
-  html+=`<h2 class="sub">🧠 Импланты</h2>`;
+  html+=`<h2 class="sub">${tr("🧠 Импланты","🧠 Implants")}</h2>`;
   if(ikeys.length){
     html+=`<div class="igrid">`;
     ikeys.forEach(k=>{
@@ -2758,27 +2758,27 @@ function openWarehouse(){
         count:S.inv.implants[k], listed:listedCount("implant",k)>0});
     });
     html+=`</div>`;
-  }else html+=`<div class="muted" style="margin-bottom:8px">Пусто.</div>`;
+  }else html+=`<div class="muted" style="margin-bottom:8px">${tr("Пусто.","Empty.")}</div>`;
 
   /* расходники и материалы */
   html+=`<h2 class="sub">🧪 Расходники</h2><div class="igrid">
     ${itemCard("cons","medkit",{count:S.inv.medkit})}
     ${itemCard("cons","grenade",{count:S.inv.grenade})}
   </div>
-  <div class="muted" style="margin-bottom:8px">Раздай бойцам на пояс — в бой идёт только то, что на поясе!</div>
+  <div class="muted" style="margin-bottom:8px">${tr("Раздай бойцам на пояс — в бой идёт только то, что на поясе!","Hand out to belts — only belt goes to battle!")}</div>
   <h2 class="sub">🔸 Патроны на складе</h2>`;
   const amkeys=Object.keys(S.inv.ammo||{}).filter(k=>S.inv.ammo[k]>0);
   if(amkeys.length){
     html+=`<div class="igrid">`+amkeys.map(k=>
       itemCard("ammo",k,{onclick:`sellAmmo('${k}')`,count:S.inv.ammo[k]})).join("")+`</div>
-      <div class="muted" style="margin-bottom:8px">Тап по коробке — продать всё за полцены. Раздача в бой — в экипировке бойца.</div>`;
+      <div class="muted" style="margin-bottom:8px">${tr("Тап по коробке — продать всё за полцены. Раздача в бой — в экипировке бойца.","Tap a box to sell all for half price. Hand out for battle in fighter gear.")}</div>`;
   }else html+=`<div class="muted" style="margin-bottom:8px">${tr("Пусто. Патроны продаются в магазине и падают с ящиков.","Empty. Ammo is sold at the shop and drops from crates.")}</div>`;
-  html+=`<h2 class="sub">⛏️ Материалы (для мастерской)</h2><div class="igrid">
+  html+=`<h2 class="sub">${tr("⛏️ Материалы (для мастерской)","⛏️ Materials (for workshop)")}</h2><div class="igrid">
     ${Object.keys(MATERIALS).map(k=>itemCard("mat",k,{count:S.mats[k]||0})).join("")}
   </div>`;
 
   /* кто что носит */
-  html+=`<h2 class="sub">🪖 На руках у бойцов</h2>`;
+  html+=`<h2 class="sub">${tr("🪖 На руках у бойцов","🪖 Carried by fighters")}</h2>`;
   S.roster.forEach(m=>{
     const w=WEAPONS[m.weapon];
     html+=`<div class="card"><div class="row"><div style="font-size:22px">${CLASSES[m.cls].emoji}</div>
@@ -2797,7 +2797,7 @@ function itemMenu(type,id,listIdx){
     genericModal(`<h2>🏷️ ${it.name}</h2>
       <div class="muted">Выставлено за ${l.price} 💰 (листинг #${l.lid})</div>
       <div class="row" style="margin-top:12px">
-        <div class="btn grow" onclick="closeModal('mGeneric')">Закрыть</div>
+        <div class="btn grow" onclick="closeModal('mGeneric')">${tr("Закрыть","Close")}</div>
         <div class="btn danger grow" onclick="closeModal('mGeneric');unlistItem(${listIdx})">Снять с торгов</div>
       </div>`);
     return;
@@ -2815,7 +2815,7 @@ function itemMenu(type,id,listIdx){
       <div><h2 style="margin:0">${it.name}</h2><div class="muted">${desc}</div>
       <div class="muted">Свободно: ${free} шт</div></div></div>
     <div class="row" style="margin-top:14px">
-      <div class="btn grow" onclick="closeModal('mGeneric')">Закрыть</div>
+      <div class="btn grow" onclick="closeModal('mGeneric')">${tr("Закрыть","Close")}</div>
       <div class="btn grow ${free>0?"":"disabled"}" onclick="closeModal('mGeneric');sellItem('${type}','${id}')">💰 ${sellPrice(it.price)}</div>
       <div class="btn primary grow" onclick="closeModal('mGeneric');listItem('${type}','${id}')">🏷️ На рынок</div>
     </div>`);
@@ -2830,12 +2830,12 @@ function invBucket(type){
 function sellItem(type,id){
   const b=invBucket(type);
   const free=(b[id]||0)-listedCount(type,id);
-  if(free<=0){toast("Свободных нет (выставлены на торгах)");return;}
+  if(free<=0){toast(tr("Свободных нет (выставлены на торгах)","None free (listed on market)"));return;}
   const it=getItemDef(type,id);
   const p=sellPrice(it.price);
-  if(!confirm(`Продать «${it.name}» скупщику за ${p} 💰?`))return;
+  if(!confirm(tr(`Продать «${it.name}» скупщику за ${p} 💰?`,`Sell “${it.name}” to fence for ${p} 💰?`)))return;
   b[id]--; S.credits+=p; save(); openWarehouse();
-  toast(`Продано: +${p} 💰`);
+  toast(tr(`Продано: +${p} 💰`,`Sold: +${p} 💰`));
 }
 let lidSeq=1;
 function listItem(type,id){
@@ -3025,7 +3025,7 @@ function marketBuy(i){
   renderHub();openMarket();
 }
 async function marketSync(fromMarket){
-  toast("Синхронизация рынка…");
+  toast(tr("Синхронизация рынка…","Syncing market…"));
   try{
     const r=await fetch(S.chain.endpoint,{method:"POST",
       headers:{"Content-Type":"application/json"},
@@ -3033,7 +3033,7 @@ async function marketSync(fromMarket){
     await r.json();
     S.market.synced=true; save();
     fromMarket?renderMarketList():openWarehouse();
-    toast("✅ Сеть доступна — подпиши транзакции в chain/sync.mjs");
+    toast(tr("✅ Сеть доступна — подпиши транзакции в chain/sync.mjs","✅ Network reachable — sign transactions in chain/sync.mjs"));
   }catch(e){
     S.market.synced=false; save();
     genericModal(`<h2>📡 Офлайн-режим</h2>
@@ -3082,15 +3082,15 @@ function openShop(){
     }
     if(!any)html+=`<div class="muted" style="margin-bottom:8px">—</div>`;
   });
-  html+=`<h2 class="sub">🧪 Расходники</h2>`;
+  html+=`<h2 class="sub">${tr("🧪 Расходники","🧪 Consumables")}</h2>`;
   html+=shopCard("cons","medkit",CONSUMABLES.medkit.name,CONSUMABLES.medkit.desc,CONSUMABLES.medkit.price,`buyCons('medkit')`,S.inv.medkit);
   html+=shopCard("cons","grenade",CONSUMABLES.grenade.name,CONSUMABLES.grenade.desc,CONSUMABLES.grenade.price,`buyCons('grenade')`,S.inv.grenade);
-  html+=`<h2 class="sub">🔸 Патроны <span class="muted" style="font-size:11px">(коробка, на склад)</span></h2>`;
+  html+=`<h2 class="sub">${tr("🔸 Патроны","🔸 Ammo")} <span class="muted" style="font-size:11px">${tr("(коробка, на склад)","(box, to stock)")}</span></h2>`;
   for(const t in AMMO){
     const a=AMMO[t];
     html+=shopCard("ammo",t,a.name,`${a.box} шт · ${a.name} · ⚖️${wtFmt(a.box*a.wpr)}`,a.price,`buyAmmo('${t}')`,(S.inv.ammo&&S.inv.ammo[t])||0);
   }
-  html+=`<h2 class="sub">🧠 Импланты</h2>`;
+  html+=`<h2 class="sub">${tr("🧠 Импланты","🧠 Implants")}</h2>`;
   for(const k in IMPLANTS){
     const i=IMPLANTS[k];
     html+=shopCard("implant",k,i.name,i.desc,i.price,`buyImp('${k}')`,(S.inv.implants[k]||0));
@@ -3113,11 +3113,11 @@ function shopCard(kind,id,n,d,p,fn,have){
     <div class="btn small ${S.credits>=p?"primary":""}" onclick="${fn}">💰${p}</div>
   </div></div>`;
 }
-function spend(p){ if(S.credits<p){toast("Не хватает кредитов");return false;} S.credits-=p; return true; }
-function buyWeapon(k){ if(!spend(WEAPONS[k].price))return; S.inv.weapons[k]=(S.inv.weapons[k]||0)+1; save(); openShop(); toast(WEAPONS[k].name+" — куплено"); }
-function buyArmor(k){ if(!spend(ARMORS[k].price))return; S.inv.armors[k]=(S.inv.armors[k]||0)+1; save(); openShop(); toast("Куплено"); }
-function buyCons(k){ if(!spend(CONSUMABLES[k].price))return; S.inv[k]++; save(); openShop(); toast("Куплено"); }
-function buyImp(k){ if(!spend(IMPLANTS[k].price))return; S.inv.implants[k]=(S.inv.implants[k]||0)+1; save(); openShop(); toast("Куплено"); }
+function spend(p){ if(S.credits<p){toast(tr("Не хватает кредитов","Not enough credits"));return false;} S.credits-=p; return true; }
+function buyWeapon(k){ if(!spend(WEAPONS[k].price))return; S.inv.weapons[k]=(S.inv.weapons[k]||0)+1; save(); openShop(); toast(WEAPONS[k].name+tr(" — куплено"," — bought")); }
+function buyArmor(k){ if(!spend(ARMORS[k].price))return; S.inv.armors[k]=(S.inv.armors[k]||0)+1; save(); openShop(); toast(tr("Куплено","Bought")); }
+function buyCons(k){ if(!spend(CONSUMABLES[k].price))return; S.inv[k]++; save(); openShop(); toast(tr("Куплено","Bought")); }
+function buyImp(k){ if(!spend(IMPLANTS[k].price))return; S.inv.implants[k]=(S.inv.implants[k]||0)+1; save(); openShop(); toast(tr("Куплено","Bought")); }
 function buyAmmo(t){
   const a=AMMO[t]; if(!a)return;
   if(!S.inv.ammo)S.inv.ammo={};
@@ -3137,7 +3137,7 @@ function sellAmmo(t){
 function openHire(){
   const el=document.getElementById("hireList");
   if(!S.hirePool.length) S.hirePool=genHirePool();
-  el.innerHTML = `<div class="muted" style="margin-bottom:10px">В отряде может быть до 6 наёмников. Биржа обновляется после найма.</div>`+
+  el.innerHTML = `<div class="muted" style="margin-bottom:10px">${tr("В отряде может быть до 6 наёмников. Биржа обновляется после найма.","Squad holds up to 6 mercs. Exchange refreshes after hiring.")}</div>`+
    S.hirePool.map((m,i)=>{
     const c=CLASSES[m.cls], st=mercStats(m);
     return `<div class="card"><div class="row">
@@ -3153,12 +3153,12 @@ function openHire(){
 }
 function hire(i){
   const m=S.hirePool[i]; if(!m)return;
-  if(S.roster.length>=6){toast("Отряд полон (6)");return;}
+  if(S.roster.length>=6){toast(tr("Отряд полон (6)","Squad full (6)"));return;}
   if(!spend(CLASSES[m.cls].hire))return;
   S.roster.push(m);
   S.hirePool.splice(i,1);
   S.hirePool.push(newMerc(pick(["human","human","dog","mutant"])));
-  save(); openHire(); toast(m.name+" в отряде!");
+  save(); openHire(); toast(m.name+tr(" в отряде!"," joined!"));
 }
 
 /* ---------- ПРОФИЛЬ / ACKI NACKI ---------- */
@@ -3985,7 +3985,7 @@ function openCrate(u,x,y){
   sfx("crate");
   addEffect({type:"text",x,y,str:"📦!",color:"#ffd27f",t:now()});
   if(!u.lootBelt)u.lootBelt={medkit:0,grenade:0};
-  blog(`📦 ${u.name} вскрыл ящик — выбирай, что взять!`);
+  blog(tr(`📦 ${u.name} вскрыл ящик — выбирай, что взять!`,`📦 ${u.name} cracked the crate — pick what to take!`));
   B.reach=reachable(u);
   recomputeFog();
   updateHud();
@@ -4007,32 +4007,32 @@ function openCrateModal(x,y){
   if(!u||!u.alive)return;
   const items=crateItems(x,y);
   const load=unitBattleLoad(u), lim=unitCarryLimit(u);
-  let html=`<h2>📦 Ящик</h2>
-    <div class="muted" style="margin:4px 0">${esc(u.name)} · несу ${wtFmt(load)}/${lim} · трофей вынести из боя нельзя</div>
+  let html=`<h2>${tr("📦 Ящик","📦 Crate")}</h2>
+    <div class="muted" style="margin:4px 0">${esc(u.name)} · ${tr("несу","carrying")} ${wtFmt(load)}/${lim} · ${tr("трофей вынести из боя нельзя","trophies stay in battle")}</div>
     ${weightBar(load,lim)}`;
   if(!items.length){
-    html+=`<div class="muted" style="margin:10px 0">Ящик пуст.</div>`;
+    html+=`<div class="muted" style="margin:10px 0">${tr("Ящик пуст.","Crate empty.")}</div>`;
   }else{
     html+=items.map((it,i)=>{
       const d=crateDesc(it);
       let btn="";
       if(it.type==="weapon"&&!WEAPONS[it.id].classes.includes(u.cls)){
-        btn=`<span class="muted" style="font-size:11px">не подходит</span>`;
+        btn=`<span class="muted" style="font-size:11px">${tr("не подходит","unsuitable")}</span>`;
       }else if(it.type==="grenade"&&(u.cls==="dog"||u.cls==="mutant")){
-        btn=`<span class="muted" style="font-size:11px">не умеет</span>`;
+        btn=`<span class="muted" style="font-size:11px">${tr("не умеет","can't use")}</span>`;
       }else if(it.type==="ammo"&&u.cls!=="human"){
-        btn=`<span class="muted" style="font-size:11px">не носит</span>`;
+        btn=`<span class="muted" style="font-size:11px">${tr("не носит","carries none")}</span>`;
       }else{
-        btn=`<div class="btn small primary" onclick="crateTake(${x},${y},${i})">Взять</div>`;
+        btn=`<div class="btn small primary" onclick="crateTake(${x},${y},${i})">${tr("Взять","Take")}</div>`;
       }
       return `<div class="row" style="padding:7px 0;border-bottom:1px solid var(--line)">
         <div style="font-size:24px">${d.emoji}</div>
         <div class="grow"><b>${esc(d.name)}</b><div class="muted" style="font-size:11px">${esc(d.sub)}</div></div>
         ${btn}</div>`;
     }).join("");
-    html+=`<div class="btn grow" style="width:100%;margin-top:8px" onclick="crateTakeAll(${x},${y})">Забрать всё подходящее</div>`;
+    html+=`<div class="btn grow" style="width:100%;margin-top:8px" onclick="crateTakeAll(${x},${y})">${tr("Забрать всё подходящее","Take all fitting")}</div>`;
   }
-  html+=`<div class="btn grow" style="width:100%;margin-top:8px" onclick="closeModal('mGeneric')">Закрыть</div>`;
+  html+=`<div class="btn grow" style="width:100%;margin-top:8px" onclick="closeModal('mGeneric')">${tr("Закрыть","Close")}</div>`;
   genericModal(html);
 }
 /* взять предмет из ящика: проверка веса и класса; взятый ствол надевается как трофей,
@@ -4052,12 +4052,12 @@ function crateTake(x,y,idx){
       blog(`📦 ${u.name} взял <b>аптечку</b> (только на этот бой)`);
     }
   }else if(it.type==="grenade"){
-    if(u.cls==="dog"||u.cls==="mutant"){toast("Не умеет пользоваться гранатами");return;}
+    if(u.cls==="dog"||u.cls==="mutant"){toast(tr("Не умеет пользоваться гранатами","Can't use grenades"));return;}
     if(unitBattleLoad(u)+itemWt("cons","grenade")>unitCarryLimit(u)){toast(`Перегруз! Несу ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)}`);return;}
     items.splice(idx,1); u.lootBelt.grenade++;
     blog(`📦 ${u.name} взял <b>гранату</b> (только на этот бой)`);
   }else if(it.type==="ammo"){
-    if(u.cls!=="human"){toast("Только люди таскают патроны");return;}
+    if(u.cls!=="human"){toast(tr("Только люди таскают патроны","Only humans carry ammo"));return;}
     const wadd=it.n*((AMMO[it.ammo]||{}).wpr||1);
     if(unitBattleLoad(u)+wadd>unitCarryLimit(u)){toast(`Перегруз! Несу ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)}`);return;}
     items.splice(idx,1);
@@ -4066,7 +4066,7 @@ function crateTake(x,y,idx){
     blog(`📦 ${u.name} взял патроны: <b>${ammoName(it.ammo)} ×${it.n}</b>`);
   }else{
     const w=WEAPONS[it.id];
-    if(!w.classes.includes(u.cls)){toast("Не может это использовать");return;}
+    if(!w.classes.includes(u.cls)){toast(tr("Не может это использовать","Cannot use this"));return;}
     if(unitBattleLoad(u)+itemWt("weapon",it.id)-(u.trophy?itemWt("weapon",u.weapon):0)>unitCarryLimit(u)){
       toast(`Перегруз! Несу ${unitBattleLoad(u)}/${unitCarryLimit(u)}`);return;
     }
@@ -4104,7 +4104,7 @@ function crateTakeAll(x,y){
     if(crateSig(u,x,y)===sig)break; /* отказ (перегруз) — дальше не влезет */
     took++;
   }
-  if(!took)toast("Ничего подходящего или перегруз");
+  if(!took)toast(tr("Ничего подходящего или перегруз","Nothing fitting or overloaded"));
 }
 function crateSig(u,x,y){
   const n=crateItems(x,y).length;
