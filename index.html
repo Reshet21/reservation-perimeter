@@ -1273,9 +1273,9 @@ function defaultSave(){
     market: { listed:[], synced:false },
     mats: { scrap:3, leather:2, comp:0, crystal:0 },
     chain: { endpoint:"https://shellnet.ackinacki.org/graphql",
-      addr:"86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c::86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c",
+      addr:"390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a::390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a",
       itemsAddr:"0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775::0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775",
-      arenaAddr:"fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74::fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74" },
+      arenaAddr:"06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd::06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd" },
     wallet: null,
     balance: null,
     seenTut: false,
@@ -1329,6 +1329,13 @@ function migrate(s){ // совместимость со старыми сейв�
   if(!s.chain)s.chain={endpoint:"https://shellnet.ackinacki.org/graphql",addr:"",itemsAddr:"",arenaAddr:""};
   if(s.chain.itemsAddr===undefined)s.chain.itemsAddr="";
   if(s.chain.arenaAddr===undefined)s.chain.arenaAddr="";
+  // v21: старые предвычисленные адреса (до деплоя) заменяем боевыми
+  const OLD2NEW={
+    "86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c::86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c":"390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a::390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a",
+    "fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74::fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74":"06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd::06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd"
+  };
+  if(OLD2NEW[s.chain.addr])s.chain.addr=OLD2NEW[s.chain.addr];
+  if(OLD2NEW[s.chain.arenaAddr])s.chain.arenaAddr=OLD2NEW[s.chain.arenaAddr];
   // v20: предвычисленные адреса Sharednet-деплоя как дефолт (как в sync.mjs)
   if(window.anWallet&&window.anWallet.chainDefaults){
     try{
@@ -6694,9 +6701,9 @@ const ENDPOINTS = ['https://mainnet.ackinacki.org'];
 /* Предвычисленные адреса контрактов (обновятся после деплоя, см. Profile) */
 const RP_DEFAULTS = {
   ENDPOINT: 'https://shellnet.ackinacki.org/graphql',
-  PROFILES: '86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c::86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c',
+  PROFILES: '390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a::390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a',
   ITEMS: '0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775::0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775',
-  ARENA: 'fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74::fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74',
+  ARENA: '06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd::06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd',
 };
 
 let sdkMod = null;

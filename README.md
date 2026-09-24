@@ -78,9 +78,9 @@ tvm-cli -u shellnet.ackinacki.org deploy PerimeterProfiles.tvc '{"value":1000000
 
 | Контракт | Адрес (новый формат: dapp_id::account_id) | Legacy (0:...) |
 |----------|-------------------------------------------|----------------|
-| **PerimeterProfiles** | `86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c::86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c` | `0:86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c` |
+| **PerimeterProfiles** | `390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a::390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a` | `0:390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a` |
 | **PerimeterItems** | `0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775::0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775` | `0:0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775` |
-| **PerimeterArena** | `fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74::fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74` | `0:fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74` |
+| **PerimeterArena** | `06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd::06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd` | `0:06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd` |
 
 > **PerimeterItems** требует constructor init data: `ownerKey = 0xc8f43f24be0fb530d4752b68421c5d3dfd377ebc9459ee5442c5f3cf7719fc72` (публичный ключ деплоера).
 
@@ -98,6 +98,13 @@ node sync.mjs read                       # прочитать профиль (б
 ```
 
 **sync.mjs уже настроен на адреса выше** (переменные окружения RP_CONTRACT, RP_ITEMS, RP_ARENA или дефолты в коде).
+
+### Привязка кошелёк ↔ он-чейн профиль
+
+1. Создай игровой ключ и профиль: `node sync.mjs init && node sync.mjs profile "Ник"`.
+2. В игре подключи AN Wallet, открой Профиль → **⛓ Привязать к профилю** (только для подтверждённого входа). Адрес кошелька попадёт в очередь.
+3. Отправь привязку: `node sync.mjs bind "<адрес>"` (адрес подскажет игра).
+4. Проверь: `node sync.mjs read` — в профиле будет `walletAddr`, `node sync.mjs top` — он-чейн топ.
 
 ### Кошелёк AN Wallet в игре (экран входа + Профиль)
 

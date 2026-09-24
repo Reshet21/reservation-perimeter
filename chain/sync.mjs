@@ -39,9 +39,9 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 TvmClient.useBinaryLibrary(libNode);
 
 const ENDPOINT = process.env.RP_ENDPOINT || "https://shellnet.ackinacki.org/graphql";
-const CONTRACT_ADDR = process.env.RP_CONTRACT || "86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c::86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c";
+const CONTRACT_ADDR = process.env.RP_CONTRACT || "390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a::390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a";
 const ITEMS_ADDR = process.env.RP_ITEMS || "0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775::0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775";
-const ARENA_ADDR = process.env.RP_ARENA || "fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74::fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74";
+const ARENA_ADDR = process.env.RP_ARENA || "06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd::06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd";
 const ABI_PATH = new URL("./PerimeterProfiles.abi.json", import.meta.url).pathname;
 const ITEMS_ABI_PATH = new URL("./PerimeterItems.abi.json", import.meta.url).pathname;
 const ARENA_ABI_PATH = new URL("./PerimeterArena.abi.json", import.meta.url).pathname;
