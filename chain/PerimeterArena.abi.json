@@ -12,7 +12,16 @@
 			]
 		},
 		{
-			"name": "deposit",
+			"name": "depositFor",
+			"inputs": [
+				{"name":"player","type":"uint256"},
+				{"name":"amount","type":"uint64"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "withdraw",
 			"inputs": [
 				{"name":"amount","type":"uint64"}
 			],
@@ -146,6 +155,7 @@
 		{"init":false,"name":"_constructorFlag","type":"bool"},
 		{"components":[{"name":"host","type":"uint256"},{"name":"guest","type":"uint256"},{"name":"mode","type":"uint8"},{"name":"stake","type":"uint64"},{"name":"naked","type":"bool"},{"name":"state","type":"uint8"},{"name":"deadline","type":"uint64"},{"name":"hostClaimWinner","type":"uint256"},{"name":"guestClaimWinner","type":"uint256"},{"name":"hostHash","type":"uint64"},{"name":"guestHash","type":"uint64"}],"init":false,"name":"rooms","type":"map(uint64,tuple)"},
 		{"init":false,"name":"balance","type":"map(uint256,uint64)"},
+		{"init":true,"name":"ownerKey","type":"uint256"},
 		{"init":false,"name":"nextRoomId","type":"uint64"},
 		{"init":false,"name":"openRooms","type":"uint32"}
 	]

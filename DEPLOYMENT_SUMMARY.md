@@ -1,17 +1,28 @@
 # DEPLOYMENT SUMMARY — RESERVATION: PERIMETER
 
-## ✅ COMPLETED
+## ✅ DEPLOYED TO SHELLNET (2026-09-24)
 
-### 1. Contracts Compiled (via GitHub Actions)
-All 3 contracts compiled to TVM bytecode (`.tvc`) + ABI (`.abi.json`):
-- `PerimeterProfiles.tvc` / `.abi.json` — профили/рейтинг
-- `PerimeterItems.tvc` / `.abi.json` — предметы/рынок/NPC-цены
-- `PerimeterArena.tvc` / `.abi.json` — PvP-комнаты 1x1/2x2/4x4
-- ⚠️ **Текущие .tvc собраны из СТАРЫХ .sol.** После фикса `PerimeterArena.deposit`
-  (закрыта mint-дыра: начисление только через `depositFor` от owner + `withdraw`)
-  workflow `deploy.yml` сначала **перекомпилирует** все контракты
-  (`sold --tvm-version gosh`), потом деплоит. Ручная пересборка:
-  `sold --tvm-version gosh PerimeterArena.sol` (sold 0.81.0, x86_64).
+Все три контракта скомпилированы (`sold 0.81.0`), профинансированы из
+мультисига флагом 16 и задеплоены через workflow `Deploy Contracts to Shellnet`.
+Статус всех — **Active**, проверено `tvm-cli account` + геттерами.
+Сквозной тест: createProfile → reportBattle (рейтинг 1000→1025) →
+bindWallet → getProfile/getPlayers — всё exit_code 0.
+
+| Contract | Address (dapp_id::account_id) | Code hash |
+|----------|-------------------------------|-----------|
+| **PerimeterProfiles** | `390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a::390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a` | `ae538c41…` |
+| **PerimeterItems** | `0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775::0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775` | `44b05074…` |
+| **PerimeterArena** | `06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd::06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd` | `4a8c52e8…` |
+
+NPC-цены выставлены workflow (39 позиций, см. лог `deploy-results`).
+`tvc`/`abi.json` в `chain/` — свежие, из артефактов CI.
+
+> Старые предвычисленные адреса (86ca…/fa59…) больше не используются:
+> код изменился (привязка кошелька, фикс арены) → адреса изменились.
+> На 86ca… зависло ~10k тестовых (было залито под старый код) — faucet-деньги,
+> не достать (у старого кода нет вывода). Не критично для тестнета.
+
+## Ключи и кошельки
 
 ### 2. Deployer Keys Generated
 ```
@@ -25,64 +36,37 @@ Secret:  <удалён из документации — лежит только
 > (`tvm-cli genaddr ... --save`) и обнови адреса в README/sync.mjs/игре.
 > Старый ключ считай скомпрометированным.
 
-### 3. Contract Addresses Precomputed (root dapps, dapp_id == account_id)
+### 3. Адреса боевых контрактов (root dapps, dapp_id == account_id)
 
-| Contract | Address (new format: dapp_id::account_id) | Legacy (0:...) |
+| Contract | Address (новый формат: dapp_id::account_id) | Legacy (0:...) |
 |----------|-------------------------------------------|----------------|
-| **PerimeterProfiles** | `86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c::86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c` | `0:86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c` |
+| **PerimeterProfiles** | `390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a::390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a` | `0:390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a` |
 | **PerimeterItems** | `0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775::0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775` | `0:0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775` |
-| **PerimeterArena** | `fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74::fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74` | `0:fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74` |
+| **PerimeterArena** | `06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd::06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd` | `0:06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd` |
 
-> **PerimeterItems** requires constructor init data: `ownerKey = 0xc8f43f24be0fb530d4752b68421c5d3dfd377ebc9459ee5442c5f3cf7719fc72` (deployer public key)
-> **PerimeterArena** requires static init data: `ownerKey = 0xc8f43f...` (same key, passed via `--data`).
-> Arena credits are issued ONLY by owner: `node sync.mjs arena-deposit <pubkey> <сумма>` (owner key required).
+> **PerimeterItems/PerimeterArena**: static `ownerKey = 0xc8f43f24be0fb530d4752b68421c5d3dfd377ebc9459ee5442c5f3cf7719fc72` вшивается через `genaddr --save --data` до деплоя.
+> Кредиты арены начисляет ТОЛЬКО owner: `node sync.mjs arena-deposit <pubkey> <сумма>` (нужен owner-ключ).
+> Привязка кошелька: `node sync.mjs bind <multifactor-address>`, топ: `node sync.mjs top [N]`.
 
-### 4. Multisig Wallet Deployed (for future contract management)
+### Мультисиг (фандинг и управление)
 - Address: `73e271257c9b6b5b32f31d1af74dce240e2113f13db959c09c4a534ebf959847::73e271257c9b6b5b32f31d1af74dce240e2113f13db959c09c4a534ebf959847`
-- Status: **Active**
-- Balance: ~10,000 VMSHELL native + 10,000 SHELL ECC
-- Custodian: deployer public key (1 confirm required)
+- Status: **Active**, кастодиан — ключ деплоера (1 подтверждение)
+- Использовался для предфандинга адресов (флаг 16, по 500 SHELL на контракт)
 
-### 5. sync.mjs Updated
-Default contract addresses now point to the precomputed addresses above.
+### sync.mjs
+Дефолтные адреса = боевые (см. таблицу выше). На ARM64 `sync.mjs` не взлетает
+(`@tvmsdk/lib-node` без arm64-бинарника) — для вызовов используй `tvm-cli`
+(call/run, как в примерах выше) или x86_64-машину.
 
-## ❌ BLOCKED: Final Deploy Step
+## Повторный деплой (при изменении .sol)
 
-**Issue**: TVM v3 requires deployer account to be **Active** (initialized) to send deploy transactions. The deployer account (`c8f4...`) is Uninit. The giver contract on Shellnet currently fails with exit code 40 (empty ECC balance), preventing funding of Uninit accounts.
-
-**Root cause**: 
-- `@tvmsdk/lib-node` has no arm64 native binary → can't use TVM SDK from Node.js
-- `tvm-cli deploy` routes through signer's dapp_id (Uninit) → rejected by network
-- Giver contract broken on Shellnet (exit code 40)
-
-## 🔧 TO COMPLETE DEPLOY (run on x86_64 machine)
-
-### Option A: Use TVM SDK on x86_64 (recommended)
-```bash
-# On x86_64 Linux/macOS:
-cd chain
-npm i @tvmsdk/core @tvmsdk/lib-node
-node deploy.js  # (create deploy.js using TVM SDK contracts.deploy())
-```
-
-### Option B: Use tvm-cli on x86_64 with funded deployer
-```bash
-# 1. Get test tokens for deployer (c8f4...) via giver or Telegram
-# 2. Deploy contracts:
-tvm-cli -u shellnet.ackinacki.org deploy PerimeterProfiles.tvc --abi PerimeterProfiles.abi.json --sign deploy.keys.json '{"value":10000000000}'
-tvm-cli -u shellnet.ackinacki.org deploy PerimeterItems.tvc --abi PerimeterItems.abi.json --sign deploy.keys.json --data '{"ownerKey":"0xc8f43f24be0fb530d4752b68421c5d3dfd377ebc9459ee5442c5f3cf7719fc72"}' '{"value":10000000000}'
-tvm-cli -u shellnet.ackinacki.org deploy PerimeterArena.tvc --abi PerimeterArena.abi.json --sign deploy.keys.json --data '{"ownerKey":"0xc8f43f24be0fb530d4752b68421c5d3dfd377ebc9459ee5442c5f3cf7719fc72"}' '{"value":10000000000}'
-```
-
-### Option C: Wait for giver fix + deploy from this machine
-Once giver works, fund deployer then deploy:
-```bash
-# Fund deployer (c8f4...) with flag=17
-tvm-cli -u shellnet.ackinacki.org callx --abi GiverV3.abi.json --addr 000...::111... -m sendCurrencyWithFlag '{"dest":"c8f4...","value":10000000000000,"ecc":{"2":10000000000000},"flag":17}'
-# Then deploy
-tvm-cli -u shellnet.ackinacki.org deploy PerimeterProfiles.tvc --abi PerimeterProfiles.abi.json --sign deploy.keys.json '{"value":10000000000}'
-# ...etc
-```
+1. Закоммить изменения, запустить workflow `Deploy Contracts to Shellnet`
+   (Actions → Run workflow): компиляция sold 0.81.0 → genaddr → фандинг
+   из мультисига → deploy с `--dst-dapp-id` → NPC-цены → проверка Active.
+2. Адреса изменятся (код входит в init-хэш) — забери новые из Summary рана,
+   обнови README / `sync.mjs` / `RP_DEFAULTS` и `defaultSave` в игре,
+   закоммить свежие `.tvc`/`.abi.json` из артефактов.
+3. Секрет `DEPLOY_KEYS_JSON` уже заведён в репозитории (для workflow).
 
 ## 📋 POST-DEPLOY CHECKLIST
 
