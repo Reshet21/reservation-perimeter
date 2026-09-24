@@ -282,21 +282,21 @@
     <h1 style="font-size:22px;font-weight:800;margin-bottom:8px">
       <span class="ttl">RESERVATION<span style="font-size:.55em;display:block;letter-spacing:.35em;color:#9fb4d8">PERIMETER</span></span>
     </h1>
-    <div class="muted" style="margin:12px 0 24px;max-width:300px">
+    <div class="muted" style="margin:12px 0 24px;max-width:300px" data-tr="Пошаговая тактика в Зоне. Профиль, предметы и PvP — на блокчейне Acki Nacki.|Turn-based tactics in the Zone. Profile, items and PvP — on Acki Nacki blockchain.">
       Пошаговая тактика в Зоне. Профиль, предметы и PvP — на блокчейне Acki Nacki.
     </div>
     <div id="splashWalletBox" style="width:100%;max-width:340px">
       <div class="card" style="text-align:left">
-        <h3>🔑 Подключи кошелёк</h3>
-        <div class="muted" style="margin:6px 0">Нажми кнопку и подтверди вход в приложении <b>AN Wallet</b> — имя вводить не нужно, кошелёк сам назовётся.</div>
+        <h3 data-tr="🔑 Подключи кошелёк|🔑 Connect wallet">🔑 Подключи кошелёк</h3>
+        <div class="muted" style="margin:6px 0" data-tr="Нажми кнопку и подтверди вход в приложении <b>AN Wallet</b> — имя вводить не нужно, кошелёк сам назовётся.|Press the button and confirm login in the <b>AN Wallet</b> app — no typing, the wallet introduces itself.">Нажми кнопку и подтверди вход в приложении <b>AN Wallet</b> — имя вводить не нужно, кошелёк сам назовётся.</div>
         <div id="splashSdkStatus" style="margin:8px 0;font-size:11px;color:var(--dim)"></div>
         <div id="splashConnectBox" style="margin-top:10px">
-          <div class="btn primary grow" id="splashBtnConnect" onclick="splashConnectQR()" style="width:100%">Подключить AN Wallet →</div>
+          <div class="btn primary grow" id="splashBtnConnect" onclick="splashConnectQR()" style="width:100%" data-tr="Подключить AN Wallet →|Connect AN Wallet →">Подключить AN Wallet →</div>
         </div>
         <div id="splashStatus" style="margin-top:10px;text-align:center"></div>
       </div>
     </div>
-    <div class="muted" style="margin-top:20px;font-size:11px">
+    <div class="muted" style="margin-top:20px;font-size:11px" data-tr="Нет кошелька? Скачай <a href='https://ackinacki.com/wallet' target='_blank' style='color:var(--blue)'>ackinacki.com/wallet</a>|No wallet? Get it at <a href='https://ackinacki.com/wallet' target='_blank' style='color:var(--blue)'>ackinacki.com/wallet</a>">
       Нет кошелька? Скачай <a href="https://ackinacki.com/wallet" target="_blank" style="color:var(--blue)">ackinacki.com/wallet</a>
     </div>
   </div>
@@ -312,7 +312,7 @@
   <div class="scroll">
     <div class="card">
       <div class="row"><div class="grow"><h3 id="hubNick">Сталкер</h3>
-      <div class="muted">Зона добычи азурита. Корпорация «Вектор» платит за зачистку.</div></div>
+      <div class="muted" data-tr="Зона добычи азурита. Корпорация «Вектор» платит за зачистку.|Azurite mining zone. The “Vector” corp pays for clearing.">Зона добычи азурита. Корпорация «Вектор» платит за зачистку.</div></div>
       <div style="font-size:36px">🧿</div></div>
       <div class="statline" id="hubStats"></div>
     </div>
@@ -343,21 +343,21 @@
     </div>
     <div class="hero" onclick="openMissions()">
       <div class="brackets"><i></i><i></i><i></i><i></i></div>
-      <div class="kick">КАМПАНИЯ · PvE · 5 ОПЕРАЦИЙ</div>
-      <h2>В БОЙ ⚔️</h2>
-      <div class="muted">Пустошь, пустыня, лес и промзона · лут · крафт</div>
-      <span class="go">ВЫБРАТЬ ОПЕРАЦИЮ ›</span>
+      <div class="kick" data-tr="КАМПАНИЯ · PvE · 5 ОПЕРАЦИЙ|CAMPAIGN · PvE · 5 OPERATIONS">КАМПАНИЯ · PvE · 5 ОПЕРАЦИЙ</div>
+      <h2 data-tr="В БОЙ ⚔️|TO BATTLE ⚔️">В БОЙ ⚔️</h2>
+      <div class="muted" data-tr="Пустошь, пустыня, лес и промзона · лут · крафт|Wasteland, desert, forest and industrial · loot · craft">Пустошь, пустыня, лес и промзона · лут · крафт</div>
+      <span class="go" data-tr="ВЫБРАТЬ ОПЕРАЦИЮ ›|PICK OPERATION ›">ВЫБРАТЬ ОПЕРАЦИЮ ›</span>
     </div>
-    <h2 class="sub" style="margin-top:4px">Отряд и снаряжение</h2>
+    <h2 class="sub" style="margin-top:4px" data-tr="Отряд и снаряжение|Squad and gear">Отряд и снаряжение</h2>
     <div class="hubgrid">
-      <div class="tile" onclick="openRooms()"><div class="ico">🎮</div><b>АРЕНА</b><div>PvP 1×1 · 2×2 · 4×4 со ставками</div></div>
-      <div class="tile" onclick="openBarracks()"><div class="ico">🪖</div><b>ОТРЯД</b><div>Бойцы, навыки, снаряжение</div></div>
-      <div class="tile" onclick="openShop()"><div class="ico">🛒</div><b>МАГАЗИН</b><div>Оружие, броня, импланты</div></div>
-      <div class="tile" onclick="openCraft()"><div class="ico">🔧</div><b>КРАФТ</b><div>Мастерская и материалы</div></div>
-      <div class="tile" onclick="openWarehouse()"><div class="ico">📦</div><b>СКЛАД</b><div>Вещи отряда, торговля</div></div>
-      <div class="tile" onclick="openInv()"><div class="ico">🎒</div><b>ИНВЕНТАРЬ</b><div>Что несёт каждый, вес, выкинуть</div></div>
-      <div class="tile" onclick="openHire()"><div class="ico">🤝</div><b>НАЁМ</b><div>Новые бойцы в отряд</div></div>
-      <div class="tile" onclick="openMarket()"><div class="ico">🏪</div><b>РЫНОК</b><div>Барахолка · мои лоты</div></div>
+      <div class="tile" onclick="openRooms()"><div class="ico">🎮</div><b data-tr="АРЕНА|ARENA">АРЕНА</b><div data-tr="PvP 1×1 · 2×2 · 4×4 со ставками|PvP 1×1 · 2×2 · 4×4 with stakes">PvP 1×1 · 2×2 · 4×4 со ставками</div></div>
+      <div class="tile" onclick="openBarracks()"><div class="ico">🪖</div><b data-tr="ОТРЯД|SQUAD">ОТРЯД</b><div data-tr="Бойцы, навыки, снаряжение|Fighters, skills, gear">Бойцы, навыки, снаряжение</div></div>
+      <div class="tile" onclick="openShop()"><div class="ico">🛒</div><b data-tr="МАГАЗИН|SHOP">МАГАЗИН</b><div data-tr="Оружие, броня, импланты|Weapons, armor, implants">Оружие, броня, импланты</div></div>
+      <div class="tile" onclick="openCraft()"><div class="ico">🔧</div><b data-tr="КРАФТ|CRAFT">КРАФТ</b><div data-tr="Мастерская и материалы|Workshop and materials">Мастерская и материалы</div></div>
+      <div class="tile" onclick="openWarehouse()"><div class="ico">📦</div><b data-tr="СКЛАД|STOCK">СКЛАД</b><div data-tr="Вещи отряда, торговля|Squad stuff, trade">Вещи отряда, торговля</div></div>
+      <div class="tile" onclick="openInv()"><div class="ico">🎒</div><b data-tr="ИНВЕНТАРЬ|INVENTORY">ИНВЕНТАРЬ</b><div data-tr="Что несёт каждый, вес, выкинуть|Who carries what, weight, drop">Что несёт каждый, вес, выкинуть</div></div>
+      <div class="tile" onclick="openHire()"><div class="ico">🤝</div><b data-tr="НАЁМ|HIRE">НАЁМ</b><div data-tr="Новые бойцы в отряд|New fighters for the squad">Новые бойцы в отряд</div></div>
+      <div class="tile" onclick="openMarket()"><div class="ico">🏪</div><b data-tr="РЫНОК|MARKET">РЫНОК</b><div data-tr="Барахолка · мои лоты|Flea market · my lots">Барахолка · мои лоты</div></div>
       <div class="tile" style="grid-column:1/-1;display:flex;align-items:center;gap:12px" onclick="openProfile()">
         <div class="ico" style="margin-bottom:0">⛓️</div>
         <div style="flex:1"><b>ACKI NACKI</b><div>Кошелёк и он-чейн</div></div>
@@ -369,35 +369,35 @@
 
 <!-- ===================== MISSIONS ===================== -->
 <div class="screen" id="scr-missions">
-  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1>ВЫБОР ОПЕРАЦИИ</h1>
+  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1 data-tr="ВЫБОР ОПЕРАЦИИ|OPERATIONS">ВЫБОР ОПЕРАЦИИ</h1>
     <span class="chip">💰 <b class="crview">0</b></span></header>
   <div class="scroll" id="missionList"></div>
 </div>
 
 <!-- ===================== BARRACKS ===================== -->
 <div class="screen" id="scr-barracks">
-  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1>КАЗАРМА</h1>
+  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1 data-tr="КАЗАРМА|BARRACKS">КАЗАРМА</h1>
     <span class="chip">💰 <b class="crview">0</b></span></header>
   <div class="scroll" id="rosterList"></div>
 </div>
 
 <!-- ===================== SHOP ===================== -->
 <div class="screen" id="scr-shop">
-  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1>МАГАЗИН «СХРОН»</h1>
+  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1 data-tr="МАГАЗИН «СХРОН»|“STASH” SHOP">МАГАЗИН «СХРОН»</h1>
     <span class="chip">💰 <b class="crview">0</b></span></header>
   <div class="scroll" id="shopList"></div>
 </div>
 
 <!-- ===================== WAREHOUSE ===================== -->
 <div class="screen" id="scr-warehouse">
-  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1>СКЛАД ОТРЯДА</h1>
+  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1 data-tr="СКЛАД ОТРЯДА|SQUAD STOCK">СКЛАД ОТРЯДА</h1>
     <span class="chip">💰 <b class="crview">0</b></span></header>
   <div class="scroll" id="whList"></div>
 </div>
 
 <!-- ===================== MARKET (барахолка) ===================== -->
 <div class="screen" id="scr-market">
-  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1>РЫНОК ЗОНЫ</h1>
+  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1 data-tr="РЫНОК ЗОНЫ|ZONE MARKET">РЫНОК ЗОНЫ</h1>
     <span class="chip">💰 <b class="crview">0</b></span></header>
   <div class="scroll" id="marketBody"></div>
 </div>
@@ -411,64 +411,69 @@
 
 <!-- ===================== INV (инвентарь отряда: кто что несёт) ===================== -->
 <div class="screen" id="scr-inv">
-  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1>ИНВЕНТАРЬ</h1>
+  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1 data-tr="ИНВЕНТАРЬ|INVENTORY">ИНВЕНТАРЬ</h1>
     <span class="chip">💰 <b class="crview">0</b></span></header>
   <div class="scroll" id="invBody"></div>
 </div>
 
 <!-- ===================== CRAFT ===================== -->
 <div class="screen" id="scr-craft">
-  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1>МАСТЕРСКАЯ</h1>
+  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1 data-tr="МАСТЕРСКАЯ|WORKSHOP">МАСТЕРСКАЯ</h1>
     <span class="chip">💰 <b class="crview">0</b></span></header>
   <div class="scroll" id="craftBody"></div>
 </div>
 
 <!-- ===================== ROOMS (PvP-лобби) ===================== -->
 <div class="screen" id="scr-rooms">
-  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1>АРЕНА · КОМНАТЫ</h1>
+  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1 data-tr="АРЕНА · КОМНАТЫ|ARENA · ROOMS">АРЕНА · КОМНАТЫ</h1>
     <span class="chip">💰 <b class="crview">0</b></span></header>
   <div class="scroll" id="roomsBody"></div>
 </div>
 
 <!-- ===================== HIRE ===================== -->
 <div class="screen" id="scr-hire">
-  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1>БИРЖА НАЁМНИКОВ</h1>
+  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1 data-tr="БИРЖА НАЁМНИКОВ|MERC EXCHANGE">БИРЖА НАЁМНИКОВ</h1>
     <span class="chip">💰 <b class="crview">0</b></span></header>
   <div class="scroll" id="hireList"></div>
 </div>
 
 <!-- ===================== PROFILE / CHAIN ===================== -->
 <div class="screen" id="scr-profile">
-  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1>ПРОФИЛЬ</h1></header>
+  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1 data-tr="ПРОФИЛЬ|PROFILE">ПРОФИЛЬ</h1></header>
   <div class="scroll">
     <div class="card">
-      <h3>Позывной</h3>
+      <h3 data-tr="Позывной|Callsign">Позывной</h3>
       <div class="row" style="margin-top:6px">
         <input type="text" id="nickInput" maxlength="20">
         <div class="btn small" onclick="saveNick()">OK</div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="muted" style="font-size:12px">🌐 Язык / Language:</div>
+        <div class="btn small grow" id="langBtnRu" onclick="setLang('ru')">🇷🇺 RU</div>
+        <div class="btn small grow" id="langBtnEn" onclick="setLang('en')">🇬🇧 EN</div>
       </div>
       <div class="statline" id="profStats" style="margin-top:10px"></div>
     </div>
 
     <div class="card">
-      <h3>🔑 Кошелёк</h3>
+      <h3 data-tr="🔑 Кошелёк|🔑 Wallet">🔑 Кошелёк</h3>
       <div id="walletInfo"></div>
     </div>
 
     <div class="card">
-      <h3>🔐 Он-чейн личность</h3>
-      <div class="muted" style="margin:6px 0">Твой прогресс привязан к имени <b>AN Wallet</b>.
+      <h3 data-tr="🔐 Он-чейн личность|🔐 On-chain identity">🔐 Он-чейн личность</h3>
+      <div class="muted" style="margin:6px 0" data-tr="Твой прогресс привязан к имени <b>AN Wallet</b>. Подписи для блокчейна создаются через <b>майнинг-ключи приложения</b> (привязка в кошельке), приватные ключи кошелька никогда не покидают AN Wallet.|Your progress is tied to your <b>AN Wallet</b> name. Blockchain signatures use the app <b>mining keys</b> (bound in the wallet); wallet private keys never leave AN Wallet.">Твой прогресс привязан к имени <b>AN Wallet</b>.
         Подписи для блокчейна создаются через <b>майнинг-ключи приложения</b> (привязка в кошельке),
         приватные ключи кошелька никогда не покидают AN Wallet.</div>
       <div id="gameKeyInfo"></div>
       <div class="row" style="margin-top:8px">
-        <div class="btn small grow" onclick="showGameKey()">👁 Показать адрес</div>
-        <div class="btn small grow" onclick="exportGameKey()">💾 Экспорт</div>
+        <div class="btn small grow" onclick="showGameKey()" data-tr="👁 Показать адрес|👁 Show address">👁 Показать адрес</div>
+        <div class="btn small grow" onclick="exportGameKey()" data-tr="💾 Экспорт|💾 Export">💾 Экспорт</div>
       </div>
     </div>
 
     <div class="card">
-      <h3>⛓️ Acki Nacki (Shellnet)</h3>
+      <h3 data-tr="⛓️ Acki Nacki (Shellnet)|⛓️ Acki Nacki (Shellnet)">⛓️ Acki Nacki (Shellnet)</h3>
       <div class="muted" style="margin:6px 0">Контракты <b>PerimeterProfiles / PerimeterItems / PerimeterArena</b>
         в тестовой сети Shellnet. Адреса впишутся автоматически после деплоя —
         или укажи вручную для он-чейн синхронизации.</div>
@@ -481,29 +486,29 @@
       <div style="margin:8px 0 4px;font-size:13px">Адрес контракта PerimeterArena:</div>
       <input type="text" id="chainArenaAddr" placeholder="hex64::hex64">
       <div class="row" style="margin-top:10px">
-        <div class="btn primary grow" onclick="chainSync()">📡 Синхронизировать</div>
+        <div class="btn primary grow" onclick="chainSync()" data-tr="📡 Синхронизировать|📡 Synchronize">📡 Синхронизировать</div>
       </div>
       <div class="row" style="margin-top:8px">
-        <div class="btn small grow" onclick="chainPing()">Проверить связь</div>
-        <div class="btn small grow" onclick="showPayload()">Payload</div>
+        <div class="btn small grow" onclick="chainPing()" data-tr="Проверить связь|Check connection">Проверить связь</div>
+        <div class="btn small grow" onclick="showPayload()" data-tr="Payload|Payload">Payload</div>
       </div>
       <div class="muted" id="chainStatus" style="margin-top:8px">Статус: офлайн</div>
       <textarea id="payloadBox" style="display:none;margin-top:8px" readonly></textarea>
     </div>
 
     <div class="card">
-      <h3>📋 Ожидающие транзакции</h3>
+      <h3 data-tr="📋 Ожидающие транзакции|📋 Pending transactions">📋 Ожидающие транзакции</h3>
       <div id="pendingTxsInfo"></div>
       <div class="row" style="margin-top:8px">
-        <div class="btn small grow" onclick="refreshPendingTxs()">🔄 Обновить</div>
-        <div class="btn small grow danger" onclick="clearPendingTxs()">🗑 Очистить</div>
+        <div class="btn small grow" onclick="refreshPendingTxs()" data-tr="🔄 Обновить|🔄 Refresh">🔄 Обновить</div>
+        <div class="btn small grow danger" onclick="clearPendingTxs()" data-tr="🗑 Очистить|🗑 Clear">🗑 Очистить</div>
       </div>
     </div>
 
     <div class="card">
-      <h3>Данные</h3>
+      <h3 data-tr="Данные|Data">Данные</h3>
       <div class="row" style="margin-top:8px">
-        <div class="btn small grow danger" onclick="resetSave()">Сбросить сохранение</div>
+        <div class="btn small grow danger" onclick="resetSave()" data-tr="Сбросить сохранение|Reset save">Сбросить сохранение</div>
       </div>
     </div>
   </div>
@@ -540,7 +545,7 @@
 
 <!-- modals -->
 <div class="modal" id="mSquad"><div class="box">
-  <h2>Выбор отряда (до 3)</h2>
+  <h2>${tr("Выбор отряда (до 3)","Squad pick (up to 3)")}</h2>
   <div id="squadPick"></div>
   <div class="row" style="margin-top:10px">
     <div class="btn grow" onclick="closeModal('mSquad')">Отмена</div>
@@ -1274,6 +1279,7 @@ function defaultSave(){
     wallet: null,
     balance: null,
     seenTut: false,
+    lang: (navigator.language||"ru").toLowerCase().startsWith("ru")?"ru":"en",
   };
 }
 let mercSeq = 1;
@@ -1336,6 +1342,7 @@ function migrate(s){ // совместимость со старыми сейв�
   if(s.wallet===undefined)s.wallet=null;                       // v8: bee-sdk сессия
   if(s.balance===undefined)s.balance=null;                     // v7: баланс
   if(s.snd===undefined)s.snd=true;                            // v7: звук
+  if(s.lang===undefined)s.lang="ru";                          // i18n
   return s;
 }
 function setSaveKeyForWallet(addr){
@@ -1347,11 +1354,11 @@ function load(){
 }
 function save(){ try{ localStorage.setItem(currentSaveKey, JSON.stringify(S)); }catch(e){} }
 function resetSave(){
-  if(!confirm("Точно сбросить весь прогресс?"))return;
+  if(!confirm(tr("Точно сбросить весь прогресс?","Really reset all progress?")))return;
   localStorage.removeItem(currentSaveKey); S=defaultSave(); save();
   localStorage.removeItem('rp-wallet-session');
   show("scr-splash");
-  toast("Прогресс сброшен");
+  toast(tr("Прогресс сброшен","Progress reset"));
 }
 
 /* ---------- ХАРАКТЕРИСТИКИ ---------- */
@@ -1407,6 +1414,7 @@ function show(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
   document.querySelectorAll(".crview").forEach(e=>e.textContent=S.credits);
+  try{ applyStaticLocale(); }catch(e){}
   if(id==="scr-hub") renderHub();
   if(id==="scr-splash") renderSplash();
 }
@@ -1428,6 +1436,119 @@ function isAddrLike(a){
   return /^[0-9a-fA-F]{64}::[0-9a-fA-F]{64}$/.test(a||"") || /^0:[0-9a-fA-F]{64}$/.test(a||"");
 }
 
+/* =========================================================
+   ИНТЕРНАЦИОНАЛИЗАЦИЯ (RU/EN):
+   - tr(ru,en) — короткие строки прямо в шаблонах;
+   - applyDataLocale() — подменяет имена/описания данных
+     (предметы, классы, миссии...), поэтому сотни шаблонов
+     с WEAPONS[x].name править не нужно.
+   ========================================================= */
+/* tr(ru, en): короткая форма для шаблонных строк */
+function tr(ru,en){ return (typeof S!=="undefined"&&S&&S.lang==="en")?en:ru; }
+/* статические подписи: data-tr="Русский|English" → applyStaticLocale() в show() */
+function applyStaticLocale(){
+  const en=S&&S.lang==="en";
+  document.querySelectorAll("[data-tr]").forEach(el=>{
+    const v=el.getAttribute("data-tr")||"";
+    const p=v.indexOf("|");
+    if(p<0)return;
+    el.innerHTML=en?v.slice(p+1):v.slice(0,p);
+  });
+}
+/* Английские имена/описания данных. Русские лежат в самих дефах. */
+const DN_EN = {
+WEAPONS:{
+  fists:{n:"Fists"}, fangs:{n:"Fangs"}, dogfangs:{n:"Dog fangs"}, pick:{n:"Pickaxe"},
+  knife:{n:"Combat knife"}, machete:{n:"Machete"}, sledge:{n:"Sledgehammer"},
+  glock:{n:"Glock-17"}, usp:{n:"USP"}, deagle:{n:"Desert Eagle"}, uzi:{n:"UZI"}, mp5:{n:"MP5"},
+  ak47:{n:"AK-47"}, m16:{n:"M16A2"}, fnfal:{n:"FN FAL"},
+  mossberg:{n:"Mossberg 500"}, spas:{n:"SPAS-12"}, m60:{n:"M60"}, minigun:{n:"Minigun"}, rpg:{n:"Bazooka"},
+  mosin:{n:"Mosin"}, svd:{n:"SVD"}, barrett:{n:"Barrett M82"}},
+ARMORS:{
+  bandana:{n:"“Dust” bandana"}, kaska:{n:"“Turtle” helmet"}, rusthelm:{n:"Fuel-cap helm"},
+  titan:{n:"“Titan” helm"}, crysthelm:{n:"Azurite helm"},
+  vest1:{n:"Quilted jacket"}, vest2:{n:"Plate carrier"}, vest3:{n:"“Nord” armor suit"},
+  scrapvest:{n:"Scrap vest"}, compvest:{n:"Kevlar chestplate"}, crystvest:{n:"Azurite carapace"},
+  jeans:{n:"Reinforced pants"}, pads:{n:"Assault guards"}, leatherlegs:{n:"Hide greaves"},
+  greaves:{n:"Heavy greaves"}, crystlegs:{n:"Azurite guards"},
+  overall:{n:"Work coveralls"}, stalker:{n:"Stalker suit"}, stormkmbz:{n:"“Thunder” assault suit"},
+  exokmbes:{n:"“Spine” exo-suit"},
+  dogvest1:{n:"Leather barding"}, dogvest2:{n:"Kevlar barding"}, dogvest3:{n:"“Cerberus” barding"}},
+IMPLANTS:{
+  imp_hp:{n:"“Regenerator” implant",d:"+25 max HP"},
+  imp_acc:{n:"“Optics-7” implant",d:"+6 accuracy"},
+  imp_ap:{n:"“Neurobooster” implant",d:"+2 AP"}},
+CONSUMABLES:{
+  medkit:{n:"Medkit",d:"Heals 40 HP in battle (4 AP)"},
+  grenade:{n:"Frag grenade",d:"25–40 area damage (5 AP)"}},
+AMMO:{
+  p9:{n:"9×19mm"}, acp:{n:".45 ACP"}, r556:{n:"5.56×45mm"}, r762:{n:"7.62×39mm"},
+  s762:{n:"7.62×54R"}, b50:{n:".50 BMG"}, g12:{n:"12 gauge"}, rpg:{n:"RPG round"}},
+MATERIALS:{scrap:{n:"Scrap metal"}, leather:{n:"Mutant hide"}, comp:{n:"Composite"}, crystal:{n:"Azurite"}},
+CLASSES:{
+  human:{n:"Human",d:"Trains ANY skill: light, auto, heavy, sniper, melee. Any weapon fits."},
+  dog:{n:"War dog",d:"Scout: vision 7, fast (17 AP), powerful bite. Melee only."},
+  mutant:{n:"Mutant miner",d:"Living wall, but near-blind (vision 5). Pickaxe hits like a truck."}},
+SKILLS:{light:{n:"Light"}, auto:{n:"Automatic"}, heavy:{n:"Heavy"}, sniper:{n:"Sniper"}, melee:{n:"Melee"}},
+SKILL_RANKS:["Rookie","Marksman","Veteran","Expert","MASTER"],
+BIOMES:{waste:{n:"Wasteland"}, desert:{n:"Desert"}, forest:{n:"Forest"}, industrial:{n:"Industrial zone"}},
+SLOTS:{head:{n:"Head"}, body:{n:"Body"}, legs:{n:"Legs"}, all:{n:"Full body"}},
+ENEMIES:{
+  bandit:{n:"Bandit"}, raider:{n:"Raider"}, miner:{n:"Mutant miner"},
+  gunner:{n:"Gunner"}, stalker:{n:"Vector fighter"}},
+MISSIONS:{
+  mine:{n:"“Azurite” mine",d:"Bandits nested in the shaft and looted the gear. Clear it — Vector pays."},
+  outskirts:{n:"Reservation outskirts",d:"Bandits rob rookie caravans in the forest near crooked houses. Search them — profit awaits."},
+  roadblock:{n:"Raider roadblock",d:"Raiders blocked the industrial zone on the way to the mines. Storm the post, crack the arsenals."},
+  dunes:{n:"Wild field salt flats",d:"Vector caravans cross the desert. Raiders shoot from dry copses. Hot. Dangerous."},
+  convoy:{n:"Vector convoy",d:"Machinegunners guard the cargo depots. Huge grounds, hangars and cover everywhere."}},
+};
+/* подмена имен/описаний под язык (с бэкапом русских) */
+function applyDataLocale(){
+  const en=S&&S.lang==="en";
+  const swap=(table,ov)=>{
+    if(!table||!ov)return;
+    Object.keys(ov).forEach(id=>{
+      const o=table[id]; if(!o)return;
+      if(!o._ru)o._ru={n:o.name,d:o.desc};
+      if(en){ if(ov[id].n!==undefined)o.name=ov[id].n; if(ov[id].d!==undefined)o.desc=ov[id].d; }
+      else if(o._ru){ o.name=o._ru.n; if(o._ru.d!==undefined)o.desc=o._ru.d; }
+    });
+  };
+  swap(WEAPONS,DN_EN.WEAPONS); swap(ARMORS,DN_EN.ARMORS);
+  swap(IMPLANTS,DN_EN.IMPLANTS); swap(CONSUMABLES,DN_EN.CONSUMABLES);
+  swap(AMMO,DN_EN.AMMO); swap(MATERIALS,DN_EN.MATERIALS);
+  swap(CLASSES,DN_EN.CLASSES); swap(SKILLS,DN_EN.SKILLS);
+  swap(BIOMES,DN_EN.BIOMES); swap(SLOTS,DN_EN.SLOTS);
+  swap(ENEMY_TYPES,DN_EN.ENEMIES); swap(MISSIONS_BY_ID(),DN_EN.MISSIONS);
+  if(en){ if(!SKILL_RANKS._ru)SKILL_RANKS._ru=SKILL_RANKS.slice(); DN_EN.SKILL_RANKS.forEach((r,i)=>SKILL_RANKS[i]=r); }
+  else if(SKILL_RANKS._ru){ SKILL_RANKS._ru.forEach((r,i)=>SKILL_RANKS[i]=r); }
+}
+function MISSIONS_BY_ID(){ const m={}; (typeof MISSIONS!=="undefined"?MISSIONS:[]).forEach(x=>m[x.id]=x); return m; }
+function setLang(l){
+  if(l!=="ru"&&l!=="en")return;
+  S.lang=l; save(); applyDataLocale();
+  /* перерисовать текущий экран */
+  try{
+    const active=document.querySelector(".screen.active");
+    const id=active?active.id:"scr-hub";
+    if(id==="scr-hub")renderHub();
+    else if(id==="scr-profile")openProfile();
+    else if(id==="scr-shop")openShop();
+    else if(id==="scr-warehouse")openWarehouse();
+    else if(id==="scr-inv")renderInv();
+    else if(id==="scr-equip"&&typeof eqMercId!=="undefined"&&eqMercId)openEquip(eqMercId);
+    else if(id==="scr-barracks")openBarracks();
+    else if(id==="scr-hire")openHire();
+    else if(id==="scr-market")openMarket();
+    else if(id==="scr-craft")openCraft();
+    else if(id==="scr-rooms")openRooms();
+    else if(id==="scr-missions")openMissions();
+    else show(id);
+  }catch(e){ try{show("scr-hub");}catch(e2){} }
+  toast(l==="en"?"English ✓":"Русский ✓");
+}
+
 /* ---------- SPLASH ---------- */
 function renderSplash(){
   const status = document.getElementById("splashStatus");
@@ -1435,7 +1556,7 @@ function renderSplash(){
   const sdkStatus = document.getElementById("splashSdkStatus");
   if(!status || !btn) return;
   if(hasWallet()){
-    status.innerHTML = '<div style="color:var(--green);font-size:13px">✅ Кошелёк подключён</div>';
+    status.innerHTML = `<div style="color:var(--green);font-size:13px">${tr('✅ Кошелёк подключён','✅ Wallet connected')}</div>`;
     btn.textContent = "В ИГРУ →";
     btn.onclick = ()=>show("scr-hub");
     return;
@@ -1446,13 +1567,13 @@ function renderSplash(){
   // Показываем статус загрузки SDK
   if(sdkStatus){
     if(window.anWallet && window.anWallet.sdkReady && window.anWallet.sdkReady()){
-      sdkStatus.innerHTML = '<span style="color:var(--green)">● SDK загружен</span>';
+      sdkStatus.innerHTML = `<span style="color:var(--green)">${tr('● SDK загружен','● SDK loaded')}</span>`;
     }else{
-      sdkStatus.innerHTML = '<span style="color:var(--amber)">⏳ Загрузка SDK блокчейна...</span>';
+      sdkStatus.innerHTML = `<span style="color:var(--amber)">${tr('⏳ Загрузка SDK блокчейна...','⏳ Loading blockchain SDK...')}</span>`;
       // Периодически проверяем
       const check = setInterval(()=>{
         if(window.anWallet && window.anWallet.sdkReady && window.anWallet.sdkReady()){
-          sdkStatus.innerHTML = '<span style="color:var(--green)">● SDK загружен</span>';
+          sdkStatus.innerHTML = `<span style="color:var(--green)">${tr('● SDK загружен','● SDK loaded')}</span>`;
           clearInterval(check);
         }
       }, 1000);
@@ -1472,35 +1593,35 @@ async function splashConnectQR(){
   const box = document.getElementById("splashConnectBox");
   const status = document.getElementById("splashStatus");
   if(!box || !status) return;
-  status.innerHTML='<div style="font-size:11px;color:var(--sand)">Создаю сессию...</div>';
+  status.innerHTML=`<div style="font-size:11px;color:var(--sand)">${tr('Создаю сессию...','Creating session...')}</div>`;
   try{
     if(!window.anWallet){ await waitForWallet(); }
     const sess = await window.anWallet.createConnectSession();
     const token = ++_connectToken;
     box.innerHTML=`
-      <a href="${esc(sess.deepLink)}" class="btn primary" style="width:100%;text-decoration:none;box-sizing:border-box">Открыть AN Wallet →</a>
+      <a href="${esc(sess.deepLink)}" class="btn primary" style="width:100%;text-decoration:none;box-sizing:border-box">${tr("Открыть AN Wallet →","Open AN Wallet →")}</a>
       <div class="muted" style="font-size:11px;margin:8px 0;line-height:1.5">
-        Подтверди вход в приложении кошелька, затем нажми «Я подтвердил».</div>
+        ${tr("Подтверди вход в приложении кошелька, затем нажми «Я подтвердил».","Confirm login in the wallet app, then press “I confirmed”.")}</div>
       <div class="row">
-        <div class="btn small grow" onclick="splashCopyLink()">📋 Скопировать ссылку</div>
-        <div class="btn small grow danger" onclick="splashCancelConnect()">✕ Отмена</div>
+        <div class="btn small grow" onclick="splashCopyLink()">${tr("📋 Скопировать ссылку","📋 Copy link")}</div>
+        <div class="btn small grow danger" onclick="splashCancelConnect()">${tr("✕ Отмена","✕ Cancel")}</div>
       </div>
       <div class="row" style="margin-top:8px">
-        <div class="btn primary grow" id="splashBtnConfirmed" onclick="splashCheckConfirm()">Я подтвердил ✓</div>
+        <div class="btn primary grow" id="splashBtnConfirmed" onclick="splashCheckConfirm()">${tr("Я подтвердил ✓","I confirmed ✓")}</div>
       </div>`;
     window._pendingSess = sess;
-    status.innerHTML='<div style="font-size:11px;color:var(--sand)">⏳ Жду подтверждения в AN Wallet...</div>';
+    status.innerHTML=`<div style="font-size:11px;color:var(--sand)">${tr('⏳ Жду подтверждения в AN Wallet...','⏳ Waiting for AN Wallet confirmation...')}</div>`;
   }catch(e){
     status.innerHTML='<div style="color:var(--red);font-size:11px;margin:6px 0">❌ '+esc((e&&e.message)?e.message:String(e))+'</div>'
-      +'<div class="btn small" onclick="splashConnectQR()">Попробовать снова</div>';
+      +`<div class="btn small" onclick="splashConnectQR()">${tr("Попробовать снова","Try again")}</div>`;
   }
 }
 
 function splashCopyLink(){
   const s = window._pendingSess;
-  if(!s){ toast("Нет активной сессии"); return; }
-  if(navigator.clipboard){ navigator.clipboard.writeText(s.deepLink); toast("Ссылка скопирована"); }
-  else toast("Скопируй ссылку вручную");
+  if(!s){ toast(tr("Нет активной сессии","No active session")); return; }
+  if(navigator.clipboard){ navigator.clipboard.writeText(s.deepLink); toast(tr("Ссылка скопирована","Link copied")); }
+  else toast(tr("Скопируй ссылку вручную","Copy the link manually"));
 }
 
 function splashCancelConnect(){
@@ -1508,7 +1629,7 @@ function splashCancelConnect(){
   window._pendingSess = null;
   const box = document.getElementById("splashConnectBox");
   const status = document.getElementById("splashStatus");
-  if(box) box.innerHTML='<div class="btn primary grow" id="splashBtnConnect" onclick="splashConnectQR()" style="width:100%">Подключить AN Wallet →</div>';
+  if(box) box.innerHTML='<div class="btn primary grow" id="splashBtnConnect" onclick="splashConnectQR()" style="width:100%">'+tr('Подключить AN Wallet →','Connect AN Wallet →')+'</div>';
   if(status) status.innerHTML='';
 }
 
@@ -1516,10 +1637,10 @@ async function splashCheckConfirm(){
   const sess = window._pendingSess;
   const status = document.getElementById("splashStatus");
   const btn = document.getElementById("splashBtnConfirmed");
-  if(!sess){ if(status)status.innerHTML='<div style="color:var(--red);font-size:11px">Сессия истекла — начни заново</div>'; return; }
+  if(!sess){ if(status)status.innerHTML=`<div style="color:var(--red);font-size:11px">${tr("Сессия истекла — начни заново","Session expired — start over")}</div>`; return; }
   const token = _connectToken;
-  if(btn){ btn.disabled=true; btn.textContent="⏳ Проверяю..."; }
-  if(status) status.innerHTML='<div style="font-size:11px;color:var(--sand)">Проверяю ответ кошелька в блокчейне...</div>';
+  if(btn){ btn.disabled=true; btn.textContent=tr("⏳ Проверяю...","⏳ Checking..."); }
+  if(status) status.innerHTML=`<div style="font-size:11px;color:var(--sand)">${tr("Проверяю ответ кошелька в блокчейне...","Checking wallet response on blockchain...")}</div>`;
   try{
     const info = await window.anWallet.waitConnect(sess, 45, 2000);
     if(token !== _connectToken) return; // отменили
@@ -1540,8 +1661,8 @@ async function splashCheckConfirm(){
     if(token !== _connectToken) return;
     if(status) status.innerHTML='<div style="color:var(--red);font-size:11px;margin:6px 0">❌ '
       +esc((e&&e.message)?e.message:String(e))
-      +'<br><span class="muted">Убедись, что подтвердил вход в AN Wallet, и попробуй ещё раз.</span></div>';
-    if(btn){ btn.disabled=false; btn.textContent="Я подтвердил ✓"; }
+      +`<br><span class="muted">${tr("Убедись, что подтвердил вход в AN Wallet, и попробуй ещё раз.","Make sure you confirmed login in AN Wallet, then try again.")}</span></div>`;
+    if(btn){ btn.disabled=false; btn.textContent=tr("Я подтвердил ✓","I confirmed ✓"); }
   }
 }
 
@@ -1551,7 +1672,7 @@ function splashCancelAuth(){
   const status = document.getElementById("splashStatus");
   const box = document.getElementById("splashConnectBox");
   if(status) status.innerHTML='';
-  if(box) box.innerHTML='<div class="btn primary grow" id="splashBtnConnect" onclick="splashConnectQR()" style="width:100%">Подключить AN Wallet →</div>';
+  if(box) box.innerHTML='<div class="btn primary grow" id="splashBtnConnect" onclick="splashConnectQR()" style="width:100%">'+tr('Подключить AN Wallet →','Connect AN Wallet →')+'</div>';
 }
 
 function showWalletResult(conn, nextScreen){
@@ -1573,8 +1694,8 @@ function showWalletResult(conn, nextScreen){
         <span style="color:var(--green);font-size:14px">✓</span>
         <span style="color:var(--sand);font-size:13px;font-weight:600">${esc(conn.walletName)}</span>
         ${conn.verified
-          ? '<span style="font-size:10px;color:var(--green);border:1px solid rgba(0,200,0,.35);border-radius:99px;padding:1px 7px">подтверждено кошельком</span>'
-          : '<span style="font-size:10px;color:var(--amber);border:1px solid rgba(255,196,107,.35);border-radius:99px;padding:1px 7px" title="Кошелёк ответил, но подпись challenge отсутствует">без подписи</span>'}
+          ? '<span style="font-size:10px;color:var(--green);border:1px solid rgba(0,200,0,.35);border-radius:99px;padding:1px 7px">${tr("подтверждено кошельком","wallet-confirmed")}</span>'
+          : '<span style="font-size:10px;color:var(--amber);border:1px solid rgba(255,196,107,.35);border-radius:99px;padding:1px 7px" title="${tr("Кошелёк ответил, но подпись challenge отсутствует","Wallet answered but challenge signature missing")}">${tr("без подписи","unsigned")}</span>'}
       </div>
       <div style="font-size:10px;color:var(--muted);font-family:monospace;word-break:break-all;margin-bottom:8px">${conn.walletAddress}</div>
       <div style="display:flex;gap:6px">
@@ -1608,10 +1729,10 @@ function renderHub(){
   document.getElementById("hubRt").textContent=S.rating;
   document.getElementById("hubNick").textContent=S.nick;
   document.getElementById("hubStats").innerHTML =
-    `<span class="tag">Боёв: <b>${S.battles}</b></span>
-     <span class="tag">Побед: <b>${S.wins}</b></span>
-     <span class="tag">Поражений: <b>${S.losses}</b></span>
-     <span class="tag">Отряд: <b>${S.roster.length}</b></span>`;
+    `<span class="tag">${tr("Боёв","Battles")}: <b>${S.battles}</b></span>
+     <span class="tag">${tr("Побед","Wins")}: <b>${S.wins}</b></span>
+     <span class="tag">${tr("Поражений","Losses")}: <b>${S.losses}</b></span>
+     <span class="tag">${tr("Отряд","Squad")}: <b>${S.roster.length}</b></span>`;
   const wc = document.getElementById("hubWalletCard");
   try{
     const conn = (window.anWallet && window.anWallet.getSession) ? window.anWallet.getSession() : null;
@@ -1638,7 +1759,7 @@ async function hubRefreshWallet(){
     document.getElementById("hubBalNackl").textContent = bal.nackl || "0";
     document.getElementById("hubBalShell").textContent = bal.shell || "0";
     document.getElementById("hubBalUsdc").textContent = bal.usdc || "0";
-    toast("🔄 Баланс обновлён");
+    toast(tr("🔄 Баланс обновлён","🔄 Balance updated"));
   }catch(e){ toast("❌ Ошибка обновления"); }
 }
 
@@ -1652,13 +1773,13 @@ function openMissions(){
         <div class="grow"><h3>${ms.name}</h3>
         <div class="muted">${ms.desc}</div></div></div>
       <div class="statline">
-        <span class="tag">Сложность: <b>${"★".repeat(ms.lvl)}</b></span>
+        <span class="tag">${tr("Сложность","Difficulty")}: <b>${"★".repeat(ms.lvl)}</b></span>
         <span class="tag">${(BIOMES[ms.biome]||BIOMES.waste).emoji} ${(BIOMES[ms.biome]||BIOMES.waste).name}</span>
-        <span class="tag">Карта: <b>${ms.size}×${ms.size}</b></span>
-        <span class="tag">Враги: <b>${ms.enemies.length}</b></span>
-        <span class="tag">Награда: <b>💰${ms.reward}</b></span>
+        <span class="tag">${tr("Карта","Map")}: <b>${ms.size}×${ms.size}</b></span>
+        <span class="tag">${tr("Враги","Enemies")}: <b>${ms.enemies.length}</b></span>
+        <span class="tag">${tr("Награда","Reward")}: <b>💰${ms.reward}</b></span>
       </div>
-      <div class="btn primary" style="margin-top:10px;width:100%" onclick="pickMission('${ms.id}')">ВЫБРАТЬ</div>
+      <div class="btn primary" style="margin-top:10px;width:100%" onclick="pickMission('${ms.id}')">${tr("ВЫБРАТЬ","PICK")}</div>
     </div>`).join("");
   show("scr-missions");
 }
@@ -1691,16 +1812,16 @@ function renderSquadPick(){
       warnEl.style.cssText="margin-top:6px;color:#ff9a52";
       document.getElementById("squadPick").after(warnEl);
     }
-    warnEl.textContent="⚠ У "+warn+" бойц(ев) пустой пояс — расходники со склада в бой не идут! Жми 🎒";
+    warnEl.textContent=tr(`⚠ У ${warn} бойц(ев) пустой пояс — расходники со склада в бой не идут! Жми 🎒`,`⚠ ${warn} fighter(s) with empty belts — stock consumables stay home! Press 🎒`);
   }else if(warnEl)warnEl.textContent="";
 }
 function togglePick(id){
   if(squadSel.includes(id)) squadSel=squadSel.filter(x=>x!==id);
-  else { if(squadSel.length>=3){toast("Максимум 3 бойца");return;} squadSel.push(id); }
+  else { if(squadSel.length>=3){toast(tr("Максимум 3 бойца","Max 3 fighters"));return;} squadSel.push(id); }
   renderSquadPick();
 }
 function deploySquad(){
-  if(!squadSel.length){toast("Выбери хотя бы одного бойца");return;}
+  if(!squadSel.length){toast(tr("Выбери хотя бы одного бойца","Pick at least one fighter"));return;}
   autoAmmo(S.roster.filter(m=>squadSel.includes(m.id)));
   closeModal("mSquad"); startBattle(chosenMission, squadSel);
 }
@@ -3058,8 +3179,8 @@ function openProfile(){
   document.getElementById("chainItemsAddr").value=S.chain.itemsAddr||"";
   document.getElementById("chainArenaAddr").value=S.chain.arenaAddr||"";
   document.getElementById("profStats").innerHTML=
-    `<span class="tag">🏆 Рейтинг <b>${S.rating}</b></span>
-     <span class="tag">Боёв <b>${S.battles}</b></span>
+    `<span class="tag">🏆 ${tr("Рейтинг","Rating")} <b>${S.rating}</b></span>
+     <span class="tag">${tr("Боёв","Battles")} <b>${S.battles}</b></span>
      <span class="tag">W/L <b>${S.wins}/${S.losses}</b></span>`;
   renderWalletInfo();
   renderGameKeyInfo();
@@ -3068,7 +3189,7 @@ function openProfile(){
 }
 function saveNick(){
   const v=document.getElementById("nickInput").value.trim();
-  if(v){S.nick=v;save();toast("Позывной сохранён");}
+  if(v){S.nick=v;save();toast(tr("Позывной сохранён","Callsign saved"));}
 }
 function chainPayload(){
   const conn = window.anWallet ? window.anWallet.getSession() : null;
@@ -3089,15 +3210,15 @@ function showPayload(){
 async function chainPing(){
   const st=document.getElementById("chainStatus");
   S.chain.endpoint=document.getElementById("chainEndpoint").value.trim(); save();
-  st.textContent="Статус: проверяю связь с Shellnet…";
+  st.textContent=tr("Статус: проверяю связь с Shellnet…","Status: pinging Shellnet…");
   try{
     const r=await fetch(S.chain.endpoint,{method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({query:"query{info{version}}"})});
     const j=await r.json();
-    st.textContent="Статус: ✅ сеть доступна"+(j.data&&j.data.info?", версия "+j.data.info.version:"");
+    st.textContent=tr("Статус: ✅ сеть доступна","Status: ✅ network reachable")+(j.data&&j.data.info?tr(", версия ",", version ")+j.data.info.version:"");
   }catch(e){
-    st.textContent="Статус: ❌ сеть недоступна из этого окружения ("+e.message+"). Открой игру в обычном браузере с интернетом.";
+    st.textContent=tr("Статус: ❌ сеть недоступна из этого окружения (","Status: ❌ network unreachable from here (")+e.message+tr("). Открой игру в обычном браузере с интернетом.","). Open the game in a regular browser with internet.");
   }
 }
 async function chainSync(){
@@ -3108,29 +3229,29 @@ async function chainSync(){
   S.chain.arenaAddr=(document.getElementById("chainArenaAddr").value||"").trim();
   save();
   if(!S.chain.addr){
-    st.textContent="Статус: укажи адрес контракта PerimeterProfiles (деплой — см. README/chain).";
+    st.textContent=tr("Статус: укажи адрес контракта PerimeterProfiles (деплой — см. README/chain).","Status: set the PerimeterProfiles contract address (deploy — see README/chain).");
     showPayload(); return;
   }
   if(!isAddrLike(S.chain.addr)){
-    st.textContent="Статус: ❌ адрес не похож на адрес Acki Nacki (ожидается hex64::hex64 или 0:hex64).";
+    st.textContent=tr("Статус: ❌ адрес не похож на адрес Acki Nacki (ожидается hex64::hex64 или 0:hex64).","Status: ❌ address doesn't look like an Acki Nacki address (hex64::hex64 or 0:hex64 expected).");
     return;
   }
-  st.textContent="Статус: читаю состояние контракта…";
+  st.textContent=tr("Статус: читаю состояние контракта…","Status: reading contract state…");
   try{
     const q=`query{blockchain{account(address:"${S.chain.addr}"){info{balance acc_type_name last_trans_lt}}}}`;
     const r=await fetch(S.chain.endpoint,{method:"POST",
       headers:{"Content-Type":"application/json"},body:JSON.stringify({query:q})});
     const j=await r.json();
     const info=j.data&&j.data.blockchain&&j.data.blockchain.account&&j.data.blockchain.account.info;
-    if(!info){ st.textContent="Статус: контракт не найден по адресу. Проверь адрес/сеть."; return; }
+    if(!info){ st.textContent=tr("Статус: контракт не найден по адресу. Проверь адрес/сеть.","Status: contract not found at address. Check address/network."); return; }
     const pend = window.anWallet.getPendingTxs().length;
-    st.textContent=`Статус: ✅ контракт найден (${info.acc_type_name}).`
-      + (info.acc_type_name!=="Active" ? " Контракт не Active — сначала задеплой его в Shellnet." : "")
-      + (pend ? ` Ожидают отправки: ${pend} (см. ниже, отправка — chain/sync.mjs).` : " Очередь пуста — сыграй бой, результат запишется автоматически.")
+    st.textContent=tr(`Статус: ✅ контракт найден (${info.acc_type_name}).`,`Status: ✅ contract found (${info.acc_type_name}).`)
+      + (info.acc_type_name!=="Active" ? tr(" Контракт не Active — сначала задеплой его в Shellnet."," Contract is not Active — deploy it to Shellnet first.") : "")
+      + (pend ? tr(` Ожидают отправки: ${pend} (см. ниже, отправка — chain/sync.mjs).`,` ${pend} awaiting send (see below, send via chain/sync.mjs).`) : tr(" Очередь пуста — сыграй бой, результат запишется автоматически."," Queue empty — play a battle, the result queues automatically."))
       + ` Отправка транзакций выполняется подписанным сообщением через скрипт chain/sync.mjs (TVM SDK) — payload готов ниже.`;
     showPayload();
   }catch(e){
-    st.textContent="Статус: ❌ нет связи ("+e.message+"). Payload сохранён локально и уйдёт при следующей синхронизации.";
+    st.textContent=tr("Статус: ❌ нет связи (","Status: ❌ no connection (")+e.message+tr("). Payload сохранён локально и уйдёт при следующей синхронизации.","). Payload saved locally, will send on next sync.");
     showPayload();
   }
 }
@@ -3146,9 +3267,9 @@ function renderWalletInfo(){
   try{ conn = (window.anWallet && window.anWallet.getSession) ? window.anWallet.getSession() : null; }catch(e){}
   if(!conn || !conn.walletAddress){
     el.innerHTML = `
-      <div class="muted" style="margin-bottom:10px">Подключи <b>AN Wallet</b> для он-чейн операций — вход подтверждается в приложении кошелька.</div>
+      <div class="muted" style="margin-bottom:10px">${tr("Подключи <b>AN Wallet</b> для он-чейн операций — вход подтверждается в приложении кошелька.","Connect <b>AN Wallet</b> for on-chain ops — login is confirmed in the wallet app.")}</div>
       <div class="row">
-        <div class="btn primary grow" onclick="walletReconnect()">Подключить AN Wallet →</div>
+        <div class="btn primary grow" onclick="walletReconnect()">${tr("Подключить AN Wallet →","Connect AN Wallet →")}</div>
       </div>`;
   }else{
     const bal = conn.balances || {};
@@ -3157,8 +3278,8 @@ function renderWalletInfo(){
         <span class="wallet-badge on">● Подключён</span>
         <span style="font-size:13px;color:var(--sand)">${esc(conn.walletName||'')}</span>
         ${conn.verified
-          ? '<span style="font-size:10px;color:var(--green)">✓ подтверждён кошельком</span>'
-          : '<span style="font-size:10px;color:var(--amber)" title="Кошелёк ответил, но подпись challenge отсутствует">без подписи</span>'}
+          ? '<span style="font-size:10px;color:var(--green)">${tr("✓ подтверждён кошельком","✓ wallet-confirmed")}</span>'
+          : '<span style="font-size:10px;color:var(--amber)" title="${tr("Кошелёк ответил, но подпись challenge отсутствует","Wallet answered but challenge signature missing")}">${tr("без подписи","unsigned")}</span>'}
       </div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:monospace;word-break:break-all">${conn.walletAddress}</div>
       <div style="display:flex;gap:6px;margin-bottom:8px">
@@ -3191,13 +3312,13 @@ function walletReconnect(){
 }
 
 async function walletDisconnect(){
-  if(!confirm("Отключить кошелёк?"))return;
+  if(!confirm(tr("Отключить кошелёк?","Disconnect wallet?")))return;
   save();
   window.anWallet.disconnect();
   currentSaveKey = SAVE_KEY_BASE;
   load();
   renderWalletInfo();
-  toast("Кошелёк отключён");
+  toast(tr("Кошелёк отключён","Wallet disconnected"));
 }
 
 async function walletRefreshBalance(){
@@ -3208,8 +3329,8 @@ async function walletRefreshBalance(){
     conn.balances = bal;
     localStorage.setItem('rp-wallet-session', JSON.stringify(conn));
     renderWalletInfo();
-    toast("🔄 Баланс обновлён");
-  }catch(e){ toast("❌ Ошибка"); }
+    toast(tr("🔄 Баланс обновлён","🔄 Balance updated"));
+  }catch(e){ toast(tr("❌ Ошибка","❌ Error")); }
 }
 
 /* ---------- ИГРОВОЙ КЛЮЧ ---------- */
@@ -3218,20 +3339,20 @@ function renderGameKeyInfo(){
   if(!el) return;
   const s = window.anWallet.getSession && window.anWallet.getSession();
   if(!s || !s.walletAddress){
-    el.innerHTML = '<div class="muted">Кошелёк не подключён.</div>';
+    el.innerHTML = '<div class="muted">${tr("Кошелёк не подключён.","Wallet not connected.")}</div>';
     return;
   }
   el.innerHTML = `
     <div style="font-family:monospace;font-size:11px;color:var(--amber);word-break:break-all;
       background:rgba(255,196,107,.08);padding:8px 10px;border-radius:10px;margin-top:6px;
       border:1px solid rgba(255,196,107,.15)">
-      <div style="font-size:10px;color:var(--dim);margin-bottom:4px">Адрес кошелька:</div>
+      <div style="font-size:10px;color:var(--dim);margin-bottom:4px">${tr("Адрес кошелька:","Wallet address:")}</div>
       ${esc(s.walletAddress)}
     </div>
     <div class="muted" style="margin-top:6px;font-size:11px">
       ${s.verified
-        ? "✅ Вход подтверждён в приложении AN Wallet (подпись challenge). Майнинг-ключи можно привязать через startAuth."
-        : "⚠️ Кошелёк ответил, но подпись challenge отсутствует — считай такое подключение неподтверждённым."}
+        ? tr("✅ Вход подтверждён в приложении AN Wallet (подпись challenge). Майнинг-ключи можно привязать через startAuth.","✅ Login confirmed in AN Wallet app (challenge signature). Mining keys can be bound via startAuth.")
+        : tr("⚠️ Кошелёк ответил, но подпись challenge отсутствует — считай такое подключение неподтверждённым.","⚠️ Wallet answered but challenge signature missing — treat as unverified.")}
     </div>`;
 }
 
@@ -3239,22 +3360,22 @@ function showGameKey(){
   const el = document.getElementById("gameKeyInfo");
   if(!el) return;
   const s = window.anWallet.getSession && window.anWallet.getSession();
-  if(!s || !s.walletAddress){ toast("Кошелёк не подключён"); return; }
+  if(!s || !s.walletAddress){ toast(tr("Кошелёк не подключён","Wallet not connected")); return; }
   el.innerHTML = `
     <div style="font-family:monospace;font-size:10px;color:var(--sand);word-break:break-all;
       background:rgba(0,0,0,.4);padding:10px;border-radius:10px;border:1px solid var(--line);margin-top:6px">
       <div><b style="color:var(--amber)">Адрес:</b><br>${esc(s.walletAddress)}</div>
       <div style="margin-top:6px"><b style="color:var(--amber)">Имя:</b> ${esc(s.walletName)}</div>
-      <div style="margin-top:6px"><b style="color:var(--amber)">Статус:</b> ${s.verified?"✅ подтверждено кошельком":"⚠️ без подписи кошелька"}</div>
+      <div style="margin-top:6px"><b style="color:var(--amber)">Статус:</b> ${s.verified?tr("✅ подтверждено кошельком","✅ wallet-confirmed"):tr("⚠️ без подписи кошелька","⚠️ wallet unsigned")}</div>
     </div>`;
 }
 
 function exportGameKey(){
   const s = window.anWallet.getSession && window.anWallet.getSession();
-  if(!s || !s.walletAddress){ toast("Кошелёк не подключён"); return; }
+  if(!s || !s.walletAddress){ toast(tr("Кошелёк не подключён","Wallet not connected")); return; }
   const txt = 'RESERVATION: PERIMETER\nКошелёк: '+s.walletName+'\nАдрес: '+s.walletAddress;
-  if(navigator.clipboard){ navigator.clipboard.writeText(txt); toast("Скопировано в буфер"); }
-  else toast("Скопируй вручную");
+  if(navigator.clipboard){ navigator.clipboard.writeText(txt); toast(tr("Скопировано в буфер","Copied to buffer")); }
+  else toast(tr("Скопируй вручную","Copy manually"));
 }
 
 function refreshPendingTxs(){
@@ -3262,7 +3383,7 @@ function refreshPendingTxs(){
   if(!el) return;
   const txs = window.anWallet.getPendingTxs();
   if(!txs.length){
-    el.innerHTML = '<div class="muted">Нет ожидающих транзакций</div>';
+    el.innerHTML = `<div class="muted">${tr('Нет ожидающих транзакций','No pending transactions')}</div>`;
     return;
   }
   el.innerHTML = txs.map((tx) => {
@@ -3288,7 +3409,7 @@ function refreshPendingTxs(){
 function clearPendingTxs(){
   window.anWallet.clearPendingTxs();
   refreshPendingTxs();
-  toast("🗑 Очищено");
+  toast(tr("🗑 Очищено","🗑 Cleared"));
 }
 
 /* =========================================================
@@ -3366,27 +3487,17 @@ function startBattle(mission, squadIds){
   resize();
   document.getElementById("btnSnd").textContent=S.snd===false?"🔇":"🔊";
   if(!S.seenTut){ S.seenTut=true; save();
-    genericModal(`<h2>Как играть</h2><div class="muted" style="font-size:13.5px;line-height:1.6">
-      • Тапни по <b>своему бойцу</b> — выбрать.<br>
-       • Тапни по <b>зелёной клетке</b> — увидишь путь и цену в ОД (по диагонали шаг стоит 2 ОД); тапни туда же ещё раз — боец пойдёт.<br>
-       • Тапни по <b>врагу</b> — выстрел (виден % попадания). Следи за магазином: патроны тратятся,
-       пустой ствол только щёлкает — жми <b>🔄</b> для перезарядки (3 ОД, патроны таскай с собой).<br>
-      • <b>У оружия есть рамки дальности как в жанровой классике</b>: пистолет не добьёт далеко,
-      снайперка и автомат <b>не стреляют в упор</b> (❌близко — мёртвая зона!),
-      дробовик бьёт только вблизи. Держи запасной ствол 🔁 или кулаки 👊.<br>
-      • Укрытия блокируют выстрелы и дают защиту -20% рядом.<br>
-      • 💉 лечит, 💣 бьёт по площади, ⏭ передаёт ход.<br>
-      • <b>Туман войны как в жанровой классике</b>: врагов не видно, пока боец не подойдёт
-      на дистанцию зрения (👁 6 у человека, 7 у пса, 5 у мутанта). Укрытия заслоняют обзор.
-      Синяя кромка — граница зрения выбранного бойца. Пёс — лучший разведчик!<br>
-      • <b>Карта большая</b> — таскай её пальцем. Заходи в ангары через двери
-      (жёлтая разметка) и вскрывай светящиеся ящики ✦ (3 ОД вплотную):
-      внутри оружие и расходники, но <b>всё найденное живёт только до конца боя</b> —
-      вынести с карты нельзя, как в жанровой классике!<br>
-      • <b>Навыки оружия растут от использования</b>: чем больше стреляешь
-      из ветки (лёгкое/автоматы/тяжёлое/снайперское/ближний бой), тем выше точность,
-      а с 50 навыка выстрел стоит на 1 ОД меньше!</div>
-      <div class="btn primary" style="width:100%;margin-top:12px" onclick="closeModal('mGeneric')">ПОНЯЛ</div>`);
+    genericModal(`<h2>${tr("Как играть","How to play")}</h2><div class="muted" style="font-size:13.5px;line-height:1.6">
+      • ${tr("Тапни по <b>своему бойцу</b> — выбрать.","Tap your <b>fighter</b> to select.")}<br>
+       • ${tr("Тапни по <b>зелёной клетке</b> — увидишь путь и цену в ОД (по диагонали шаг стоит 2 ОД); тапни туда же ещё раз — боец пойдёт.","Tap a <b>green cell</b> to preview path and AP cost (diagonal step is 2 AP); tap again — the fighter moves.")}<br>
+       • ${tr("Тапни по <b>врагу</b> — выстрел (виден % попадания). Следи за магазином: патроны тратятся, пустой ствол только щёлкает — жми <b>🔄</b> для перезарядки (3 ОД, патроны таскай с собой).","Tap an <b>enemy</b> to shoot (hit % shown). Watch the magazine: ammo is spent, an empty gun just clicks — press <b>🔄</b> to reload (3 AP, carry ammo).")}<br>
+      • ${tr("<b>У оружия есть рамки дальности как в жанровой классике</b>: пистолет не добьёт далеко, снайперка и автомат <b>не стреляют в упор</b> (❌близко — мёртвая зона!), дробовик бьёт только вблизи. Держи запасной ствол 🔁 или кулаки 👊.","<b>Guns have genre-classic range brackets</b>: pistols fall short, sniper rifles and assault rifles <b>can't fire point-blank</b> (❌close — dead zone!), shotguns hit only up close. Keep a spare gun 🔁 or fists 👊.")}<br>
+      • ${tr("Укрытия блокируют выстрелы и дают защиту -20% рядом.","Cover blocks shots and gives −20% protection nearby.")}<br>
+      • ${tr("💉 лечит, 💣 бьёт по площади, ⏭ передаёт ход.","💉 heals, 💣 hits an area, ⏭ passes the turn.")}<br>
+      • ${tr("<b>Туман войны как в жанровой классике</b>: врагов не видно, пока боец не подойдёт на дистанцию зрения (👁 6 у человека, 7 у пса, 5 у мутанта). Укрытия заслоняют обзор. Синяя кромка — граница зрения выбранного бойца. Пёс — лучший разведчик!","<b>Genre-classic fog of war</b>: enemies stay hidden until a fighter closes to sight range (👁 6 human, 7 dog, 5 mutant). Cover blocks vision. Blue edge marks the selected fighter's sight. The dog is the best scout!")}<br>
+      • ${tr("<b>Карта большая</b> — таскай её пальцем. Заходи в ангары через двери (жёлтая разметка) и вскрывай светящиеся ящики ✦ (3 ОД вплотную): внутри оружие и расходники, но <b>всё найденное живёт только до конца боя</b> — вынести с карты нельзя, как в жанровой классике!","<b>The map is big</b> — drag it with your finger. Enter hangars through doors (yellow marks) and crack glowing crates ✦ (3 AP adjacent): guns and consumables inside, but <b>everything found lives only until battle ends</b> — can't be carried out, genre-classic style!")}<br>
+      • ${tr("<b>Навыки оружия растут от использования</b>: чем больше стреляешь из ветки (лёгкое/автоматы/тяжёлое/снайперское/ближний бой), тем выше точность, а с 50 навыка выстрел стоит на 1 ОД меньше!","<b>Weapon skills grow with use</b>: the more you shoot a branch (light/auto/heavy/sniper/melee), the higher the accuracy, and at skill 50 shots cost 1 AP less!")}</div>
+      <div class="btn primary" style="width:100%;margin-top:12px" onclick="closeModal('mGeneric')">${tr("ПОНЯЛ","GOT IT")}</div>`);
   }
 }
 
@@ -3641,13 +3752,13 @@ function canAttack(att,def){
 /* причина невозможности атаки — подсказка игроку */
 function whyCantAttack(att,def){
   const w=WEAPONS[att.weapon];
-  if(att.ap<weaponAp(att))return "Не хватает ОД ("+weaponAp(att)+")";
-  if(gunSpec(att.weapon)&&(att.mag||0)<=0)return "Магазин пуст — перезарядись 🔄";
+  if(att.ap<weaponAp(att))return tr("Не хватает ОД (","Not enough AP (")+weaponAp(att)+")";
+  if(gunSpec(att.weapon)&&(att.mag||0)<=0)return tr("Магазин пуст — перезарядись 🔄","Magazine empty — reload 🔄");
   const d=dist(att,def);
-  if(w.melee)return d>1?"Только вплотную — подойди":"";
-  if(d<(w.min||1))return "Слишком близко для "+w.name+" (мин. "+w.min+")"+(att.weapon2?" — смени оружие 🔁":"");
-  if(d>w.max)return "Слишком далеко (макс. "+w.max+")";
-  if(!los(att.x,att.y,def.x,def.y))return "Нет линии огня";
+  if(w.melee)return d>1?tr("Только вплотную — подойди","Point-blank only — close in"):"";
+  if(d<(w.min||1))return tr("Слишком близко для ","Too close for ")+w.name+tr(" (мин. "," (min. ")+w.min+")"+(att.weapon2?tr(" — смени оружие 🔁"," — swap gun 🔁"):"");
+  if(d>w.max)return tr("Слишком далеко (макс. ","Too far (max. ")+w.max+")";
+  if(!los(att.x,att.y,def.x,def.y))return tr("Нет линии огня","No line of fire");
   return "";
 }
 function applyDamage(def, dmg, srcName, info){
@@ -3687,7 +3798,7 @@ function doAttack(att,def){
   /* патроны: очередь короче остатка не стреляет, пустой магазин — щелчок */
   if(g){
     if((att.mag||0)<=0){
-      if(att.side==="p"){toast("Пусто! Жми 🔄 для перезарядки");try{sfx("click");}catch(e){}}
+      if(att.side==="p"){toast(tr("Пусто! Жми 🔄 для перезарядки","Empty! Press 🔄 to reload"));try{sfx("click");}catch(e){}}
       return false;
     }
     const burst=Math.min(w.shots||1,att.mag);
@@ -3819,14 +3930,14 @@ cv.addEventListener("click",ev=>{
   }
   /* лут-ящик: вскрыть, если рядом (3 ОД) */
   if(B.map[c.y]&&B.map[c.y][c.x]===7&&B.fog[c.y][c.x]===2){
-    if(dist(sel,c)>1){toast("Подойди вплотную к ящику");return;}
-    if(sel.ap<3){toast("Вскрытие — 3 ОД");return;}
+    if(dist(sel,c)>1){toast(tr("Подойди вплотную к ящику","Move adjacent to the crate"));return;}
+    if(sel.ap<3){toast(tr("Вскрытие — 3 ОД","Opening — 3 AP"));return;}
     openCrate(sel,c.x,c.y);
     return;
   }
   /* вскрытый ящик с остатками — порыться бесплатно */
   if(B.map[c.y]&&B.map[c.y][c.x]===8&&B.fog[c.y][c.x]===2&&crateItems(c.x,c.y).length){
-    if(dist(sel,c)>1){toast("Подойди вплотную к ящику");return;}
+    if(dist(sel,c)>1){toast(tr("Подойди вплотную к ящику","Move adjacent to the crate"));return;}
     openCrateModal(c.x,c.y);
     return;
   }
@@ -3839,7 +3950,7 @@ cv.addEventListener("click",ev=>{
       const p=buildPath(sel,c.x,c.y);
       if(!p){B.movePath=null;return;}
       B.movePath={ux:sel.x,uy:sel.y,tx:c.x,ty:c.y,cells:p.cells,cost:p.cost};
-      toast(`Путь: ${p.cost} ОД — тапни ещё раз, чтобы идти`);
+      toast(tr(`Путь: ${p.cost} ОД — тапни ещё раз, чтобы идти`,`Path: ${p.cost} AP — tap again to move`));
       return;
     }
     B.movePath=null;
@@ -3852,7 +3963,7 @@ cv.addEventListener("click",ev=>{
     recomputeFog(); // движение открывает обзор — можно наткнуться на врага
     updateHud();
   }else if(u&&u.side==="e"&&!enemyVisible(u)){
-    toast("Клетка занята... что-то там есть?"); // скрытый враг блокирует проход
+    toast(tr("Клетка занята... что-то там есть?","Cell occupied... something there?")); // скрытый враг блокирует проход
   }
 });
 /* =========================================================
@@ -4008,9 +4119,9 @@ function spendBelt(u,k){ /* сначала тратим найденное в б
 function useMedkit(){
   if(!B||B.phase!=="p"||!B.sel||!B.sel.alive)return;
   const u=B.sel;
-  if(totalBelt(u,"medkit")<=0){toast("Нет аптечек — экипируй перед боем или ищи в ящиках");return;}
-  if(u.ap<4){toast("Нужно 4 ОД");return;}
-  if(u.hp>=u.maxhp){toast("HP полные");return;}
+  if(totalBelt(u,"medkit")<=0){toast(tr("Нет аптечек — экипируй перед боем или ищи в ящиках","No medkits — equip before battle or search crates"));return;}
+  if(u.ap<4){toast(tr("Нужно 4 ОД","Need 4 AP"));return;}
+  if(u.hp>=u.maxhp){toast(tr("HP полные","HP full"));return;}
   spendBelt(u,"medkit");u.ap-=4;
   u.hp=Math.min(u.maxhp,u.hp+40);
   B.movePath=null;
@@ -4022,20 +4133,20 @@ function useMedkit(){
 function toggleGrenade(){
   if(!B||B.phase!=="p"||!B.sel)return;
   const u=B.sel;
-  if(u.cls==="dog"||u.cls==="mutant"){toast(u.cls==="dog"?"Псы не бросают гранаты":"Мутант не бросает гранаты");return;}
-  if(totalBelt(u,"grenade")<=0){toast("Нет гранат — экипируй перед боем или ищи в ящиках");return;}
-  if(u.ap<5){toast("Нужно 5 ОД");return;}
+  if(u.cls==="dog"||u.cls==="mutant"){toast(u.cls==="dog"?tr("Псы не бросают гранаты","Dogs don't throw grenades"):tr("Мутант не бросает гранаты","Mutants don't throw grenades"));return;}
+  if(totalBelt(u,"grenade")<=0){toast(tr("Нет гранат — экипируй перед боем или ищи в ящиках","No grenades — equip before battle or search crates"));return;}
+  if(u.ap<5){toast(tr("Нужно 5 ОД","Need 5 AP"));return;}
   B.mode=B.mode==="grenade"?"normal":"grenade";
   B.movePath=null;
-  toast(B.mode==="grenade"?"Выбери клетку (дальность 7)":"Отмена");
+  toast(B.mode==="grenade"?tr("Выбери клетку (дальность 7)","Pick a cell (range 7)"):tr("Отмена","Cancelled"));
   updateHud();
 }
 /* смена оружия в бою — 2 ОД (заряженность каждого ствола сохраняется) */
 function swapWeapon(){
   if(!B||B.phase!=="p"||!B.sel||!B.sel.alive)return;
   const u=B.sel;
-  if(!u.weapon2){toast("Нет запасного оружия");return;}
-  if(u.ap<2){toast("Нужно 2 ОД");return;}
+  if(!u.weapon2){toast(tr("Нет запасного оружия","No spare weapon"));return;}
+  if(u.ap<2){toast(tr("Нужно 2 ОД","Need 2 AP"));return;}
   u.ap-=2;
   if(!u.mags)u.mags={};
   u.mags[u.weapon]=u.mag||0;
@@ -4053,23 +4164,23 @@ function reloadUnit(){
   if(!B||B.phase!=="p"||!B.sel||!B.sel.alive)return;
   const u=B.sel;
   const g=gunSpec(u.weapon);
-  if(!g){toast("Это оружие не требует патронов");return;}
-  if(u.mag>=g.mag){toast("Магазин полный");return;}
-  if(u.ap<3){toast("Нужно 3 ОД");return;}
+  if(!g){toast(tr("Это оружие не требует патронов","This weapon needs no ammo"));return;}
+  if(u.mag>=g.mag){toast(tr("Магазин полный","Magazine full"));return;}
+  if(u.ap<3){toast(tr("Нужно 3 ОД","Need 3 AP"));return;}
   const have=(u.spare&&u.spare[g.ammo])||0;
-  if(have<=0){toast(`Нет патронов ${ammoName(g.ammo)} — таскай запас в инвентаре`);return;}
+  if(have<=0){toast(tr(`Нет патронов ${ammoName(g.ammo)} — таскай запас в инвентаре`,`No ${ammoName(g.ammo)} rounds — carry stock in inventory`));return;}
   const take=Math.min(g.mag-u.mag,have);
   u.mag+=take; u.spare[g.ammo]-=take; u.ap-=3;
   B.movePath=null;
   sfx("reload");
-  blog(`🔄 ${u.name} перезаряжается (+${take})`);
+  blog(tr(`🔄 ${u.name} перезаряжается (+${take})`,`🔄 ${u.name} reloading (+${take})`));
   updateHud();
 }
 function throwGrenade(c){
   const sel=B.sel;
-  if(dist(sel,c)>7){toast("Слишком далеко");return;}
-  if(!los(sel.x,sel.y,c.x,c.y)){toast("Нет линии броска");return;}
-  if(B.fog[c.y][c.x]!==2){toast("Не видно клетку — бросать вслепую нельзя");return;}
+  if(dist(sel,c)>7){toast(tr("Слишком далеко","Too far"));return;}
+  if(!los(sel.x,sel.y,c.x,c.y)){toast(tr("Нет линии броска","No throwing line"));return;}
+  if(B.fog[c.y][c.x]!==2){toast(tr("Не видно клетку — бросать вслепую нельзя","Cell unseen — no blind throws"));return;}
   spendBelt(sel,"grenade");sel.ap-=5;B.mode="normal";B.movePath=null;
   addEffect({type:"boom",x:c.x,y:c.y,t:now()});
   doShake(8,400);
@@ -4087,13 +4198,13 @@ function endPlayerTurn(){
   if(!B||B.over||B.phase!=="p")return;
   B.phase="e";B.mode="normal";B.movePath=null;
   B.units.forEach(u=>{if(u.side==="e"&&u.alive)u.ap=u.maxap;});
-  blog(`— Ход противника —`);
+  blog(tr(`— Ход противника —`,`— Enemy turn —`));
   updateHud();
   aiStep();
 }
 function surrender(){
   if(!B||B.over)return;
-  if(confirm("Сдаться и покинуть бой?"))finishBattle(false);
+  if(confirm(tr("Сдаться и покинуть бой?","Give up and leave the battle?")))finishBattle(false);
 }
 
 /* --- ИИ v2: BFS-поиск пути, фокус-огонь, гранаты/аптечки, обход укрытий --- */
@@ -4224,8 +4335,8 @@ function aiStep(){
   if(!e){
     B.phase="p";B.turn++;
     B.units.forEach(u=>{if(u.side==="p"&&u.alive)u.ap=u.maxap;});
-    blog(`— Ход ${B.turn}. Твоя очередь —`);
-    addEffect({type:"banner",str:"ХОД "+B.turn,t:now()});
+    blog(tr(`— Ход ${B.turn}. Твоя очередь —`,`— Turn ${B.turn}. Your move —`));
+    addEffect({type:"banner",str:tr("ХОД ","TURN ")+B.turn,t:now()});
     B.aiFocus=null;
     if(B.sel&&B.sel.alive)B.reach=reachable(B.sel);
     else selectUnit(B.units.find(u=>u.side==="p"&&u.alive));
@@ -4352,7 +4463,7 @@ function finishBattle(win){
     let lvlMsgs=[];
     squad.forEach(bu=>{
       const m=S.roster.find(x=>x.id===bu.mercId);
-      if(m){const ups=grantXp(m,per);if(ups)lvlMsgs.push(`⬆ ${m.name} — уровень ${m.level}!`);}
+      if(m){const ups=grantXp(m,per);if(ups)lvlMsgs.push(tr(`⬆ ${m.name} — уровень ${m.level}!`,`⬆ ${m.name} — level ${m.level}!`));}
     });
     /* лут материалов — только в PvE (обыск трупов как в жанровой классике) */
     let lootStr="";
@@ -4364,17 +4475,17 @@ function finishBattle(win){
         S.mats[mt]=(S.mats[mt]||0)+loot[mt];
         parts.push(`${MATERIALS[mt].name} ×${loot[mt]}`);
       }
-      if(parts.length)lootStr=`🎒 Обыск трупов: <b>${parts.join(", ")}</b><br>`;
+      if(parts.length)lootStr=tr(`🎒 Обыск трупов: <b>${parts.join(", ")}</b><br>`,`🎒 Body loot: <b>${parts.join(", ")}</b><br>`);
     }
-    html=`<h2>🏆 ПОБЕДА!</h2>
+    html=`<h2>${tr("🏆 ПОБЕДА!","🏆 VICTORY!")}</h2>
       <div class="muted" style="line-height:1.7">
-      ${isPvp?`Бой «${B.mission.name}» выигран за ${B.turn} ход(а).`:`Операция «${B.mission.name}» выполнена за ${B.turn} ход(а).`}<br>
-      ${reward?`💰 ${isPvp?"Ставка соперника":"Награда"}: <b style="color:var(--rust2)">+${reward}</b><br>`:""}
+      ${isPvp?tr(`Бой «${B.mission.name}» выигран за ${B.turn} ход(а).`,`“${B.mission.name}” fight won in ${B.turn} turn(s).`):tr(`Операция «${B.mission.name}» выполнена за ${B.turn} ход(а).`,`“${B.mission.name}” operation complete in ${B.turn} turn(s).`)}<br>
+      ${reward?`💰 ${isPvp?tr("Ставка соперника","Enemy stake"):tr("Награда","Reward")}: <b style="color:var(--rust2)">+${reward}</b><br>`:""}
       ${lootStr}
-      ⭐ Опыт отряду: +${per} каждому<br>
-      🏆 Рейтинг: <b>+${dRt}</b> → ${S.rating}<br>
+      ⭐ ${tr("Опыт отряду","Squad XP")}: +${per} ${tr("каждому","each")}<br>
+      🏆 ${tr("Рейтинг","Rating")}: <b>+${dRt}</b> → ${S.rating}<br>
       ${lvlMsgs.join("<br>")}
-      <br><span class="tag">hash боя: ${hash}</span></div>`;
+      <br><span class="tag">${tr("hash боя","battle hash")}: ${hash}</span></div>`;
   }else{
     S.losses++;
     const dRt=isPvp?20:15;
@@ -4382,16 +4493,16 @@ function finishBattle(win){
     let stakeStr="";
     if(isPvp&&B.pvp.stake){
       S.credits=Math.max(0,S.credits-B.pvp.stake);
-      stakeStr=`💸 Ставка потеряна: <b>-${B.pvp.stake}</b><br>`;
+      stakeStr=tr(`💸 Ставка потеряна: <b>-${B.pvp.stake}</b><br>`,`💸 Stake lost: <b>-${B.pvp.stake}</b><br>`);
     }
-    html=`<h2>💀 ПОРАЖЕНИЕ</h2>
+    html=`<h2>${tr("💀 ПОРАЖЕНИЕ","💀 DEFEAT")}</h2>
       <div class="muted" style="line-height:1.7">
-      Отряд отступает. Наёмники подлатаются в казарме.<br>
+      ${tr("Отряд отступает. Наёмники подлатаются в казарме.","Squad retreats. Mercs will patch up in barracks.")}<br>
       ${stakeStr}
-      🏆 Рейтинг: <b>-${dRt}</b> → ${S.rating}<br>
-      <span class="tag">hash боя: ${hash}</span></div>`;
+      🏆 ${tr("Рейтинг","Rating")}: <b>-${dRt}</b> → ${S.rating}<br>
+      <span class="tag">${tr("hash боя","battle hash")}: ${hash}</span></div>`;
   }
-  html+=`<div class="btn primary" style="width:100%;margin-top:14px" onclick="closeModal('mResult');show('scr-hub')">В ШТАБ</div>`;
+  html+=`<div class="btn primary" style="width:100%;margin-top:14px" onclick="closeModal('mResult');show('scr-hub')">${tr("В ШТАБ","TO HQ")}</div>`;
   /* Он-чейн: результат боя уходит в очередь reportBattle (рейтинг посчитает контракт: +25/−15) */
   try{ if(window.anWallet&&window.anWallet.reportBattleOffline) window.anWallet.reportBattleOffline(win,hash); }catch(e){}
   save();
@@ -4405,7 +4516,7 @@ function updateHud(){
   document.getElementById("medCnt").textContent=u?totalBelt(u,"medkit"):0;
   document.getElementById("grenCnt").textContent=u?totalBelt(u,"grenade"):0;
   document.getElementById("uiHint").innerHTML=
-    B.phase==="p"?`Ход ${B.turn}<br>твой${u&&u.over>0?`<br><span style="color:var(--amber)">🎒−${u.over} ОД</span>`:""}`:`Ход ${B.turn}<br>враг…`;
+    B.phase==="p"?`${tr("Ход","Turn")} ${B.turn}<br>${tr("твой","yours")}${u&&u.over>0?`<br><span style="color:var(--amber)">🎒−${u.over} ${tr("ОД","AP")}</span>`:""}`:`${tr("Ход","Turn")} ${B.turn}<br>${tr("враг…","enemy…")}`;
   if(!u){return;}
   const w=WEAPONS[u.weapon];
   const sk=uSkill(u);
@@ -6521,6 +6632,7 @@ function drawDust(w,h){
     }
   }catch(e){}
   load();save();
+  try{ applyDataLocale(); }catch(e){}
   if(hasWallet()){
     show("scr-hub");
   }else{
