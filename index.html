@@ -529,6 +529,7 @@
       <div class="btn" id="btnMed" onclick="useMedkit()">💉<span id="medCnt"></span></div>
       <div class="btn" id="btnGren" onclick="toggleGrenade()">💣<span id="grenCnt"></span></div>
       <div class="btn" id="btnSwap" onclick="swapWeapon()">🔁</div>
+      <div class="btn" id="btnReload" onclick="reloadUnit()">🔄<span id="magCnt"></span></div>
       <div class="btn" onclick="nextUnit()">👤</div>
       <div class="btn primary" onclick="endPlayerTurn()">⏭ Ход</div>
       <div class="btn" style="flex:0 0 42px" id="btnSnd" onclick="toggleSnd()">🔊</div>
@@ -740,6 +741,7 @@ function mercLoad(m){
   });
   (m.implants||[]).forEach(k => { w += itemWt("implant", k); });
   w += (m.belt ? (m.belt.medkit||0) + (m.belt.grenade||0) : 0);
+  Object.keys(m.ammo||{}).forEach(t => { w += (m.ammo[t]||0) * (AMMO[t]?AMMO[t].wpr:0.05); });
   return w;
 }
 /* вес боевого снаряжения юнита в бою: стволы + все расходники при себе */
@@ -748,11 +750,13 @@ function unitBattleLoad(u){
   if(u.weapon2) w += itemWt("weapon", u.weapon2);
   w += (u.belt ? (u.belt.medkit||0) + (u.belt.grenade||0) : 0);
   w += (u.lootBelt ? (u.lootBelt.medkit||0) + (u.lootBelt.grenade||0) : 0);
+  Object.keys(u.spare||{}).forEach(t => { w += (u.spare[t]||0) * (AMMO[t]?AMMO[t].wpr:0.05); });
   return w;
 }
 function unitCarryLimit(u){ return 16 + 2*((u.lvl||1)-1); }
 /* шкала веса для карточек */
 function weightBar(load, limit){
+  load=wtFmt(load);
   const pct = Math.min(100, Math.round(100*load/Math.max(1,limit)));
   const col = load > limit ? "var(--red)" : pct >= 85 ? "var(--amber)" : "var(--green)";
   return `<div style="margin-top:6px"><div class="row" style="font-size:11px"><span>⚖️ Вес</span>
@@ -1077,6 +1081,12 @@ function svgIcon(kind, id){
           <circle cx="21" cy="14" r="1.4" fill="#fff" opacity=".8"/>`);
     }
   }
+  if(kind==="ammo")
+    return wrap(`<rect x="10" y="20" width="28" height="18" rx="2" fill="#5a4a2e" stroke="#2e2517" stroke-width="1.6"/>
+      <rect x="14" y="8" width="4" height="14" fill="#b8964a"/><rect x="14" y="8" width="4" height="4" fill="#d8b95e"/>
+      <rect x="22" y="8" width="4" height="14" fill="#b8964a"/><rect x="22" y="8" width="4" height="4" fill="#d8b95e"/>
+      <rect x="30" y="8" width="4" height="14" fill="#b8964a"/><rect x="30" y="8" width="4" height="4" fill="#d8b95e"/>
+      <rect x="10" y="26" width="28" height="3" fill="rgba(0,0,0,.25)"/>`);
   return wrap(`<circle cx="24" cy="24" r="14" fill="${D}"/>`);
 }
 /* карточка предмета с тиром */
@@ -1088,6 +1098,7 @@ function itemCard(kind,id,opts){
   else if(kind==="implant"){name=IMPLANTS[id].name.replace("Имплант ","");tier=3;}
   else if(kind==="cons"){name=CONSUMABLES[id].name;tier=1;}
   else if(kind==="mat"){name=MATERIALS[id].name;tier=MATERIALS[id].tier;}
+  else if(kind==="ammo"){name=(AMMO[id]||{}).name||id;tier=2;}
   const[bc,glow]=TIERS[tier]||TIERS[1];
   return `<div class="icard" style="--tier:${bc};--tierglow:${glow}" ${opts.onclick?`onclick="${opts.onclick}"`:""}>
     <div class="iglow"></div>
@@ -1105,6 +1116,32 @@ const CONSUMABLES = {
   medkit:{name:"Аптечка", desc:"Лечит 40 HP в бою (4 ОД)", price:60},
   grenade:{name:"Осколочная граната", desc:"25–40 урона по площади (5 ОД)", price:80},
 };
+/* ---------- ПАТРОНЫ (как в оригинале): у каждого ствола свой калибр и магазин.
+   box — сколько штук в одной покупке, wpr — вес одного патрона. ---------- */
+const AMMO = {
+  p9:  {name:"9×19 мм",    box:30, price:40,  wpr:0.04},
+  acp: {name:".45 ACP",     box:16, price:45,  wpr:0.06},
+  r556:{name:"5.56×45 мм",  box:30, price:90,  wpr:0.06},
+  r762:{name:"7.62×39 мм",  box:30, price:100, wpr:0.08},
+  s762:{name:"7.62×54R",    box:20, price:90,  wpr:0.10},
+  b50: {name:".50 BMG",     box:10, price:150, wpr:0.25},
+  g12: {name:"12 калибр",   box:12, price:70,  wpr:0.12},
+  rpg: {name:"Выстрел РПГ", box:1,  price:200, wpr:3},
+};
+/* ствол → размер магазина + калибр (ближний бой и природное — без патронов) */
+const GUN = {
+  glock:{mag:15,ammo:"p9"}, usp:{mag:15,ammo:"p9"},
+  deagle:{mag:8,ammo:"acp"}, uzi:{mag:32,ammo:"p9"}, mp5:{mag:30,ammo:"p9"},
+  ak47:{mag:30,ammo:"r762"}, m16:{mag:30,ammo:"r556"}, fnfal:{mag:20,ammo:"r762"},
+  mossberg:{mag:6,ammo:"g12"}, spas:{mag:8,ammo:"g12"},
+  m60:{mag:50,ammo:"s762"}, minigun:{mag:100,ammo:"s762"},
+  rpg:{mag:1,ammo:"rpg"},
+  mosin:{mag:5,ammo:"s762"}, svd:{mag:10,ammo:"s762"}, barrett:{mag:10,ammo:"b50"},
+};
+function gunSpec(wid){ return GUN[wid]||null; }
+function ammoName(t){ return (AMMO[t]||{}).name||t; }
+/* красивый вес без хвостов 12.30000001 */
+function wtFmt(x){ return Math.round((+x||0)*10)/10; }
 /* sight — радиус зрения (как в жанровой классике: врага не видно, пока не подойдёшь).
    У пса зрение на 1 больше человеческого (7 против 6) и больше ОД. */
 /* Как в жанровой классике: расы, а не классы.
@@ -1186,7 +1223,7 @@ function defaultSave(){
     nick: "Сталкер-" + (100 + Math.floor(Math.random()*900)),
     credits: 300, rating: 1000, wins: 0, losses: 0, battles: 0,
     lastHash: "",
-    inv: { weapons:{}, armors:{}, implants:{}, medkit:1, grenade:1 },
+    inv: { weapons:{}, armors:{}, implants:{}, medkit:1, grenade:1, ammo:{p9:60, r762:30} },
     roster: [ newMerc("human"), newMerc("dog") ],
     hirePool: genHirePool(),
     market: { listed:[], synced:false },
@@ -1206,7 +1243,7 @@ function newMerc(cls, name){
   return { id: "m"+(Date.now()%1e7)+"_"+(mercSeq++), cls,
     name: name || (cls==="dog" ? pick(DOGNAMES) : pick(NAMES)),
     level:1, xp:0, weapon:c.weapon, weapon2:null, gear:{head:null,body:null,legs:null}, implants:[],
-    belt:{medkit:0, grenade:0},
+    belt:{medkit:0, grenade:0}, ammo:{},
     look: cls==="human" ? Math.floor(Math.random()*LOOKS.length) : 0,
     skills: blankSkills() };
 }
@@ -1238,8 +1275,10 @@ function migrate(s){ // совместимость со старыми сейв�
     }
     ["head","body","legs"].forEach(s=>{ if(m.gear[s]&&!ARMORS[m.gear[s]])m.gear[s]=null; });
     if(m.level>MAX_LEVEL){m.level=MAX_LEVEL;m.xp=0;} /* кап уровня 20 */
+    if(!m.ammo||typeof m.ammo!=="object")m.ammo={}; /* запас патронов при себе */
   });
-  if(!s.inv)s.inv={weapons:{},armors:{},implants:{},medkit:1,grenade:1};
+  if(!s.inv)s.inv={weapons:{},armors:{},implants:{},medkit:1,grenade:1,ammo:{}};
+  if(!s.inv.ammo)s.inv.ammo={};
   if(!s.market)s.market={listed:[], synced:false};            // v4: он-чейн торговля
   if(!s.mats)s.mats={scrap:3,leather:2,comp:0,crystal:0};     // v5: материалы крафта
   if(!s.chain)s.chain={endpoint:"https://shellnet.ackinacki.org/graphql",addr:"",itemsAddr:"",arenaAddr:""};
@@ -1623,6 +1662,7 @@ function togglePick(id){
 }
 function deploySquad(){
   if(!squadSel.length){toast("Выбери хотя бы одного бойца");return;}
+  autoAmmo(S.roster.filter(m=>squadSel.includes(m.id)));
   closeModal("mSquad"); startBattle(chosenMission, squadSel);
 }
 
@@ -1763,8 +1803,49 @@ function openEquip(mid){
   }else{
     html+=`<div class="card muted">🐕 Пёс не носит пояс — зато видит дальше всех (👁 7) и может носить крафтовую попону!</div>`;
   }
+  /* --- патроны: запас при себе (в бой идёт только свой запас) --- */
+  if(m.cls==="human"){
+    if(!m.ammo)m.ammo={};
+    if(!S.inv.ammo)S.inv.ammo={};
+    const cals=[...new Set([m.weapon,m.weapon2].map(gunSpec).filter(Boolean).map(g=>g.ammo))];
+    html+=`<div class="card"><h3>🔸 Патроны <span class="muted">(с собой в бой)</span></h3>`;
+    if(!cals.length)html+=`<div class="muted">Безоружному патроны не нужны.</div>`;
+    cals.forEach(t=>{
+      const g1=gunSpec(m.weapon), g2=gunSpec(m.weapon2);
+      const perShot=(m.weapon&&g1&&g1.ammo===t?g1.mag:0)+(m.weapon2&&g2&&g2.ammo===t?g2.mag:0);
+      const have=m.ammo[t]||0, store=S.inv.ammo[t]||0;
+      html+=`<div class="row" style="margin-top:8px">
+        <div style="width:30px">${svgIcon("ammo",t)}</div>
+        <div class="grow">${ammoName(t)} <span class="muted">с собой ×${have} · склад ×${store} · ⚖️${wtFmt(have*AMMO[t].wpr)}</span></div>
+        <div class="btn small ${store>0?"primary":""}" onclick="ammoTake('${t}',${perShot||30})">+${perShot||30}</div>
+        <div class="btn small" onclick="ammoBack('${t}')">−</div>
+      </div>`;
+    });
+    html+=`<div class="muted" style="margin-top:6px">Перед боем запас добирается автоматически (2 магазина на ствол, если влезет по весу).</div></div>`;
+  }
   document.getElementById("eqBody").innerHTML=html;
   show("scr-equip");
+}
+/* взять патроны со склада себе (с проверкой веса), вернуть обратно */
+function ammoTake(t,qty){
+  const m=eqM(); if(!m)return;
+  if(!m.ammo)m.ammo={};
+  if(!S.inv.ammo)S.inv.ammo={};
+  const avail=S.inv.ammo[t]||0;
+  if(avail<=0){toast("На складе нет "+ammoName(t));return;}
+  let take=Math.min(qty||30,avail);
+  const free=carryLimit(m)-mercLoad(m);
+  take=Math.min(take,Math.floor(free/((AMMO[t]||{}).wpr||0.05)));
+  if(take<=0){toast(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level})`);return;}
+  m.ammo[t]=(m.ammo[t]||0)+take; S.inv.ammo[t]-=take;
+  save(); eqRefresh(m.id); toast(`+${take} ${ammoName(t)}`);
+}
+function ammoBack(t){
+  const m=eqM(); if(!m||!m.ammo)return;
+  if(!(m.ammo[t]>0)){toast("При себе нет");return;}
+  if(!S.inv.ammo)S.inv.ammo={};
+  S.inv.ammo[t]=(S.inv.ammo[t]||0)+m.ammo[t]; m.ammo[t]=0;
+  save(); eqRefresh(m.id); toast("Патроны на складе");
 }
 /* модалки выбора из склада — карточками */
 function pickWeaponModal(slot){
@@ -1952,7 +2033,7 @@ function renderInv(){
     const l=mercLoad(r), lm=carryLimit(r);
     const over=l>lm;
     return `<div class="btn small ${r.id===m.id?"primary":""}" style="${over?"border-color:var(--red);":""}" onclick="openInvSel('${r.id}')"
-      >${c_emoji(r)} ${esc(r.name)} <span class="muted">${l}/${lm}</span></div>`;
+      >${c_emoji(r)} ${esc(r.name)} <span class="muted">${wtFmt(l)}/${lm}</span></div>`;
   }).join("");
   const w=WEAPONS[m.weapon], w2=m.weapon2?WEAPONS[m.weapon2]:null;
   const natural=!!w.natural && m.weapon!=="fists";
@@ -2319,6 +2400,7 @@ function renderSquadPickPvp(){
 function deployPvp(){
   const md=ROOM_MODES[pvpCtx.mode];
   if(squadSel.length!==md.units){toast("Нужно ровно "+md.units+" бойц(а)");return;}
+  autoAmmo(S.roster.filter(m=>squadSel.includes(m.id)));
   closeModal("mSquad");
   document.getElementById("btnDeploy").setAttribute("onclick","deploySquad()");
   startPvpBattle();
@@ -2340,6 +2422,7 @@ function startPvpBattle(){
     units.push({side:"p",mercId:m.id,name:m.name,emoji:CLASSES[m.cls].emoji,
       cls:m.cls,look:m.look,x:pSpawns[i].x,y:pSpawns[i].y,
       hp:st.hp,maxhp:st.hp,ap:bap,maxap:bap,acc:st.acc,lvl:m.level,over:pen,
+      mag:0, mags:{}, spare:Object.assign({},m.ammo||{}),
       armor:naked?0:st.armor,
       weapon:w,weapon2:naked?null:m.weapon2,
       belt:naked?{medkit:0,grenade:0}:{medkit:m.belt.medkit||0,grenade:m.belt.grenade||0},
@@ -2359,9 +2442,10 @@ function startPvpBattle(){
   B={mission:{name:`${pvpCtx.mode} против ${hostName}`,reward:0},units,turn:1,phase:"p",
      sel:null,reach:null,mode:"normal",movePath:null,crates:{},log:[],over:false,kills:0,aiTimer:null,map,
      fog:[],spotted:new Set(),pvp:{stake,hostName,naked}};
-  logLines=[];effects=[];particles=[];initDust();
-  recomputeFog();
-  blog(`🎮 ${pvpCtx.mode} против ${hostName}${naked?" · 🚿":""}${stake?` · ставка ${stake}💰`:""}`);
+   logLines=[];effects=[];particles=[];initDust();
+   recomputeFog();
+   loadMags();
+   blog(`🎮 ${pvpCtx.mode} против ${hostName}${naked?" · 🚿":""}${stake?` · ставка ${stake}💰`:""}`);
   units.filter(u=>u.side==="p"&&u.over>0).forEach(u=>
     blog(`🎒 ${u.name}: перегруз, ОД на весь бой −${u.over}`));
   selectUnit(B.units.find(u=>u.side==="p"));
@@ -2521,7 +2605,14 @@ function openWarehouse(){
     ${itemCard("cons","grenade",{count:S.inv.grenade})}
   </div>
   <div class="muted" style="margin-bottom:8px">Раздай бойцам на пояс — в бой идёт только то, что на поясе!</div>
-  <h2 class="sub">⛏️ Материалы (для мастерской)</h2><div class="igrid">
+  <h2 class="sub">🔸 Патроны на складе</h2>`;
+  const amkeys=Object.keys(S.inv.ammo||{}).filter(k=>S.inv.ammo[k]>0);
+  if(amkeys.length){
+    html+=`<div class="igrid">`+amkeys.map(k=>
+      itemCard("ammo",k,{onclick:`sellAmmo('${k}')`,count:S.inv.ammo[k]})).join("")+`</div>
+      <div class="muted" style="margin-bottom:8px">Тап по коробке — продать всё за полцены. Раздача в бой — в экипировке бойца.</div>`;
+  }else html+=`<div class="muted" style="margin-bottom:8px">Пусто. Патроны продаются в магазине и падают с ящиков.</div>`;
+  html+=`<h2 class="sub">⛏️ Материалы (для мастерской)</h2><div class="igrid">
     ${Object.keys(MATERIALS).map(k=>itemCard("mat",k,{count:S.mats[k]||0})).join("")}
   </div>`;
 
@@ -2794,8 +2885,10 @@ async function marketSync(fromMarket){
 }
 
 /* ---------- МАГАЗИН ---------- */
-function weaponDesc(w){
+function weaponDesc(w,id){
   let d=`Урон ${w.dmg[0]}–${w.dmg[1]}${w.shots>1?" ×"+w.shots:""} · ${w.ap} ОД`;
+  const g=id?gunSpec(id):null;
+  if(g)d+=` · 🔸${g.mag} · ${ammoName(g.ammo)}`;
   if(w.melee)d+=" · ближний бой";
   else{
     d+=` · дальн. ${(w.min||1)>1?w.min+"–":""}${w.max}`;
@@ -2814,7 +2907,7 @@ function openShop(){
     html+=`<h2 class="sub">${SKILLS[g].emoji} ${SKILLS[g].name}</h2>`;
     list.sort((a,b)=>WEAPONS[a].price-WEAPONS[b].price).forEach(k=>{
       const w=WEAPONS[k];
-      html+=shopCard("weapon",k,w.name,weaponDesc(w),w.price,`buyWeapon('${k}')`,(S.inv.weapons[k]||0));
+      html+=shopCard("weapon",k,w.name,weaponDesc(w,k),w.price,`buyWeapon('${k}')`,(S.inv.weapons[k]||0));
     });
   });
   [["head","🪖 Голова"],["body","🦺 Тело"],["legs","🥾 Ноги"],["all","🧵 Комбезы (всё тело)"]].forEach(([sl,title])=>{
@@ -2830,6 +2923,11 @@ function openShop(){
   html+=`<h2 class="sub">🧪 Расходники</h2>`;
   html+=shopCard("cons","medkit",CONSUMABLES.medkit.name,CONSUMABLES.medkit.desc,CONSUMABLES.medkit.price,`buyCons('medkit')`,S.inv.medkit);
   html+=shopCard("cons","grenade",CONSUMABLES.grenade.name,CONSUMABLES.grenade.desc,CONSUMABLES.grenade.price,`buyCons('grenade')`,S.inv.grenade);
+  html+=`<h2 class="sub">🔸 Патроны <span class="muted" style="font-size:11px">(коробка, на склад)</span></h2>`;
+  for(const t in AMMO){
+    const a=AMMO[t];
+    html+=shopCard("ammo",t,a.name,`${a.box} шт · ${a.name} · ⚖️${wtFmt(a.box*a.wpr)}`,a.price,`buyAmmo('${t}')`,(S.inv.ammo&&S.inv.ammo[t])||0);
+  }
   html+=`<h2 class="sub">🧠 Импланты</h2>`;
   for(const k in IMPLANTS){
     const i=IMPLANTS[k];
@@ -2850,6 +2948,20 @@ function buyWeapon(k){ if(!spend(WEAPONS[k].price))return; S.inv.weapons[k]=(S.i
 function buyArmor(k){ if(!spend(ARMORS[k].price))return; S.inv.armors[k]=(S.inv.armors[k]||0)+1; save(); openShop(); toast("Куплено"); }
 function buyCons(k){ if(!spend(CONSUMABLES[k].price))return; S.inv[k]++; save(); openShop(); toast("Куплено"); }
 function buyImp(k){ if(!spend(IMPLANTS[k].price))return; S.inv.implants[k]=(S.inv.implants[k]||0)+1; save(); openShop(); toast("Куплено"); }
+function buyAmmo(t){
+  const a=AMMO[t]; if(!a)return;
+  if(!S.inv.ammo)S.inv.ammo={};
+  if(!spend(a.price))return;
+  S.inv.ammo[t]=(S.inv.ammo[t]||0)+a.box;
+  save(); openShop(); toast(`${a.name} ×${a.box} — куплено`);
+}
+function sellAmmo(t){
+  if(!S.inv.ammo||!(S.inv.ammo[t]>0))return;
+  const a=AMMO[t];
+  const gain=Math.max(1,Math.floor(a.price/a.box/2))*S.inv.ammo[t];
+  S.credits+=gain; S.inv.ammo[t]=0;
+  save(); openWarehouse(); toast(`Продано: +${gain}💰`);
+}
 
 /* ---------- НАЁМ ---------- */
 function openHire(){
@@ -3174,6 +3286,7 @@ function startBattle(mission, squadIds){
       cls:m.cls, look:m.look, x:pSpawns[i].x, y:pSpawns[i].y, hp:st.hp, maxhp:st.hp,
       ap:bap, maxap:bap, acc:st.acc, armor:st.armor, lvl:m.level,
       over:pen,
+      mag:0, mags:{}, spare:Object.assign({},m.ammo||{}),
       weapon:m.weapon, weapon2:m.weapon2,
       belt:{medkit:m.belt.medkit||0, grenade:m.belt.grenade||0}, // личный пояс как в жанровой классике
       sight:st.sight, alive:true});
@@ -3195,6 +3308,7 @@ function startBattle(mission, squadIds){
         kills:0, aiTimer:null, map, fog:[], spotted:new Set() };
   logLines=[]; effects=[]; particles=[]; initDust();
   recomputeFog();
+  loadMags();
   blog(`⚔️ ${mission.name}. Найди противника — врагов не видно, пока не подойдёшь!`);
   units.filter(u=>u.side==="p"&&u.over>0).forEach(u=>
     blog(`🎒 ${u.name}: перегруз, ОД на весь бой −${u.over}`));
@@ -3206,7 +3320,8 @@ function startBattle(mission, squadIds){
     genericModal(`<h2>Как играть</h2><div class="muted" style="font-size:13.5px;line-height:1.6">
       • Тапни по <b>своему бойцу</b> — выбрать.<br>
        • Тапни по <b>зелёной клетке</b> — увидишь путь и цену в ОД (по диагонали шаг стоит 2 ОД); тапни туда же ещё раз — боец пойдёт.<br>
-      • Тапни по <b>врагу</b> — выстрел (виден % попадания).<br>
+       • Тапни по <b>врагу</b> — выстрел (виден % попадания). Следи за магазином: патроны тратятся,
+       пустой ствол только щёлкает — жми <b>🔄</b> для перезарядки (3 ОД, патроны таскай с собой).<br>
       • <b>У оружия есть рамки дальности как в жанровой классике</b>: пистолет не добьёт далеко,
       снайперка и автомат <b>не стреляют в упор</b> (❌близко — мёртвая зона!),
       дробовик бьёт только вблизи. Держи запасной ствол 🔁 или кулаки 👊.<br>
@@ -3281,11 +3396,15 @@ function genMap(size, hangars, biome){
 }
 /* лут в ящиках: что может выпасть (только на этот бой!) */
 const CRATE_LOOT = [
-  {w:0.25, type:"medkit"},
-  {w:0.20, type:"grenade"},
-  {w:0.30, type:"weapon", pool:["usp","mp5","mossberg","uzi","deagle"]},
-  {w:0.15, type:"weapon", pool:["ak47","spas","mosin","m16"]},
-  {w:0.10, type:"weapon", pool:["svd","fnfal","m60"]},
+  {w:0.20, type:"medkit"},
+  {w:0.15, type:"grenade"},
+  {w:0.25, type:"weapon", pool:["usp","mp5","mossberg","uzi","deagle"]},
+  {w:0.12, type:"weapon", pool:["ak47","spas","mosin","m16"]},
+  {w:0.08, type:"weapon", pool:["svd","fnfal","m60"]},
+  {w:0.08, type:"ammo", ammo:"p9", n:30},
+  {w:0.07, type:"ammo", ammo:"r762", n:30},
+  {w:0.03, type:"ammo", ammo:"s762", n:20},
+  {w:0.02, type:"ammo", ammo:"g12", n:12},
 ];
 function rollCrate(){
   let r=Math.random(), acc=0;
@@ -3293,6 +3412,7 @@ function rollCrate(){
     acc+=e.w;
     if(r<=acc){
       if(e.type==="weapon")return {type:"weapon", id:pick(e.pool)};
+      if(e.type==="ammo")return {type:"ammo", ammo:e.ammo, n:e.n};
       return {type:e.type};
     }
   }
@@ -3311,6 +3431,36 @@ function freeCellsNear(map,cx,cy,n){
   return res;
 }
 function unitAt(x,y){ return B.units.find(u=>u.alive&&u.x===x&&u.y===y); }
+/* перед боем каждый забирает со склада запас: 2 магазина на ствол (влезет по весу) */
+function autoAmmo(squad){
+  if(!S.inv.ammo)S.inv.ammo={};
+  squad.forEach(m=>{
+    if(!m.ammo)m.ammo={};
+    [m.weapon,m.weapon2].forEach(wid=>{
+      const g=gunSpec(wid);
+      if(!g)return;
+      const need=g.mag*2-(m.ammo[g.ammo]||0);
+      if(need<=0)return;
+      const avail=S.inv.ammo[g.ammo]||0;
+      let take=Math.min(need,avail);
+      const free=carryLimit(m)-mercLoad(m);
+      take=Math.min(take,Math.floor(free/(AMMO[g.ammo].wpr||0.05)));
+      if(take>0){ m.ammo[g.ammo]=(m.ammo[g.ammo]||0)+take; S.inv.ammo[g.ammo]-=take; }
+    });
+  });
+  save();
+}
+/* в начале боя стволы заряжены полными магазинами; у врагов абстрактный запас */
+function loadMags(){
+  if(!B)return;
+  B.units.forEach(u=>{
+    const g=gunSpec(u.weapon);
+    u.mag=g?g.mag:0;
+    if(!u.mags)u.mags={};
+    if(u.side==="e"&&g){ u.spare=u.spare||{}; u.spare[g.ammo]=9999; }
+    if(!u.spare)u.spare={};
+  });
+}
 /* проходимость: пол ангара (5) и дверь (6) — можно ходить */
 function blocked(x,y){
   if(x<0||y<0||x>=GRID||y>=GRID)return true;
@@ -3434,6 +3584,7 @@ function canAttack(att,def){
   const w=WEAPONS[att.weapon];
   if(att.ap<weaponAp(att))return false;
   if(w.melee)return dist(att,def)===1;
+  if(gunSpec(att.weapon)&&(att.mag||0)<=0)return false; // пустой магазин — сначала 🔄
   const d=dist(att,def);
   if(d<(w.min||1))return false; // слишком близко — длинный ствол не развернуть
   return d<=w.max&&los(att.x,att.y,def.x,def.y);
@@ -3442,6 +3593,7 @@ function canAttack(att,def){
 function whyCantAttack(att,def){
   const w=WEAPONS[att.weapon];
   if(att.ap<weaponAp(att))return "Не хватает ОД ("+weaponAp(att)+")";
+  if(gunSpec(att.weapon)&&(att.mag||0)<=0)return "Магазин пуст — перезарядись 🔄";
   const d=dist(att,def);
   if(w.melee)return d>1?"Только вплотную — подойди":"";
   if(d<(w.min||1))return "Слишком близко для "+w.name+" (мин. "+w.min+")"+(att.weapon2?" — смени оружие 🔁":"");
@@ -3482,10 +3634,22 @@ function applyDamage(def, dmg, srcName, info){
 }
 function doAttack(att,def){
   const w=WEAPONS[att.weapon];
+  const g=gunSpec(att.weapon);
+  /* патроны: очередь короче остатка не стреляет, пустой магазин — щелчок */
+  if(g){
+    if((att.mag||0)<=0){
+      if(att.side==="p"){toast("Пусто! Жми 🔄 для перезарядки");try{sfx("click");}catch(e){}}
+      return false;
+    }
+    const burst=Math.min(w.shots||1,att.mag);
+    att.mag-=burst;
+    att._burst=burst;
+  } else att._burst=0;
   att.ap-=weaponAp(att);
   const ch=hitChance(att,def);
   let total=0,hits=0,crit=false,armoredAny=false;
-  const shots=w.shots||1;
+  const shots=att._burst||w.shots||1;
+  att._burst=0;
   const pellets=[];
   for(let i=0;i<shots;i++){
     if(rnd(1,100)<=ch){
@@ -3667,6 +3831,7 @@ function crateItems(x,y){
 function crateDesc(it){
   if(it.type==="medkit")return {emoji:CONSUMABLES.medkit.emoji||"💉",name:CONSUMABLES.medkit.name,sub:CONSUMABLES.medkit.desc+" · ⚖️"+itemWt("cons","medkit")};
   if(it.type==="grenade")return {emoji:CONSUMABLES.grenade.emoji||"💣",name:CONSUMABLES.grenade.name,sub:CONSUMABLES.grenade.desc+" · ⚖️"+itemWt("cons","grenade")};
+  if(it.type==="ammo")return {emoji:"🔸",name:ammoName(it.ammo)+` ×${it.n}`,sub:`Запасные патроны · ⚖️${wtFmt(it.n*((AMMO[it.ammo]||{}).wpr||0.05))}`};
   const w=WEAPONS[it.id];
   return {emoji:w.emoji,name:w.name,sub:`${w.dmg[0]}–${w.dmg[1]}${w.shots>1?"×"+w.shots:""} · ${w.ap}ОД · ⚖️${itemWt("weapon",it.id)}`};
 }
@@ -3676,7 +3841,7 @@ function openCrateModal(x,y){
   const items=crateItems(x,y);
   const load=unitBattleLoad(u), lim=unitCarryLimit(u);
   let html=`<h2>📦 Ящик</h2>
-    <div class="muted" style="margin:4px 0">${esc(u.name)} · несу ${load}/${lim} · трофей вынести из боя нельзя</div>
+    <div class="muted" style="margin:4px 0">${esc(u.name)} · несу ${wtFmt(load)}/${lim} · трофей вынести из боя нельзя</div>
     ${weightBar(load,lim)}`;
   if(!items.length){
     html+=`<div class="muted" style="margin:10px 0">Ящик пуст.</div>`;
@@ -3688,6 +3853,8 @@ function openCrateModal(x,y){
         btn=`<span class="muted" style="font-size:11px">не подходит</span>`;
       }else if(it.type==="grenade"&&(u.cls==="dog"||u.cls==="mutant")){
         btn=`<span class="muted" style="font-size:11px">не умеет</span>`;
+      }else if(it.type==="ammo"&&u.cls!=="human"){
+        btn=`<span class="muted" style="font-size:11px">не носит</span>`;
       }else{
         btn=`<div class="btn small primary" onclick="crateTake(${x},${y},${i})">Взять</div>`;
       }
@@ -3713,15 +3880,23 @@ function crateTake(x,y,idx){
   if(it.type==="medkit"){
     if(u.cls==="dog"){ items.splice(idx,1); u.hp=Math.min(u.maxhp,u.hp+40); blog(`📦 ${u.name} съел аптечку (+40 HP)`); }
     else{
-      if(unitBattleLoad(u)+itemWt("cons","medkit")>unitCarryLimit(u)){toast(`Перегруз! Несу ${unitBattleLoad(u)}/${unitCarryLimit(u)}`);return;}
+      if(unitBattleLoad(u)+itemWt("cons","medkit")>unitCarryLimit(u)){toast(`Перегруз! Несу ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)}`);return;}
       items.splice(idx,1); u.lootBelt.medkit++;
       blog(`📦 ${u.name} взял <b>аптечку</b> (только на этот бой)`);
     }
   }else if(it.type==="grenade"){
     if(u.cls==="dog"||u.cls==="mutant"){toast("Не умеет пользоваться гранатами");return;}
-    if(unitBattleLoad(u)+itemWt("cons","grenade")>unitCarryLimit(u)){toast(`Перегруз! Несу ${unitBattleLoad(u)}/${unitCarryLimit(u)}`);return;}
+    if(unitBattleLoad(u)+itemWt("cons","grenade")>unitCarryLimit(u)){toast(`Перегруз! Несу ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)}`);return;}
     items.splice(idx,1); u.lootBelt.grenade++;
     blog(`📦 ${u.name} взял <b>гранату</b> (только на этот бой)`);
+  }else if(it.type==="ammo"){
+    if(u.cls!=="human"){toast("Только люди таскают патроны");return;}
+    const wadd=it.n*((AMMO[it.ammo]||{}).wpr||0.05);
+    if(unitBattleLoad(u)+wadd>unitCarryLimit(u)){toast(`Перегруз! Несу ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)}`);return;}
+    items.splice(idx,1);
+    if(!u.spare)u.spare={};
+    u.spare[it.ammo]=(u.spare[it.ammo]||0)+it.n;
+    blog(`📦 ${u.name} взял патроны: <b>${ammoName(it.ammo)} ×${it.n}</b>`);
   }else{
     const w=WEAPONS[it.id];
     if(!w.classes.includes(u.cls)){toast("Не может это использовать");return;}
@@ -3734,6 +3909,11 @@ function crateTake(x,y,idx){
     if(!u.weapon2 && !WEAPONS[u.weapon].natural && !u.trophy){ u.weapon2=u.weapon; }
     u.weapon=it.id;
     u.trophy=true;
+    /* найденный ствол заряжен полным магазином */
+    const ng=gunSpec(it.id);
+    u.mag=ng?ng.mag:0;
+    if(!u.mags)u.mags={};
+    if(ng)u.mags[it.id]=u.mag;
     blog(`📦 ${u.name} взял трофей: ${w.emoji}<b>${w.name}</b>! (вынести из боя нельзя)`);
   }
   B.reach=reachable(u);
@@ -3748,6 +3928,7 @@ function crateTakeAll(x,y){
     const idx=crateItems(x,y).findIndex(it=>{
       if(it.type==="weapon")return WEAPONS[it.id].classes.includes(u.cls);
       if(it.type==="grenade")return !(u.cls==="dog"||u.cls==="mutant");
+      if(it.type==="ammo")return u.cls==="human";
       return true;
     });
     if(idx<0)break;
@@ -3793,18 +3974,39 @@ function toggleGrenade(){
   toast(B.mode==="grenade"?"Выбери клетку (дальность 7)":"Отмена");
   updateHud();
 }
-/* смена оружия в бою — 2 ОД */
+/* смена оружия в бою — 2 ОД (заряженность каждого ствола сохраняется) */
 function swapWeapon(){
   if(!B||B.phase!=="p"||!B.sel||!B.sel.alive)return;
   const u=B.sel;
   if(!u.weapon2){toast("Нет запасного оружия");return;}
   if(u.ap<2){toast("Нужно 2 ОД");return;}
   u.ap-=2;
+  if(!u.mags)u.mags={};
+  u.mags[u.weapon]=u.mag||0;
   const t=u.weapon; u.weapon=u.weapon2; u.weapon2=t;
+  const g=gunSpec(u.weapon);
+  u.mag=g?(u.mags[u.weapon]!==undefined?u.mags[u.weapon]:g.mag):0;
   B.movePath=null;
   const w=WEAPONS[u.weapon];
   blog(`🔁 ${u.name} достаёт ${w.emoji}${w.name}`);
   addEffect({type:"text",x:u.x,y:u.y,str:"🔁",color:"#cbb",t:now()});
+  updateHud();
+}
+/* перезарядка в бою — 3 ОД, патроны из носимого запаса */
+function reloadUnit(){
+  if(!B||B.phase!=="p"||!B.sel||!B.sel.alive)return;
+  const u=B.sel;
+  const g=gunSpec(u.weapon);
+  if(!g){toast("Это оружие не требует патронов");return;}
+  if(u.mag>=g.mag){toast("Магазин полный");return;}
+  if(u.ap<3){toast("Нужно 3 ОД");return;}
+  const have=(u.spare&&u.spare[g.ammo])||0;
+  if(have<=0){toast(`Нет патронов ${ammoName(g.ammo)} — таскай запас в инвентаре`);return;}
+  const take=Math.min(g.mag-u.mag,have);
+  u.mag+=take; u.spare[g.ammo]-=take; u.ap-=3;
+  B.movePath=null;
+  sfx("reload");
+  blog(`🔄 ${u.name} перезаряжается (+${take})`);
   updateHud();
 }
 function throwGrenade(c){
@@ -3999,6 +4201,17 @@ function aiStep(){
       if(!B.over)B.aiTimer=setTimeout(aiStep,420);
       return;
     }
+    /* пустой магазин у бота — перезарядка за 3 ОД вместо выстрела */
+    const eg=gunSpec(e.weapon);
+    if(best&&eg&&(e.mag||0)<=0){
+      if(e.ap>=3&&e.spare&&e.spare[eg.ammo]>0){
+        const take=Math.min(eg.mag,e.spare[eg.ammo]);
+        e.mag+=take;e.spare[eg.ammo]-=take;e.ap-=3;
+        blog(`🔄 ${e.name} перезаряжается`);
+      }else e.ap=0;
+      if(!B.over)B.aiTimer=setTimeout(aiStep,420);
+      return;
+    }
     const near=visible.reduce((a,b)=>dist(e,a)<dist(e,b)?a:b);
     if(aiGrenade(e,visible,players)){if(!B.over)B.aiTimer=setTimeout(aiStep,520);return;}
     if(aiHeal(e,dist(e,near))){if(!B.over)B.aiTimer=setTimeout(aiStep,420);return;}
@@ -4059,6 +4272,7 @@ function finishBattle(win){
     const m=S.roster.find(x=>x.id===bu.mercId);
     if(!m)return;
     m.belt.medkit=bu.belt.medkit; m.belt.grenade=bu.belt.grenade; // lootBelt сгорает
+    m.ammo=Object.assign({},bu.spare||{}); // несгоревшие патроны возвращаются
     if(bu.trophy){
       /* трофей бросается на выходе — возвращаем родную экипировку */
       m.weapon=bu.origWeapon; m.weapon2=bu.origWeapon2;
@@ -4141,7 +4355,8 @@ function updateHud(){
   const sk=uSkill(u);
   document.getElementById("uiFace").textContent=u.emoji;
   document.getElementById("uiName").textContent=u.name;
-  document.getElementById("uiWeap").textContent=` ${w.emoji}${w.name} ${weaponAp(u)}ОД · ${skillRank(sk)} ${sk}`;
+  document.getElementById("uiWeap").textContent=` ${w.emoji}${w.name} ${weaponAp(u)}ОД · ${skillRank(sk)} ${sk}${gunSpec(u.weapon)?` · 🔸${u.mag||0}/${gunSpec(u.weapon).mag}`:""}`;
+  document.getElementById("magCnt").textContent=gunSpec(u.weapon)?(u.mag||0):"";
   document.getElementById("uiHp").style.width=Math.max(0,100*u.hp/u.maxhp)+"%";
   const apEl=document.getElementById("uiAp");
   let dots="";
@@ -4216,6 +4431,10 @@ function sfx(kind){
                    sBurst(a,{dur:0.46,peak:0.28,type:"lowpass",freq:420,slide:85});break;
       case"crate": sTone(a,{f0:620,dur:0.07,peak:0.11,type:"square"});
                    sTone(a,{f0:880,dur:0.09,peak:0.09,type:"square",delay:0.08});break;
+      case"click": sTone(a,{f0:1800,dur:0.03,peak:0.08,type:"square"});break;
+      case"reload":sTone(a,{f0:500,dur:0.06,peak:0.10,type:"square"});
+                   sTone(a,{f0:750,dur:0.06,peak:0.10,type:"square",delay:0.09});
+                   sTone(a,{f0:1000,dur:0.05,peak:0.08,type:"square",delay:0.18});break;
     }
   }catch(e){}
 }
