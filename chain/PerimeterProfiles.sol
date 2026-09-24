@@ -25,10 +25,13 @@ contract PerimeterProfiles {
         uint64  lastBattleHash;
         uint32  updatedAt;
         bool    exists;
+        string  walletAddr; // адрес AN Wallet владельца (привязка кошелёк↔профиль)
     }
 
     // pubkey игрока -> профиль
     mapping(uint256 => Profile) public profiles;
+    // перечисление игроков для он-чейн топа (mapping не итерируется)
+    uint256[] public playerKeys;
     uint32 public totalPlayers;
     uint32 public totalBattles;
 
@@ -53,9 +56,23 @@ contract PerimeterProfiles {
         if (!p.exists) {
             p.exists = true;
             p.rating = 1000;
+            playerKeys.push(pk);
             totalPlayers++;
         }
         p.nick = nick;
+        p.updatedAt = block.timestamp;
+        profiles[pk] = p;
+    }
+
+    /// Привязать AN Wallet к своему профилю (адрес вида hex::hex).
+    /// Только владелец профиля; перепривязка разрешена (смена кошелька).
+    function bindWallet(string walletAddr) public onlySigned {
+        uint256 pk = msg.pubkey();
+        Profile p = profiles[pk];
+        require(p.exists, 102);
+        uint256 len = bytes(walletAddr).length;
+        require(len >= 8 && len <= 256, 105);
+        p.walletAddr = walletAddr;
         p.updatedAt = block.timestamp;
         profiles[pk] = p;
     }
@@ -93,11 +110,23 @@ contract PerimeterProfiles {
 
     function getProfile(uint256 pk) public view returns (
         string nick, uint32 rating, uint32 wins, uint32 losses,
-        uint32 battles, uint64 lastBattleHash, uint32 updatedAt, bool exists
+        uint32 battles, uint64 lastBattleHash, uint32 updatedAt, bool exists,
+        string walletAddr
     ) {
         Profile p = profiles[pk];
         return (p.nick, p.rating, p.wins, p.losses,
-                p.battles, p.lastBattleHash, p.updatedAt, p.exists);
+                p.battles, p.lastBattleHash, p.updatedAt, p.exists,
+                p.walletAddr);
+    }
+
+    /// Срез ключей игроков для он-чейн топа/списка (листать offset/limit).
+    function getPlayers(uint32 offset, uint32 limit) public view returns (uint256[] keys) {
+        uint256 total = playerKeys.length;
+        if (offset >= total || limit == 0) return new uint256[](0);
+        uint256 n = limit;
+        if (offset + limit > total) n = total - offset;
+        keys = new uint256[](n);
+        for (uint256 i = 0; i < n; i++) keys[i] = playerKeys[offset + i];
     }
 
     function getStats() public view returns (uint32 players, uint32 battles) {

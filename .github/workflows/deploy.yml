@@ -11,6 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ENDPOINT: "https://shellnet.ackinacki.org/graphql"
+      # deployer pubkey (owner of Items/Arena + multisig custodian)
+      OWNER_KEY: "0xc8f43f24be0fb530d4752b68421c5d3dfd377ebc9459ee5442c5f3cf7719fc72"
+      # funded single-custodian multisig for pre-deploy funding
+      MSIG: "73e271257c9b6b5b32f31d1af74dce240e2113f13db959c09c4a534ebf959847::73e271257c9b6b5b32f31d1af74dce240e2113f13db959c09c4a534ebf959847"
     steps:
       - uses: actions/checkout@v4
 
@@ -19,14 +23,20 @@ jobs:
           wget -q https://github.com/tvmlabs/tvm-sdk/releases/download/v3.0.5.an/tvm-cli-3.0.5.an-linux-musl-amd64.tar.gz
           tar -xzf tvm-cli-3.0.5.an-linux-musl-amd64.tar.gz
           chmod +x tvm-cli
-          ./tvm-cli --version
+          ./tvm-cli config -g --url shellnet.ackinacki.org
 
-      - name: Download sold (TVM Solidity compiler, x86_64)
+      - name: Download sold 0.81.0 (x86_64, required version)
         run: |
           wget -q https://github.com/gosh-sh/TVM-Solidity-Compiler/releases/download/gosh_0.81.0/sold_gosh_0.81.0_linux_x86_64.tar.gz
           tar -xzf sold_gosh_0.81.0_linux_x86_64.tar.gz
           chmod +x sold
           ./sold --version
+
+      - name: Restore deploy keys
+        run: |
+          echo '${{ secrets.DEPLOY_KEYS_JSON }}' > deploy.keys.json
+          chmod 600 deploy.keys.json
+          echo "keys restored (contents never printed)"
 
       - name: Compile contracts (sold --tvm-version gosh)
         run: |
@@ -36,61 +46,81 @@ jobs:
             ls -la "$C.tvc" "$C.abi.json"
           done
 
-      - name: Restore deploy keys
+      - name: Compute future addresses (offline)
+        id: addrs
         run: |
-          echo '${{ secrets.DEPLOY_KEYS_JSON }}' > deploy.keys.json
-          chmod 600 deploy.keys.json
-          echo "keys restored (contents never printed)"
+          cd chain
+          P=$(../tvm-cli -j genaddr PerimeterProfiles.tvc --abi PerimeterProfiles.abi.json --setkey ../deploy.keys.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dapp_account'])")
+          I=$(../tvm-cli -j genaddr PerimeterItems.tvc --abi PerimeterItems.abi.json --setkey ../deploy.keys.json --data '{"ownerKey":"${{ env.OWNER_KEY }}"}' | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dapp_account'])")
+          A=$(../tvm-cli -j genaddr PerimeterArena.tvc --abi PerimeterArena.abi.json --setkey ../deploy.keys.json --data '{"ownerKey":"${{ env.OWNER_KEY }}"}' | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dapp_account'])")
+          echo "PROFILES_ADDR=${P}" >> $GITHUB_OUTPUT
+          echo "ITEMS_ADDR=${I}" >> $GITHUB_OUTPUT
+          echo "ARENA_ADDR=${A}" >> $GITHUB_OUTPUT
+          echo "Profiles: ${P}"
+          echo "Items: ${I}"
+          echo "Arena: ${A}"
 
-      - name: Config tvm-cli
+      - name: Fund future addresses from multisig (flag 16 = SHELL→VMSHELL)
         run: |
-          ./tvm-cli config -g --url shellnet.ackinacki.org
+          for A in "${{ steps.addrs.outputs.PROFILES_ADDR }}" "${{ steps.addrs.outputs.ITEMS_ADDR }}" "${{ steps.addrs.outputs.ARENA_ADDR }}"; do
+            ACC=$(echo "$A" | cut -d: -f1)
+            echo "Funding 0:${ACC}"
+            ./tvm-cli -u shellnet.ackinacki.org callx \
+              --abi chain/Multisig.abi.json \
+              --keys deploy.keys.json \
+              --addr "${{ env.MSIG }}" \
+              -m sendTransaction "{\"dest\":\"0:${ACC}\",\"value\":1000000000,\"cc\":{\"2\":500000000000},\"bounce\":false,\"flags\":16,\"payload\":\"\"}" 2>&1 | tail -4
+            sleep 5
+          done
 
       - name: Deploy PerimeterProfiles
         id: profiles
         run: |
-          ./tvm-cli -u shellnet.ackinacki.org deploy chain/PerimeterProfiles.tvc \
+          P_ACCT=$(echo "${{ steps.addrs.outputs.PROFILES_ADDR }}" | cut -d: -f1)
+          ./tvm-cli -u shellnet.ackinacki.org deploy \
+            --dst-dapp-id "${P_ACCT}" \
             --abi chain/PerimeterProfiles.abi.json \
             --sign deploy.keys.json \
-            '{"value":10000000000}' 2>&1 | tee deploy_profiles.log
-          
-          # Extract address from output
-          ADDR=$(grep -oE 'account_id: ([a-f0-9]{64})' deploy_profiles.log | head -1 | cut -d' ' -f2)
-          echo "PROFILES_ADDR=${ADDR}::${ADDR}" >> $GITHUB_OUTPUT
-          echo "Profiles deployed at: ${ADDR}::${ADDR}"
+            chain/PerimeterProfiles.tvc '{"value":0}' 2>&1 | tee deploy_profiles.log
+          echo "PROFILES_ADDR=${{ steps.addrs.outputs.PROFILES_ADDR }}" >> $GITHUB_OUTPUT
 
       - name: Deploy PerimeterItems
         id: items
         run: |
-          ./tvm-cli -u shellnet.ackinacki.org deploy chain/PerimeterItems.tvc \
+          I_ACCT=$(echo "${{ steps.addrs.outputs.ITEMS_ADDR }}" | cut -d: -f1)
+          ./tvm-cli -u shellnet.ackinacki.org deploy \
+            --dst-dapp-id "${I_ACCT}" \
             --abi chain/PerimeterItems.abi.json \
             --sign deploy.keys.json \
-            --data '{"ownerKey":"0xc8f43f24be0fb530d4752b68421c5d3dfd377ebc9459ee5442c5f3cf7719fc72"}' \
-            '{"value":10000000000}' 2>&1 | tee deploy_items.log
-          
-          ADDR=$(grep -oE 'account_id: ([a-f0-9]{64})' deploy_items.log | head -1 | cut -d' ' -f2)
-          echo "ITEMS_ADDR=${ADDR}::${ADDR}" >> $GITHUB_OUTPUT
-          echo "Items deployed at: ${ADDR}::${ADDR}"
+            --data '{"ownerKey":"${{ env.OWNER_KEY }}"}' \
+            chain/PerimeterItems.tvc '{"value":0}' 2>&1 | tee deploy_items.log
+          echo "ITEMS_ADDR=${{ steps.addrs.outputs.ITEMS_ADDR }}" >> $GITHUB_OUTPUT
 
       - name: Deploy PerimeterArena
         id: arena
         run: |
-          ./tvm-cli -u shellnet.ackinacki.org deploy chain/PerimeterArena.tvc \
+          A_ACCT=$(echo "${{ steps.addrs.outputs.ARENA_ADDR }}" | cut -d: -f1)
+          ./tvm-cli -u shellnet.ackinacki.org deploy \
+            --dst-dapp-id "${A_ACCT}" \
             --abi chain/PerimeterArena.abi.json \
             --sign deploy.keys.json \
-            --data '{"ownerKey":"0xc8f43f24be0fb530d4752b68421c5d3dfd377ebc9459ee5442c5f3cf7719fc72"}' \
-            '{"value":10000000000}' 2>&1 | tee deploy_arena.log
-          
-          ADDR=$(grep -oE 'account_id: ([a-f0-9]{64})' deploy_arena.log | head -1 | cut -d' ' -f2)
-          echo "ARENA_ADDR=${ADDR}::${ADDR}" >> $GITHUB_OUTPUT
-          echo "Arena deployed at: ${ADDR}::${ADDR}"
+            --data '{"ownerKey":"${{ env.OWNER_KEY }}"}' \
+            chain/PerimeterArena.tvc '{"value":0}' 2>&1 | tee deploy_arena.log
+          echo "ARENA_ADDR=${{ steps.addrs.outputs.ARENA_ADDR }}" >> $GITHUB_OUTPUT
+
+      - name: Verify contracts are Active
+        run: |
+          ./tvm-cli -u shellnet.ackinacki.org account "${{ steps.profiles.outputs.PROFILES_ADDR }}" | grep -E "acc_type|balance" | head -3
+          ./tvm-cli -u shellnet.ackinacki.org account "${{ steps.items.outputs.ITEMS_ADDR }}" | grep -E "acc_type|balance" | head -3
+          ./tvm-cli -u shellnet.ackinacki.org account "${{ steps.arena.outputs.ARENA_ADDR }}" | grep -E "acc_type|balance" | head -3
+          ./tvm-cli -u shellnet.ackinacki.org run "${{ steps.profiles.outputs.PROFILES_ADDR }}" getStats {} --abi chain/PerimeterProfiles.abi.json
 
       - name: Set NPC Prices (PerimeterItems)
         if: steps.items.outputs.ITEMS_ADDR != ''
         run: |
           ITEMS_ADDR="${{ steps.items.outputs.ITEMS_ADDR }}"
           echo "Setting NPC prices on ${ITEMS_ADDR}"
-          
+
           # Item prices in credits (nano-credits, 9 decimals)
           declare -A PRICES=(
             ["usp"]=100000000
@@ -135,7 +165,7 @@ jobs:
             ["crystal"]=200000000
             ["machete"]=100000000
           )
-          
+
           for CODE in "${!PRICES[@]}"; do
             PRICE="${PRICES[$CODE]}"
             echo "Setting $CODE = $PRICE"
@@ -147,13 +177,6 @@ jobs:
             sleep 1
           done
 
-      - name: Verify Contracts
-        run: |
-          echo "=== Verifying contracts ==="
-          ./tvm-cli -u shellnet.ackinacki.org account "${{ steps.profiles.outputs.PROFILES_ADDR }}"
-          ./tvm-cli -u shellnet.ackinacki.org account "${{ steps.items.outputs.ITEMS_ADDR }}"
-          ./tvm-cli -u shellnet.ackinacki.org account "${{ steps.arena.outputs.ARENA_ADDR }}"
-
       - name: Upload Deploy Info
         uses: actions/upload-artifact@v4
         with:
@@ -162,7 +185,13 @@ jobs:
             deploy_profiles.log
             deploy_items.log
             deploy_arena.log
-          retention-days: 7
+            chain/PerimeterProfiles.tvc
+            chain/PerimeterProfiles.abi.json
+            chain/PerimeterItems.tvc
+            chain/PerimeterItems.abi.json
+            chain/PerimeterArena.tvc
+            chain/PerimeterArena.abi.json
+          retention-days: 30
 
       - name: Summary
         run: |
