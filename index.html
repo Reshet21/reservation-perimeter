@@ -2091,7 +2091,7 @@ function startPvpBattle(){
       sight:c.sight,alive:true,xp:40+r.lvl*15,skl:r.skl,belt:{medkit:r.lvl>=3?1:0,grenade:r.cls==="human"?1:0},lastSeen:null});
   });
   B={mission:{name:`${pvpCtx.mode} против ${hostName}`,reward:0},units,turn:1,phase:"p",
-     sel:null,reach:null,mode:"normal",log:[],over:false,kills:0,aiTimer:null,map,
+     sel:null,reach:null,mode:"normal",movePath:null,log:[],over:false,kills:0,aiTimer:null,map,
      fog:[],spotted:new Set(),pvp:{stake,hostName,naked}};
   logLines=[];effects=[];particles=[];initDust();
   recomputeFog();
@@ -2918,7 +2918,7 @@ function startBattle(mission, squadIds){
       belt:{medkit:(ek==="stalker"||ek==="gunner")?1:0,grenade:(ek==="gunner"||ek==="raider")?1:0},
       lastSeen:null});
   });
-  B = { mission, units, turn:1, phase:"p", sel:null, reach:null, mode:"normal",
+  B = { mission, units, turn:1, phase:"p", sel:null, reach:null, mode:"normal", movePath:null,
         log:[], over:false,
         kills:0, aiTimer:null, map, fog:[], spotted:new Set() };
   logLines=[]; effects=[]; particles=[]; initDust();
@@ -2931,7 +2931,7 @@ function startBattle(mission, squadIds){
   if(!S.seenTut){ S.seenTut=true; save();
     genericModal(`<h2>Как играть</h2><div class="muted" style="font-size:13.5px;line-height:1.6">
       • Тапни по <b>своему бойцу</b> — выбрать.<br>
-       • Тапни по <b>зелёной клетке</b> — переместиться (1 ОД за шаг, хоть по диагонали).<br>
+       • Тапни по <b>зелёной клетке</b> — увидишь путь и цену в ОД; тапни туда же ещё раз — боец пойдёт.<br>
       • Тапни по <b>врагу</b> — выстрел (виден % попадания).<br>
       • <b>У оружия есть рамки дальности как в жанровой классике</b>: пистолет не добьёт далеко,
       снайперка и автомат <b>не стреляют в упор</b> (❌близко — мёртвая зона!),
@@ -3106,6 +3106,25 @@ function reachable(u){
   }
   return {cost,prev};
 }
+/* предпросмотр пути: цепочка клеток от юнита к цели через B.reach.prev */
+function clearPath(){ if(typeof B!=="undefined"&&B) B.movePath=null; }
+function buildPath(u,tx,ty){
+  if(!B||!B.reach||!B.reach.prev) return null;
+  const key=(x,y)=>x+","+y;
+  const k=key(tx,ty);
+  if(B.reach.cost[k]===undefined) return null;
+  const cells=[]; let cur=k;
+  const start=key(u.x,u.y);
+  let guard=0;
+  while(cur!==start&&guard++<1000){
+    const parts=cur.split(",");
+    cells.unshift({x:+parts[0],y:+parts[1]});
+    cur=B.reach.prev[cur];
+    if(cur===undefined) return null;
+  }
+  if(cur!==start) return null;
+  return {cells, cost:B.reach.cost[k]};
+}
 function los(x1,y1,x2,y2){
   const d=Math.max(Math.abs(x2-x1),Math.abs(y2-y1));
   if(d===0)return true;
@@ -3259,7 +3278,7 @@ function doAttack(att,def){
 /* --- выбор/ввод игрока --- */
 function selectUnit(u){
   if(!u||!u.alive||u.side!=="p")return;
-  B.sel=u; B.mode="normal";
+  B.sel=u; B.mode="normal"; B.movePath=null;
   B.reach=reachable(u);
   centerCam(u.x,u.y); // камера следует за выбранным бойцом
   updateHud();
@@ -3300,7 +3319,7 @@ cv.addEventListener("click",ev=>{
   if(!sel||!sel.alive)return;
   /* по скрытому врагу нельзя ни кликнуть, ни атаковать — игрок его «не видит» */
   if(u&&u.side==="e"&&enemyVisible(u)){
-    if(canAttack(sel,u)){doAttack(sel,u);B.reach=reachable(sel);}
+    if(canAttack(sel,u)){B.movePath=null;doAttack(sel,u);B.reach=reachable(sel);}
     else toast(whyCantAttack(sel,u)||"Нельзя атаковать");
     return;
   }
@@ -3313,6 +3332,17 @@ cv.addEventListener("click",ev=>{
   }
   const k=c.x+","+c.y;
   if(B.reach&&B.reach.cost[k]!==undefined&&!blocked(c.x,c.y)){
+    if(c.x===sel.x&&c.y===sel.y){B.movePath=null;return;} /* тап по себе — снять превью */
+    const mp=B.movePath;
+    /* второй тап по той же клетке — идём; первый тап — только показать путь */
+    if(!(mp&&mp.ux===sel.x&&mp.uy===sel.y&&mp.tx===c.x&&mp.ty===c.y)){
+      const p=buildPath(sel,c.x,c.y);
+      if(!p){B.movePath=null;return;}
+      B.movePath={ux:sel.x,uy:sel.y,tx:c.x,ty:c.y,cells:p.cells,cost:p.cost};
+      toast(`Путь: ${p.cost} ОД — тапни ещё раз, чтобы идти`);
+      return;
+    }
+    B.movePath=null;
     const fx=sel.x,fy=sel.y;
     sel.ap-=B.reach.cost[k];
     sel.x=c.x;sel.y=c.y;
@@ -3331,6 +3361,7 @@ cv.addEventListener("click",ev=>{
    ========================================================= */
 function openCrate(u,x,y){
   u.ap-=3;
+  B.movePath=null;
   B.map[y][x]=8; // вскрыт
   const loot=rollCrate();
   spawnSparks(x,y,"#ffd27f",10);
@@ -3375,6 +3406,7 @@ function useMedkit(){
   if(u.hp>=u.maxhp){toast("HP полные");return;}
   spendBelt(u,"medkit");u.ap-=4;
   u.hp=Math.min(u.maxhp,u.hp+40);
+  B.movePath=null;
   addEffect({type:"text",x:u.x,y:u.y,str:"+40",color:"#8fdc6a",t:now()});
   spawnSparks(u.x,u.y,"#8fdc6a",8);
   blog(`💉 ${u.name} лечится`);
@@ -3387,6 +3419,7 @@ function toggleGrenade(){
   if(totalBelt(u,"grenade")<=0){toast("Нет гранат — экипируй перед боем или ищи в ящиках");return;}
   if(u.ap<5){toast("Нужно 5 ОД");return;}
   B.mode=B.mode==="grenade"?"normal":"grenade";
+  B.movePath=null;
   toast(B.mode==="grenade"?"Выбери клетку (дальность 7)":"Отмена");
   updateHud();
 }
@@ -3398,6 +3431,7 @@ function swapWeapon(){
   if(u.ap<2){toast("Нужно 2 ОД");return;}
   u.ap-=2;
   const t=u.weapon; u.weapon=u.weapon2; u.weapon2=t;
+  B.movePath=null;
   const w=WEAPONS[u.weapon];
   blog(`🔁 ${u.name} достаёт ${w.emoji}${w.name}`);
   addEffect({type:"text",x:u.x,y:u.y,str:"🔁",color:"#cbb",t:now()});
@@ -3408,7 +3442,7 @@ function throwGrenade(c){
   if(dist(sel,c)>7){toast("Слишком далеко");return;}
   if(!los(sel.x,sel.y,c.x,c.y)){toast("Нет линии броска");return;}
   if(B.fog[c.y][c.x]!==2){toast("Не видно клетку — бросать вслепую нельзя");return;}
-  spendBelt(sel,"grenade");sel.ap-=5;B.mode="normal";
+  spendBelt(sel,"grenade");sel.ap-=5;B.mode="normal";B.movePath=null;
   addEffect({type:"boom",x:c.x,y:c.y,t:now()});
   doShake(8,400);
   blog(`💣 ${sel.name} бросает гранату!`);
@@ -3423,7 +3457,7 @@ function throwGrenade(c){
 }
 function endPlayerTurn(){
   if(!B||B.over||B.phase!=="p")return;
-  B.phase="e";B.mode="normal";
+  B.phase="e";B.mode="normal";B.movePath=null;
   B.units.forEach(u=>{if(u.side==="e"&&u.alive)u.ap=u.maxap;});
   blog(`— Ход противника —`);
   updateHud();
@@ -4191,6 +4225,33 @@ function draw(){
       ctx.strokeStyle=`rgba(155,235,110,${d===1?0.42:0.20})`;
       ctx.lineWidth=1;ctx.stroke();
     }
+  }
+  /* предпросмотр пути: первый тап показывает траекторию, второй — идёт */
+  if(B.phase==="p"&&B.sel&&B.sel.alive&&B.movePath&&B.mode==="normal"){
+    const mp=B.movePath;
+    if(mp.ux===B.sel.x&&mp.uy===B.sel.y&&B.reach&&B.reach.cost[mp.tx+","+mp.ty]!==undefined){
+      ctx.save();
+      const pts=[{x:mp.ux,y:mp.uy},...mp.cells];
+      ctx.strokeStyle="rgba(255,214,130,.85)";ctx.lineWidth=2.5;
+      ctx.setLineDash([6,4]);
+      ctx.beginPath();
+      pts.forEach((p,i)=>{const px=isoX(p.x,p.y),py=isoY(p.x,p.y)+cam.th/2;
+        if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);});
+      ctx.stroke();ctx.setLineDash([]);
+      mp.cells.forEach(p=>{const px=isoX(p.x,p.y),py=isoY(p.x,p.y)+cam.th/2;
+        ctx.fillStyle="rgba(255,214,130,.9)";ctx.beginPath();ctx.arc(px,py,3,0,7);ctx.fill();});
+      diamondPath(ctx,mp.tx,mp.ty,2);
+      ctx.fillStyle="rgba(255,196,107,.30)";ctx.fill();
+      ctx.strokeStyle="rgba(255,214,130,.95)";ctx.lineWidth=2;ctx.stroke();
+      const cx=isoX(mp.tx,mp.ty),cy=isoY(mp.tx,mp.ty)+cam.th/2,s=cam.tw;
+      const label=mp.cost+" ОД";
+      ctx.font=`bold ${Math.round(s*0.24)}px sans-serif`;
+      ctx.textAlign="center";ctx.textBaseline="middle";
+      ctx.strokeStyle="rgba(0,0,0,.85)";ctx.lineWidth=3.5;ctx.lineJoin="round";
+      ctx.strokeText(label,cx,cy-s*0.9);
+      ctx.fillStyle="#ffd27f";ctx.fillText(label,cx,cy-s*0.9);
+      ctx.restore();
+    } else { B.movePath=null; } /* юнит сдвинулся/ОД изменились — превью протухло */
   }
   if(B.mode==="grenade"&&B.sel){
     for(let y=0;y<GRID;y++)for(let x=0;x<GRID;x++){
