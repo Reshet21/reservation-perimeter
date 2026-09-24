@@ -686,30 +686,30 @@ function gearStr(m){
 const MAX_LEVEL = 20;
 const ITEM_WT = {
   /* оружие */
-  fists:0, knife:1, machete:2, sledge:5,
-  glock:1, usp:1, deagle:2, uzi:2, mp5:3,
-  ak47:4, m16:4, fnfal:5, mossberg:4, spas:5,
-  m60:8, minigun:12, rpg:9, mosin:4, svd:5, barrett:8,
+  fists:0, knife:40, machete:60, sledge:150,
+  glock:50, usp:55, deagle:80, uzi:120, mp5:110,
+  ak47:150, m16:130, fnfal:160, mossberg:140, spas:150,
+  m60:350, minigun:700, rpg:400, mosin:150, svd:160, barrett:500,
   /* броня: голова */
-  bandana:1, kaska:1, rusthelm:2, titan:2, crysthelm:3,
+  bandana:10, kaska:40, rusthelm:60, titan:70, crysthelm:80,
   /* броня: тело */
-  vest1:2, vest2:4, vest3:6, scrapvest:3, compvest:5, crystvest:7,
+  vest1:80, vest2:150, vest3:220, scrapvest:120, compvest:180, crystvest:250,
   /* броня: ноги */
-  jeans:1, pads:2, leatherlegs:2, greaves:3, crystlegs:4,
+  jeans:40, pads:60, leatherlegs:70, greaves:100, crystlegs:110,
   /* комбезы */
-  overall:4, stalker:5, stormkmbz:6, exokmbes:8,
+  overall:120, stalker:150, stormkmbz:180, exokmbes:260,
   /* попоны */
-  dogvest1:2, dogvest2:3, dogvest3:4,
+  dogvest1:60, dogvest2:90, dogvest3:120,
   /* импланты и расходники */
-  imp_hp:1, imp_acc:1, imp_ap:1, medkit:1, grenade:1,
+  imp_hp:20, imp_acc:20, imp_ap:20, medkit:40, grenade:80,
 };
 function itemWt(type,id){
   if(id&&ITEM_WT[id]!==undefined) return ITEM_WT[id];
   /* фолбэк по категории, если предмет не в таблице */
-  if(type==="weapon") return 3;
-  if(type==="armor") return 3;
-  if(type==="implant") return 1;
-  return 1;
+  if(type==="weapon") return 100;
+  if(type==="armor") return 80;
+  if(type==="implant") return 20;
+  return 40;
 }
 /* ступени перегруза (как в оригинале): с собой в бой можно всё,
    но каждые лишние кило режут ОД. Возврат: 0 нет, 1 лёгкий, 2 средний, 3 тяжёлый */
@@ -728,7 +728,8 @@ function overBadge(load, limit){
 }
 /* лимит переноски бойца: 16 + 2 за уровень (ур.1 → 16, ур.20 → 54) —
    миниган и экзо-комбез таскают только прокачанные */
-function carryLimit(m){ return 16 + 2*((m.level||1)-1); }
+/* лимит переноски: 350 + 55 за уровень (ур.1 → 350, ур.20 → 1395, шкала как в оригинале ~1200) */
+function carryLimit(m){ return 350 + 55*((m.level||1)-1); }
 /* текущий носимый вес: оружие + броня + импланты + пояс */
 function mercLoad(m){
   let w = 0;
@@ -741,7 +742,7 @@ function mercLoad(m){
   });
   (m.implants||[]).forEach(k => { w += itemWt("implant", k); });
   w += (m.belt ? (m.belt.medkit||0) + (m.belt.grenade||0) : 0);
-  Object.keys(m.ammo||{}).forEach(t => { w += (m.ammo[t]||0) * (AMMO[t]?AMMO[t].wpr:0.05); });
+  Object.keys(m.ammo||{}).forEach(t => { w += (m.ammo[t]||0) * ((AMMO[t]||{}).wpr||1); });
   return w;
 }
 /* вес боевого снаряжения юнита в бою: стволы + все расходники при себе */
@@ -750,10 +751,10 @@ function unitBattleLoad(u){
   if(u.weapon2) w += itemWt("weapon", u.weapon2);
   w += (u.belt ? (u.belt.medkit||0) + (u.belt.grenade||0) : 0);
   w += (u.lootBelt ? (u.lootBelt.medkit||0) + (u.lootBelt.grenade||0) : 0);
-  Object.keys(u.spare||{}).forEach(t => { w += (u.spare[t]||0) * (AMMO[t]?AMMO[t].wpr:0.05); });
+  Object.keys(u.spare||{}).forEach(t => { w += (u.spare[t]||0) * ((AMMO[t]||{}).wpr||1); });
   return w;
 }
-function unitCarryLimit(u){ return 16 + 2*((u.lvl||1)-1); }
+function unitCarryLimit(u){ return 350 + 55*((u.lvl||1)-1); }
 /* шкала веса для карточек */
 function weightBar(load, limit){
   load=wtFmt(load);
@@ -1119,14 +1120,14 @@ const CONSUMABLES = {
 /* ---------- ПАТРОНЫ (как в оригинале): у каждого ствола свой калибр и магазин.
    box — сколько штук в одной покупке, wpr — вес одного патрона. ---------- */
 const AMMO = {
-  p9:  {name:"9×19 мм",    box:30, price:40,  wpr:0.04},
-  acp: {name:".45 ACP",     box:16, price:45,  wpr:0.06},
-  r556:{name:"5.56×45 мм",  box:30, price:90,  wpr:0.06},
-  r762:{name:"7.62×39 мм",  box:30, price:100, wpr:0.08},
-  s762:{name:"7.62×54R",    box:20, price:90,  wpr:0.10},
-  b50: {name:".50 BMG",     box:10, price:150, wpr:0.25},
-  g12: {name:"12 калибр",   box:12, price:70,  wpr:0.12},
-  rpg: {name:"Выстрел РПГ", box:1,  price:200, wpr:3},
+  p9:  {name:"9×19 мм",    box:30, price:40,  wpr:1},
+  acp: {name:".45 ACP",     box:16, price:45,  wpr:1},
+  r556:{name:"5.56×45 мм",  box:30, price:90,  wpr:1},
+  r762:{name:"7.62×39 мм",  box:30, price:100, wpr:1},
+  s762:{name:"7.62×54R",    box:20, price:90,  wpr:1},
+  b50: {name:".50 BMG",     box:10, price:150, wpr:1},
+  g12: {name:"12 калибр",   box:12, price:70,  wpr:1},
+  rpg: {name:"Выстрел РПГ", box:1,  price:200, wpr:150},
 };
 /* ствол → размер магазина + калибр (ближний бой и природное — без патронов) */
 const GUN = {
@@ -1835,7 +1836,7 @@ function ammoTake(t,qty){
   if(avail<=0){toast("На складе нет "+ammoName(t));return;}
   let take=Math.min(qty||30,avail);
   const free=carryLimit(m)-mercLoad(m);
-  take=Math.min(take,Math.floor(free/((AMMO[t]||{}).wpr||0.05)));
+  take=Math.min(take,Math.floor(free/((AMMO[t]||{}).wpr||1)));
   if(take<=0){toast(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level})`);return;}
   m.ammo[t]=(m.ammo[t]||0)+take; S.inv.ammo[t]-=take;
   save(); eqRefresh(m.id); toast(`+${take} ${ammoName(t)}`);
@@ -3444,7 +3445,7 @@ function autoAmmo(squad){
       const avail=S.inv.ammo[g.ammo]||0;
       let take=Math.min(need,avail);
       const free=carryLimit(m)-mercLoad(m);
-      take=Math.min(take,Math.floor(free/(AMMO[g.ammo].wpr||0.05)));
+      take=Math.min(take,Math.floor(free/((AMMO[g.ammo]||{}).wpr||1)));
       if(take>0){ m.ammo[g.ammo]=(m.ammo[g.ammo]||0)+take; S.inv.ammo[g.ammo]-=take; }
     });
   });
@@ -3831,7 +3832,7 @@ function crateItems(x,y){
 function crateDesc(it){
   if(it.type==="medkit")return {emoji:CONSUMABLES.medkit.emoji||"💉",name:CONSUMABLES.medkit.name,sub:CONSUMABLES.medkit.desc+" · ⚖️"+itemWt("cons","medkit")};
   if(it.type==="grenade")return {emoji:CONSUMABLES.grenade.emoji||"💣",name:CONSUMABLES.grenade.name,sub:CONSUMABLES.grenade.desc+" · ⚖️"+itemWt("cons","grenade")};
-  if(it.type==="ammo")return {emoji:"🔸",name:ammoName(it.ammo)+` ×${it.n}`,sub:`Запасные патроны · ⚖️${wtFmt(it.n*((AMMO[it.ammo]||{}).wpr||0.05))}`};
+  if(it.type==="ammo")return {emoji:"🔸",name:ammoName(it.ammo)+` ×${it.n}`,sub:`Запасные патроны · ⚖️${wtFmt(it.n*((AMMO[it.ammo]||{}).wpr||1))}`};
   const w=WEAPONS[it.id];
   return {emoji:w.emoji,name:w.name,sub:`${w.dmg[0]}–${w.dmg[1]}${w.shots>1?"×"+w.shots:""} · ${w.ap}ОД · ⚖️${itemWt("weapon",it.id)}`};
 }
@@ -3891,7 +3892,7 @@ function crateTake(x,y,idx){
     blog(`📦 ${u.name} взял <b>гранату</b> (только на этот бой)`);
   }else if(it.type==="ammo"){
     if(u.cls!=="human"){toast("Только люди таскают патроны");return;}
-    const wadd=it.n*((AMMO[it.ammo]||{}).wpr||0.05);
+    const wadd=it.n*((AMMO[it.ammo]||{}).wpr||1);
     if(unitBattleLoad(u)+wadd>unitCarryLimit(u)){toast(`Перегруз! Несу ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)}`);return;}
     items.splice(idx,1);
     if(!u.spare)u.spare={};
