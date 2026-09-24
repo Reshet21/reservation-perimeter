@@ -46,13 +46,13 @@ jobs:
             ls -la "$C.tvc" "$C.abi.json"
           done
 
-      - name: Compute future addresses (offline)
+      - name: Compute future addresses (offline, embed keys+data with --save)
         id: addrs
         run: |
           cd chain
-          P=$(../tvm-cli -j genaddr PerimeterProfiles.tvc --abi PerimeterProfiles.abi.json --setkey ../deploy.keys.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dapp_account'])")
-          I=$(../tvm-cli -j genaddr PerimeterItems.tvc --abi PerimeterItems.abi.json --setkey ../deploy.keys.json --data '{"ownerKey":"${{ env.OWNER_KEY }}"}' | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dapp_account'])")
-          A=$(../tvm-cli -j genaddr PerimeterArena.tvc --abi PerimeterArena.abi.json --setkey ../deploy.keys.json --data '{"ownerKey":"${{ env.OWNER_KEY }}"}' | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dapp_account'])")
+          P=$(../tvm-cli -j genaddr PerimeterProfiles.tvc --save --abi PerimeterProfiles.abi.json --setkey ../deploy.keys.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dapp_account'])")
+          I=$(../tvm-cli -j genaddr PerimeterItems.tvc --save --abi PerimeterItems.abi.json --setkey ../deploy.keys.json --data '{"ownerKey":"${{ env.OWNER_KEY }}"}' | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dapp_account'])")
+          A=$(../tvm-cli -j genaddr PerimeterArena.tvc --save --abi PerimeterArena.abi.json --setkey ../deploy.keys.json --data '{"ownerKey":"${{ env.OWNER_KEY }}"}' | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dapp_account'])")
           echo "PROFILES_ADDR=${P}" >> $GITHUB_OUTPUT
           echo "ITEMS_ADDR=${I}" >> $GITHUB_OUTPUT
           echo "ARENA_ADDR=${A}" >> $GITHUB_OUTPUT
@@ -108,7 +108,6 @@ jobs:
             --dst-dapp-id "${I_ACCT}" \
             --abi chain/PerimeterItems.abi.json \
             --sign deploy.keys.json \
-            --data '{"ownerKey":"${{ env.OWNER_KEY }}"}' \
             chain/PerimeterItems.tvc '{"value":0}' 2>&1 | tee deploy_items.log
           echo "ITEMS_ADDR=${{ steps.addrs.outputs.ITEMS_ADDR }}" >> $GITHUB_OUTPUT
 
@@ -120,7 +119,6 @@ jobs:
             --dst-dapp-id "${A_ACCT}" \
             --abi chain/PerimeterArena.abi.json \
             --sign deploy.keys.json \
-            --data '{"ownerKey":"${{ env.OWNER_KEY }}"}' \
             chain/PerimeterArena.tvc '{"value":0}' 2>&1 | tee deploy_arena.log
           echo "ARENA_ADDR=${{ steps.addrs.outputs.ARENA_ADDR }}" >> $GITHUB_OUTPUT
 
