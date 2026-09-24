@@ -1282,6 +1282,7 @@ function defaultSave(){
     lang: (navigator.language||"ru").toLowerCase().startsWith("ru")?"ru":"en",
   };
 }
+let mercSeq = 1;
 function newMerc(cls, name){
   const c = CLASSES[cls];
   return { id: "m"+(Date.now()%1e7)+"_"+(mercSeq++), cls,
