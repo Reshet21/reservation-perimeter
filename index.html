@@ -2421,12 +2421,26 @@ function openRooms(){
   show("scr-rooms");
 }
 let waitingTimerInterval = null;
+const WAIT_MATCHMAKE_S = 25; /* через столько секунд ожидания соперник находится сам */
 function startWaitingTimer(){
   if(waitingTimerInterval) clearInterval(waitingTimerInterval);
   waitingTimerInterval = setInterval(()=>{
-    if(!waitingForOpponent){clearInterval(waitingTimerInterval);return;}
+    if(!waitingForOpponent||!myCreatedRoom){clearInterval(waitingTimerInterval);return;}
+    const elapsed=Math.floor((Date.now()-myCreatedRoom.createdAt)/1000);
+    if(elapsed>=WAIT_MATCHMAKE_S){ waitingResolve(); return; }
     renderWaitingRoom();
   },1000);
+}
+/* соперник нашёлся: закрываем ожидание и идём в бой */
+function waitingResolve(){
+  const r=myCreatedRoom;
+  if(!r)return;
+  waitingForOpponent=false; myCreatedRoom=null;
+  if(waitingTimerInterval)clearInterval(waitingTimerInterval);
+  const rival=pick(RIVAL_NICKS)+rnd(10,99);
+  const rating=Math.max(800,S.rating+rnd(-120,120));
+  toast(tr("Соперник найден: ","Opponent found: ")+rival);
+  startRoomBattle(r.stake, r.naked, rival, rating, r.mode);
 }
 function renderRooms(){
   const md=ROOM_MODES[roomMode];
@@ -2518,7 +2532,7 @@ function renderWaitingRoom(){
       <div style="margin:16px 0;font-size:14px;color:var(--sand)">
         ${min}:${sec<10?"0"+sec:sec}
       </div>
-      <div class="muted" style="font-size:12px;margin-bottom:12px">${tr("Соперник найдёт тебя в списке комнат","An opponent will find you in the room list")}</div>
+      <div class="muted" style="font-size:12px;margin-bottom:12px">${tr("Соперник найдёт тебя в списке комнат","An opponent will find you in the room list")}<br>${tr("Автоподбор соперника — до 25 сек.","Auto-matchmaking — up to 25 sec.")}</div>
       <div style="display:flex;gap:8px;justify-content:center">
         <div class="btn danger" onclick="cancelWait()">${tr("❌ Покинуть комнату","❌ Leave room")}</div>
       </div>
@@ -2571,7 +2585,7 @@ function joinRoom(i){
     const local=getLocalRooms().filter(lr=>lr.id!==r.id);
     saveLocalRooms(local);
   }
-  startRoomBattle(r.stake, r.naked, r.host, r.rating);
+  startRoomBattle(r.stake, r.naked, r.host, r.rating, r.mode||roomMode);
 }
 /* отряд соперника генерируется из тех же классов с похожей силой */
 function genRivalSquad(n, rating, naked){
@@ -2595,21 +2609,22 @@ function genRivalSquad(n, rating, naked){
   return squad;
 }
 let pvpCtx=null;
-function startRoomBattle(stake, naked, hostName, hostRating){
-  const md=ROOM_MODES[roomMode];
+function startRoomBattle(stake, naked, hostName, hostRating, mode){
+  const usemode=(mode&&ROOM_MODES[mode])?mode:roomMode;
+  const md=ROOM_MODES[usemode];
   const rating=hostRating||S.rating;
   closeModal("mGeneric");
   /* выбор своего отряда */
   chosenMission=null;
   squadSel=S.roster.slice(0,md.units).map(m=>m.id);
-  pvpCtx={stake, naked, hostName, rating, units:md.units, mode:roomMode};
+  pvpCtx={stake, naked, hostName, rating, units:md.units, mode:usemode};
   renderSquadPickPvp();
   openModal("mSquad");
 }
 function renderSquadPickPvp(){
   const md=ROOM_MODES[pvpCtx.mode];
   document.querySelector("#mSquad h2").textContent=
-    `Отряд на ${pvpCtx.mode} (ровно ${md.units})${pvpCtx.naked?" · 🚿 голый бой":""}`;
+    tr(`Отряд на ${pvpCtx.mode} (ровно ${md.units})`,`Squad for ${pvpCtx.mode} (exactly ${md.units})`)+(pvpCtx.naked?tr(" · 🚿 голый бой"," · 🚿 naked fight"):"");
   renderSquadPick();
   const btn=document.getElementById("btnDeploy");
   btn.setAttribute("onclick","deployPvp()");
@@ -2640,7 +2655,7 @@ function startPvpBattle(){
       cls:m.cls,look:m.look,x:pSpawns[i].x,y:pSpawns[i].y,
       hp:st.hp,maxhp:st.hp,ap:bap,maxap:bap,acc:st.acc,lvl:m.level,over:pen,
       al:naked?null:gearLook(m),
-      mag:0, mags:{}, spare:Object.assign({},m.ammo||{}),
+      mag:0, mags:{}, spare:naked?{}:Object.assign({},m.ammo||{}),
       armor:naked?0:st.armor,
       weapon:w,weapon2:naked?null:m.weapon2,
       belt:naked?{medkit:0,grenade:0}:{medkit:m.belt.medkit||0,grenade:m.belt.grenade||0},
@@ -2667,6 +2682,7 @@ function startPvpBattle(){
   units.filter(u=>u.side==="p"&&u.over>0).forEach(u=>
     blog(tr(`🎒 ${u.name}: перегруз, ОД на весь бой −${u.over}`,`🎒 ${u.name}: overloaded, −${u.over} AP all battle`)));
   selectUnit(B.units.find(u=>u.side==="p"));
+  turnTimerStart();
   show("scr-battle");
   resize();
   document.getElementById("btnSnd").textContent=S.snd===false?"🔇":"🔊";
@@ -3565,6 +3581,7 @@ function startBattle(mission, squadIds){
       • ${tr("<b>У оружия есть рамки дальности как в жанровой классике</b>: пистолет не добьёт далеко, снайперка и автомат <b>не стреляют в упор</b> (❌близко — мёртвая зона!), дробовик бьёт только вблизи. Держи запасной ствол 🔁 или кулаки 👊.","<b>Guns have genre-classic range brackets</b>: pistols fall short, sniper rifles and assault rifles <b>can't fire point-blank</b> (❌close — dead zone!), shotguns hit only up close. Keep a spare gun 🔁 or fists 👊.")}<br>
       • ${tr("Укрытия блокируют выстрелы и дают защиту -20% рядом.","Cover blocks shots and gives −20% protection nearby.")}<br>
       • ${tr("💉 лечит, 💣 бьёт по площади, ⏭ передаёт ход.","💉 heals, 💣 hits an area, ⏭ passes the turn.")}<br>
+      • ${tr("⏱ На ход — 120 секунд: не успел — ход переходит противнику.","⏱ 120 seconds per turn: run out — the turn passes.")}<br>
       • ${tr("<b>Туман войны как в жанровой классике</b>: врагов не видно, пока боец не подойдёт на дистанцию зрения (👁 6 у человека, 7 у пса, 5 у мутанта). Укрытия заслоняют обзор. Синяя кромка — граница зрения выбранного бойца. Пёс — лучший разведчик!","<b>Genre-classic fog of war</b>: enemies stay hidden until a fighter closes to sight range (👁 6 human, 7 dog, 5 mutant). Cover blocks vision. Blue edge marks the selected fighter's sight. The dog is the best scout!")}<br>
       • ${tr("<b>Карта большая</b> — таскай её пальцем. Заходи в ангары через двери (жёлтая разметка) и вскрывай светящиеся ящики ✦ (3 ОД вплотную): внутри оружие и расходники, но <b>всё найденное живёт только до конца боя</b> — вынести с карты нельзя, как в жанровой классике!","<b>The map is big</b> — drag it with your finger. Enter hangars through doors (yellow marks) and crack glowing crates ✦ (3 AP adjacent): guns and consumables inside, but <b>everything found lives only until battle ends</b> — can't be carried out, genre-classic style!")}<br>
       • ${tr("<b>Навыки оружия растут от использования</b>: чем больше стреляешь из ветки (лёгкое/автоматы/тяжёлое/снайперское/ближний бой), тем выше точность, а с 50 навыка выстрел стоит на 1 ОД меньше!","<b>Weapon skills grow with use</b>: the more you shoot a branch (light/auto/heavy/sniper/melee), the higher the accuracy, and at skill 50 shots cost 1 AP less!")}</div>
@@ -4271,7 +4288,47 @@ function endPlayerTurn(){
   B.units.forEach(u=>{if(u.side==="e"&&u.alive)u.ap=u.maxap;});
   blog(tr(`— Ход противника —`,`— Enemy turn —`));
   updateHud();
+  turnTimerStart(); /* таймер следит и за фазой ИИ (watchdog) */
   aiStep();
+}
+/* ---------- ТАЙМЕР ХОДА: 120 сек на ход игрока, автопереход; watchdog ИИ ---------- */
+const TURN_LIMIT_S=120, E_PHASE_LIMIT_S=75;
+function turnTimerStop(){ if(typeof B!=="undefined"&&B&&B.timerId){clearInterval(B.timerId);B.timerId=null;} }
+function turnTimerDraw(left){
+  const el=document.getElementById("uiHint");
+  if(!el||!B||!B.sel||!B.sel.alive)return;
+  const m=Math.floor(left/60), s=left%60;
+  const urg=left<=15;
+  el.innerHTML=`${tr("Ход","Turn")} ${B.turn}<br>${tr("твой","yours")}<br><span style="color:${urg?"var(--red)":"var(--sand)"};font-weight:700">⏱ ${m}:${String(s).padStart(2,"0")}</span>`;
+}
+function turnTimerStart(){
+  turnTimerStop();
+  if(!B||B.over)return;
+  B.turnStart=Date.now();
+  if(B.phase==="e")B.eStart=Date.now();
+  let lastTick=99;
+  B.timerId=setInterval(()=>{
+    if(!B||B.over){turnTimerStop();return;}
+    const el=(Date.now()-B.turnStart)/1000;
+    if(B.phase==="p"){
+      const left=Math.max(0,Math.ceil(TURN_LIMIT_S-el));
+      turnTimerDraw(left);
+      const sec=Math.ceil(TURN_LIMIT_S-el);
+      if(sec<=5&&sec>0&&sec!==lastTick){lastTick=sec;try{sfx("click");}catch(e){}}
+      if(el>=TURN_LIMIT_S){
+        turnTimerStop();
+        toast(tr("⏱ Время вышло — ход переходит","⏱ Time up — turn passes"));
+        blog(tr("⏱ Время на ход вышло — автопереход.","⏱ Turn time out — auto-pass."));
+        endPlayerTurn();
+      }
+    }else{
+      /* зависший ИИ не должен вешать бой: гасим ему ОД, aiStep завершит фазу */
+      if(Date.now()-(B.eStart||Date.now())>E_PHASE_LIMIT_S*1000){
+        B.units.forEach(u=>{if(u.side==="e")u.ap=0;});
+        try{aiStep();}catch(e){}
+      }
+    }
+  },500);
 }
 function surrender(){
   if(!B||B.over)return;
@@ -4412,6 +4469,7 @@ function aiStep(){
     if(B.sel&&B.sel.alive)B.reach=reachable(B.sel);
     else selectUnit(B.units.find(u=>u.side==="p"&&u.alive));
     updateHud();
+    turnTimerStart(); /* новый ход игрока — новый отсчёт 120 сек */
     return;
   }
   const players=B.units.filter(u=>u.side==="p"&&u.alive);
@@ -4501,6 +4559,7 @@ function battleHash(){
 function finishBattle(win){
   if(B.over)return;B.over=true;
   clearTimeout(B.aiTimer);
+  turnTimerStop();
   /* остатки пояса и текущее оружие (после смен) возвращаются бойцу.
      ТРОФЕИ С КАРТЫ НЕ ВЫНОСЯТСЯ (как в жанровой классике): lootBelt сгорает,
      трофейный ствол бросается — бойцу возвращается его родное оружие.
