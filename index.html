@@ -660,6 +660,13 @@ const ARMORS = {
   dogvest2:{name:"Кевларовая попона", slot:"body", red:5, price:430, tier:2, dog:1, craft:1},
   dogvest3:{name:"Попона «Цербер»",   slot:"body", red:8, price:1150,tier:4, dog:1, craft:1},
 };
+/* облик брони для спрайта: тиры слотов + азуритовый glow */
+function gearLook(m){
+  const t=s=>{const id=m.gear&&m.gear[s];const a=id&&ARMORS[id];return a?(a.tier||1):0;};
+  const hid=m.gear&&m.gear.head, bid=m.gear&&m.gear.body;
+  return {h:t("head"),b:t("body"),l:t("legs"),
+    crys:hid==="crysthelm"||hid==="crystlegs"||bid==="crystvest"};
+}
 /* суммарная защита бойца: комбез считается один раз */
 function gearArmor(m){
   let red=0; const seen=new Set();
@@ -2423,6 +2430,7 @@ function startPvpBattle(){
     units.push({side:"p",mercId:m.id,name:m.name,emoji:CLASSES[m.cls].emoji,
       cls:m.cls,look:m.look,x:pSpawns[i].x,y:pSpawns[i].y,
       hp:st.hp,maxhp:st.hp,ap:bap,maxap:bap,acc:st.acc,lvl:m.level,over:pen,
+      al:naked?null:gearLook(m),
       mag:0, mags:{}, spare:Object.assign({},m.ammo||{}),
       armor:naked?0:st.armor,
       weapon:w,weapon2:naked?null:m.weapon2,
@@ -3286,7 +3294,7 @@ function startBattle(mission, squadIds){
     units.push({side:"p", mercId:m.id, name:m.name, emoji:CLASSES[m.cls].emoji,
       cls:m.cls, look:m.look, x:pSpawns[i].x, y:pSpawns[i].y, hp:st.hp, maxhp:st.hp,
       ap:bap, maxap:bap, acc:st.acc, armor:st.armor, lvl:m.level,
-      over:pen,
+      over:pen, al:gearLook(m),
       mag:0, mags:{}, spare:Object.assign({},m.ammo||{}),
       weapon:m.weapon, weapon2:m.weapon2,
       belt:{medkit:m.belt.medkit||0, grenade:m.belt.grenade||0}, // личный пояс как в жанровой классике
@@ -5525,7 +5533,7 @@ function drawSoldier(c,s,u,moving,ph,t){
     c.quadraticCurveTo(hx+(kneeX-hx)*0.9,kneeY,kneeX,kneeY);c.stroke();
     c.lineWidth=near?s*0.066:s*0.058;
     c.beginPath();c.moveTo(kneeX,kneeY);c.lineTo(fxx,fyy);c.stroke();
-    if(near){ /* наколенник */
+    if(near&&( !u.al||u.al.l>0 )){ /* наколенник — только если есть броня ног */
       c.fillStyle=mixc(U.dark,"#000000",0.5);
       c.beginPath();c.arc(kneeX,kneeY,s*0.042,Math.PI*0.15,Math.PI*1.3);c.fill();
     }
@@ -5551,14 +5559,37 @@ function drawSoldier(c,s,u,moving,ph,t){
   c.beginPath();c.ellipse(-s*0.032,-s*0.162,s*0.030,s*0.017,0.5,0,7);c.fill();
   c.beginPath();c.ellipse(s*0.034,-s*0.06,s*0.032,s*0.015,-0.4,0,7);c.fill();
   c.beginPath();c.ellipse(s*0.005,-s*0.118,s*0.022,s*0.013,0.9,0,7);c.fill();
-  c.fillStyle=mixc(U.dark,"#000000",0.30); /* бронеплита */
-  rr(c,-s*0.062,-s*0.196,s*0.124,s*0.142,s*0.030);c.fill();
-  c.strokeStyle="rgba(255,240,200,0.14)";c.lineWidth=1.2;
-  c.beginPath();c.moveTo(-s*0.056,-s*0.194);c.lineTo(s*0.052,-s*0.064);c.stroke();
-  c.fillStyle=mixc(U.dark,"#000000",0.45); /* три подсумка */
-  rr(c,-s*0.055,-s*0.130,s*0.032,s*0.048,s*0.009);c.fill();
-  rr(c,-s*0.016,-s*0.130,s*0.032,s*0.048,s*0.009);c.fill();
-  rr(c,s*0.023,-s*0.130,s*0.032,s*0.048,s*0.009);c.fill();
+  c.fillStyle=mixc(U.dark,"#000000",0.30); /* бронеплита — размер по тиру тела */
+  const AL=u.al||null, bt=AL?AL.b:2;
+  if(bt>0){
+    const pw=0.100+bt*0.012, ph2=0.120+bt*0.011;
+    rr(c,-pw,-s*0.196,pw*2,ph2,s*0.030);c.fill();
+    c.strokeStyle=bt>=4?"rgba(150,220,255,0.35)":"rgba(255,240,200,0.14)";c.lineWidth=1.2;
+    c.beginPath();c.moveTo(-pw+0.006,-s*0.194);c.lineTo(pw-0.010,-s*0.064);c.stroke();
+    c.fillStyle=mixc(U.dark,"#000000",0.45); /* подсумки: число по тиру */
+    const np=bt>=3?3:bt>=2?2:1;
+    for(let pi=0;pi<np;pi++){
+      rr(c,-s*0.055+pi*s*0.039,-s*0.130,s*0.032,s*0.048,s*0.009);c.fill();
+    }
+    if(bt>=3){ /* наплечники тяжёлой брони */
+      c.fillStyle=mixc(U.dark,"#000000",0.35);
+      rr(c,-s*0.115,-s*0.245,s*0.052,s*0.075,s*0.02);c.fill();
+      rr(c,s*0.063,-s*0.245,s*0.052,s*0.075,s*0.02);c.fill();
+      c.fillStyle="rgba(255,240,210,0.10)";
+      rr(c,-s*0.110,-s*0.240,s*0.020,s*0.065,s*0.01);c.fill();
+      rr(c,s*0.068,-s*0.240,s*0.020,s*0.065,s*0.01);c.fill();
+    }
+    if(AL&&AL.crys){ /* азуритовый самоцвет на груди */
+      c.save();c.globalCompositeOperation="lighter";
+      const gg=c.createRadialGradient(0,-s*0.13,0,0,-s*0.13,s*0.035);
+      gg.addColorStop(0,"rgba(200,240,255,0.95)");
+      gg.addColorStop(0.5,"rgba(120,200,255,0.55)");
+      gg.addColorStop(1,"rgba(120,200,255,0)");
+      c.fillStyle=gg;
+      c.beginPath();c.arc(0,-s*0.13,s*0.035,0,7);c.fill();
+      c.restore();
+    }
+  }
   c.fillStyle="#2a241a"; /* ремень с пряжкой */
   c.fillRect(-s*0.081,-s*0.048,s*0.162,s*0.032);
   c.fillStyle="#8a744a";
@@ -5579,8 +5610,14 @@ function drawSoldier(c,s,u,moving,ph,t){
   c.fillStyle="#1c1408";c.fillRect(s*0.044,-s*0.014,s*0.021,s*0.012); /* глаз */
   c.strokeStyle=mixc(skin,"#000000",0.5);c.lineWidth=1.2; /* бровь */
   c.beginPath();c.moveTo(s*0.034,-s*0.024);c.lineTo(s*0.068,-s*0.019);c.stroke();
-  const gear=U.gear||(U.helm?"helm":U.hood?"hood":U.cap?"cap":U.hat?"hat":"band");
-  const gcol=U.gcol||U.helm||U.hood||U.cap||U.hat||mixc(U.uni,"#000000",0.25);
+  let gear=U.gear||(U.helm?"helm":U.hood?"hood":U.cap?"cap":U.hat?"hat":"band");
+  let gcol=U.gcol||U.helm||U.hood||U.cap||U.hat||mixc(U.uni,"#000000",0.25);
+  /* шлем показывает РЕАЛЬНУЮ броню головы: нет — голая голова, тир 2+ — каска */
+  const ALh=u.al||null;
+  if(ALh){
+    if(ALh.h<=0)gear="bare";
+    else if(ALh.h>=2)gear="helm";
+  }
   if(gear==="helm"){ /* каска + очки на лбу + ПНВ */
     c.fillStyle=gcol;
     c.beginPath();c.arc(0,-s*0.010,s*0.099,Math.PI*0.93,Math.PI*2.07);c.fill();
@@ -5621,6 +5658,11 @@ function drawSoldier(c,s,u,moving,ph,t){
     c.beginPath();c.arc(0,-s*0.038,s*0.068,Math.PI,Math.PI*2);c.fill();
     c.fillStyle=mixc(gcol,"#000000",0.35);
     c.fillRect(-s*0.068,-s*0.058,s*0.136,s*0.016);
+  }else if(gear==="bare"){ /* голая голова — короткий ёжик */
+    c.fillStyle="#3a2c18";
+    c.beginPath();c.arc(0,-s*0.018,s*0.082,Math.PI*1.02,Math.PI*1.98);c.fill();
+    c.fillStyle="rgba(255,240,210,0.12)";
+    c.beginPath();c.arc(-s*0.02,-s*0.05,s*0.03,0,7);c.fill();
   }else{ /* бандана с узлом и волосами */
     c.fillStyle=gcol;
     c.beginPath();c.arc(0,-s*0.016,s*0.09,Math.PI*0.98,Math.PI*2.02);c.fill();
@@ -5632,6 +5674,12 @@ function drawSoldier(c,s,u,moving,ph,t){
   }
   c.fillStyle="rgba(255,240,210,0.20)"; /* блик */
   c.beginPath();c.arc(-s*0.021,-s*0.030,s*0.026,0,7);c.fill();
+  if(ALh&&ALh.crys){ /* азуритовая кромка шлема */
+    c.save();c.globalCompositeOperation="lighter";
+    c.strokeStyle="rgba(140,220,255,0.75)";c.lineWidth=1.6;
+    c.beginPath();c.arc(0,-s*0.014,s*0.096,Math.PI*1.05,Math.PI*1.95);c.stroke();
+    c.restore();
+  }
   c.restore();
 
   /* ===== оружие в руках (крупнее, с деталями) ===== */
