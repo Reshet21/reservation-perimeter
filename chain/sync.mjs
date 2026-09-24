@@ -24,6 +24,9 @@
  *   node sync.mjs room-result 5 <winnerPubkey> 0x1a2b  # подтвердить результат
  *   node sync.mjs room-timeout 5           # возврат ставок после дедлайна (1 час)
  *   node sync.mjs rooms                    # статистика арены
+ *   node sync.mjs arena-deposit <pubkey> 500  # начислить кредиты (только owner-ключ!)
+ *   node sync.mjs arena-withdraw 200        # вывести свои кредиты арены
+ *   node sync.mjs arena-balance             # мой баланс в арене
  *
  * Адреса: RP_CONTRACT (профили), RP_ITEMS (предметы), RP_ARENA (арена).
  */
@@ -159,10 +162,22 @@ try {
   } else if (cmd === "rooms") {
     const out = await runGet("getArenaStats", {}, ARENA_ADDR, arenaAbi());
     console.log("🎮 Арена: всего комнат:", out.totalRooms, "· открытых:", out.open);
+  } else if (cmd === "arena-deposit") {
+    const [to, amount] = args;
+    if (!to || !Number(amount)) { console.error("Использование: node sync.mjs arena-deposit <pubkey> <сумма> (требует owner-ключ)"); process.exit(1); }
+    await call("depositFor",
+      { player: to.startsWith("0x") ? to : "0x" + to, amount: Number(amount) },
+      ARENA_ADDR, arenaAbi());
+  } else if (cmd === "arena-withdraw") {
+    await call("withdraw", { amount: Number(args[0] || 0) }, ARENA_ADDR, arenaAbi());
+  } else if (cmd === "arena-balance") {
+    const kp = keys();
+    const out = await runGet("getBalance", { player: "0x" + kp.public }, ARENA_ADDR, arenaAbi());
+    console.log("🎮 Мой баланс в арене:", out);
   } else {
     console.log("Профиль:  init | profile <ник> | battle <win|lose> <hash> | read");
     console.log("Предметы: items <code> | list <code> <кол-во> <цена> | unlist <lid> | buy <lid> <кол-во> | gift <pubkey> <code> <кол-во> | market");
-    console.log("Арена:    room-create <1|2|4> <ставка> <naked> | room-join <id> | room-result <id> <winner> <hash> | room-timeout <id> | rooms");
+    console.log("Арена:    room-create <1|2|4> <ставка> <naked> | room-join <id> | room-result <id> <winner> <hash> | room-timeout <id> | rooms | arena-deposit <pubkey> <сумма> | arena-withdraw <сумма> | arena-balance");
   }
 } catch (e) {
   console.error("❌ Ошибка:", e.message || e);

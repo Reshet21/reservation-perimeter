@@ -42,11 +42,17 @@ contract PerimeterArena {
 
     mapping(uint64 => Room) public rooms;
     mapping(uint256 => uint64) public balance;   // кредиты игрока в арене
+    uint256 static ownerKey; // владелец (геймсервер/деплоер) — единственный, кто начисляет кредиты
     uint64 public nextRoomId = 1;
     uint32 public openRooms;
 
     modifier onlySigned() {
         require(msg.pubkey() != 0, 101);
+        tvm.accept();
+        _;
+    }
+    modifier onlyOwner() {
+        require(msg.pubkey() == ownerKey, 100);
         tvm.accept();
         _;
     }
@@ -57,9 +63,17 @@ contract PerimeterArena {
         gosh.cnvrtshellq(value);
     }
 
-    /// Пополнить арену кредитами (в проде — перевод из PerimeterItems)
-    function deposit(uint64 amount) public onlySigned {
-        balance[msg.pubkey()] += amount;
+    /// Начисление кредитов арены. ТОЛЬКО owner (геймсервер): раньше здесь был
+    /// открытый deposit(amount) — любой мог минтить себе бесконечные кредиты.
+    function depositFor(uint256 player, uint64 amount) public onlyOwner {
+        balance[player] += amount;
+    }
+
+    /// Вывод кредитов арены себе (например, после закрытия комнат).
+    function withdraw(uint64 amount) public onlySigned {
+        uint256 pk = msg.pubkey();
+        require(balance[pk] >= amount, 202);
+        balance[pk] -= amount;
     }
 
     function createRoom(uint8 mode, uint64 stake, bool naked) public onlySigned returns (uint64 roomId) {

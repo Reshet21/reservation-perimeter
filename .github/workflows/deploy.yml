@@ -21,10 +21,26 @@ jobs:
           chmod +x tvm-cli
           ./tvm-cli --version
 
+      - name: Download sold (TVM Solidity compiler, x86_64)
+        run: |
+          wget -q https://github.com/gosh-sh/TVM-Solidity-Compiler/releases/download/gosh_0.81.0/sold_gosh_0.81.0_linux_x86_64.tar.gz
+          tar -xzf sold_gosh_0.81.0_linux_x86_64.tar.gz
+          chmod +x sold
+          ./sold --version
+
+      - name: Compile contracts (sold --tvm-version gosh)
+        run: |
+          cd chain
+          for C in PerimeterProfiles PerimeterItems PerimeterArena; do
+            ../sold --tvm-version gosh "$C.sol"
+            ls -la "$C.tvc" "$C.abi.json"
+          done
+
       - name: Restore deploy keys
         run: |
           echo '${{ secrets.DEPLOY_KEYS_JSON }}' > deploy.keys.json
-          cat deploy.keys.json
+          chmod 600 deploy.keys.json
+          echo "keys restored (contents never printed)"
 
       - name: Config tvm-cli
         run: |
@@ -62,6 +78,7 @@ jobs:
           ./tvm-cli -u shellnet.ackinacki.org deploy chain/PerimeterArena.tvc \
             --abi chain/PerimeterArena.abi.json \
             --sign deploy.keys.json \
+            --data '{"ownerKey":"0xc8f43f24be0fb530d4752b68421c5d3dfd377ebc9459ee5442c5f3cf7719fc72"}' \
             '{"value":10000000000}' 2>&1 | tee deploy_arena.log
           
           ADDR=$(grep -oE 'account_id: ([a-f0-9]{64})' deploy_arena.log | head -1 | cut -d' ' -f2)

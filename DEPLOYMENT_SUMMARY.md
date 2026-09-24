@@ -7,13 +7,23 @@ All 3 contracts compiled to TVM bytecode (`.tvc`) + ABI (`.abi.json`):
 - `PerimeterProfiles.tvc` / `.abi.json` — профили/рейтинг
 - `PerimeterItems.tvc` / `.abi.json` — предметы/рынок/NPC-цены
 - `PerimeterArena.tvc` / `.abi.json` — PvP-комнаты 1x1/2x2/4x4
+- ⚠️ **Текущие .tvc собраны из СТАРЫХ .sol.** После фикса `PerimeterArena.deposit`
+  (закрыта mint-дыра: начисление только через `depositFor` от owner + `withdraw`)
+  workflow `deploy.yml` сначала **перекомпилирует** все контракты
+  (`sold --tvm-version gosh`), потом деплоит. Ручная пересборка:
+  `sold --tvm-version gosh PerimeterArena.sol` (sold 0.81.0, x86_64).
 
 ### 2. Deployer Keys Generated
 ```
-/root/tio-nacki/chain/deploy.keys.json
+chain/deploy.keys.json — ТОЛЬКО ЛОКАЛЬНО, в git НЕ попадает (.gitignore)
 Public:  c8f43f24be0fb530d4752b68421c5d3dfd377ebc9459ee5442c5f3cf7719fc72
-Secret:  d2d599ffb6cf05a83dbfc188ef96032427631184662daf0bbd51f63d7d6cd6d0
+Secret:  <удалён из документации — лежит только в chain/deploy.keys.json>
 ```
+> ⚠️ Секрет раньше светился в этом файле (закоммичен в истории). Так как сеть
+> тестовая и деплоя ещё не было, после мержа **сгенерируй новую пару**
+> (`tvm-cli genphrase --dump chain/deploy.keys.json`), пересчитай адреса
+> (`tvm-cli genaddr ... --save`) и обнови адреса в README/sync.mjs/игре.
+> Старый ключ считай скомпрометированным.
 
 ### 3. Contract Addresses Precomputed (root dapps, dapp_id == account_id)
 
@@ -24,6 +34,8 @@ Secret:  d2d599ffb6cf05a83dbfc188ef96032427631184662daf0bbd51f63d7d6cd6d0
 | **PerimeterArena** | `fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74::fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74` | `0:fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74` |
 
 > **PerimeterItems** requires constructor init data: `ownerKey = 0xc8f43f24be0fb530d4752b68421c5d3dfd377ebc9459ee5442c5f3cf7719fc72` (deployer public key)
+> **PerimeterArena** requires static init data: `ownerKey = 0xc8f43f...` (same key, passed via `--data`).
+> Arena credits are issued ONLY by owner: `node sync.mjs arena-deposit <pubkey> <сумма>` (owner key required).
 
 ### 4. Multisig Wallet Deployed (for future contract management)
 - Address: `73e271257c9b6b5b32f31d1af74dce240e2113f13db959c09c4a534ebf959847::73e271257c9b6b5b32f31d1af74dce240e2113f13db959c09c4a534ebf959847`
@@ -59,7 +71,7 @@ node deploy.js  # (create deploy.js using TVM SDK contracts.deploy())
 # 2. Deploy contracts:
 tvm-cli -u shellnet.ackinacki.org deploy PerimeterProfiles.tvc --abi PerimeterProfiles.abi.json --sign deploy.keys.json '{"value":10000000000}'
 tvm-cli -u shellnet.ackinacki.org deploy PerimeterItems.tvc --abi PerimeterItems.abi.json --sign deploy.keys.json --data '{"ownerKey":"0xc8f43f24be0fb530d4752b68421c5d3dfd377ebc9459ee5442c5f3cf7719fc72"}' '{"value":10000000000}'
-tvm-cli -u shellnet.ackinacki.org deploy PerimeterArena.tvc --abi PerimeterArena.abi.json --sign deploy.keys.json '{"value":10000000000}'
+tvm-cli -u shellnet.ackinacki.org deploy PerimeterArena.tvc --abi PerimeterArena.abi.json --sign deploy.keys.json --data '{"ownerKey":"0xc8f43f24be0fb530d4752b68421c5d3dfd377ebc9459ee5442c5f3cf7719fc72"}' '{"value":10000000000}'
 ```
 
 ### Option C: Wait for giver fix + deploy from this machine

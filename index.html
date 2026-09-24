@@ -452,24 +452,30 @@
     </div>
 
     <div class="card">
-      <h3>🔐 Игровой ключ</h3>
-      <div class="muted" style="margin:6px 0">Ed25519 ключ для подписания транзакций на блокчейне.
-        Хранится локально в IndexedDB. <b>Не потеряй seed!</b></div>
+      <h3>🔐 Он-чейн личность</h3>
+      <div class="muted" style="margin:6px 0">Твой прогресс привязан к имени <b>AN Wallet</b>.
+        Подписи для блокчейна создаются через <b>майнинг-ключи приложения</b> (привязка в кошельке),
+        приватные ключи кошелька никогда не покидают AN Wallet.</div>
       <div id="gameKeyInfo"></div>
       <div class="row" style="margin-top:8px">
-        <div class="btn small grow" onclick="showGameKey()">👁 Показать ключ</div>
+        <div class="btn small grow" onclick="showGameKey()">👁 Показать адрес</div>
         <div class="btn small grow" onclick="exportGameKey()">💾 Экспорт</div>
       </div>
     </div>
 
     <div class="card">
       <h3>⛓️ Acki Nacki (Shellnet)</h3>
-      <div class="muted" style="margin:6px 0">Контракт <b>PerimeterProfiles</b> в тестовой сети Shellnet.
-        Укажи адрес задеплоенного контракта для он-чейн синхронизации.</div>
+      <div class="muted" style="margin:6px 0">Контракты <b>PerimeterProfiles / PerimeterItems / PerimeterArena</b>
+        в тестовой сети Shellnet. Адреса впишутся автоматически после деплоя —
+        или укажи вручную для он-чейн синхронизации.</div>
       <div style="margin:8px 0 4px;font-size:13px">GraphQL endpoint:</div>
       <input type="text" id="chainEndpoint">
       <div style="margin:8px 0 4px;font-size:13px">Адрес контракта PerimeterProfiles:</div>
-      <input type="text" id="chainAddr" placeholder="0:...">
+      <input type="text" id="chainAddr" placeholder="hex64::hex64">
+      <div style="margin:8px 0 4px;font-size:13px">Адрес контракта PerimeterItems:</div>
+      <input type="text" id="chainItemsAddr" placeholder="hex64::hex64">
+      <div style="margin:8px 0 4px;font-size:13px">Адрес контракта PerimeterArena:</div>
+      <input type="text" id="chainArenaAddr" placeholder="hex64::hex64">
       <div class="row" style="margin-top:10px">
         <div class="btn primary grow" onclick="chainSync()">📡 Синхронизировать</div>
       </div>
@@ -1101,7 +1107,10 @@ function defaultSave(){
     hirePool: genHirePool(),
     market: { listed:[], synced:false },
     mats: { scrap:3, leather:2, comp:0, crystal:0 },
-    chain: { endpoint:"https://shellnet.ackinacki.org/graphql", addr:"" },
+    chain: { endpoint:"https://shellnet.ackinacki.org/graphql",
+      addr:"86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c::86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c",
+      itemsAddr:"0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775::0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775",
+      arenaAddr:"fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74::fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74" },
     wallet: null,
     balance: null,
     seenTut: false,
@@ -1148,6 +1157,18 @@ function migrate(s){ // совместимость со старыми сейв�
   if(!s.inv)s.inv={weapons:{},armors:{},implants:{},medkit:1,grenade:1};
   if(!s.market)s.market={listed:[], synced:false};            // v4: он-чейн торговля
   if(!s.mats)s.mats={scrap:3,leather:2,comp:0,crystal:0};     // v5: материалы крафта
+  if(!s.chain)s.chain={endpoint:"https://shellnet.ackinacki.org/graphql",addr:"",itemsAddr:"",arenaAddr:""};
+  if(s.chain.itemsAddr===undefined)s.chain.itemsAddr="";
+  if(s.chain.arenaAddr===undefined)s.chain.arenaAddr="";
+  // v20: предвычисленные адреса Sharednet-деплоя как дефолт (как в sync.mjs)
+  if(window.anWallet&&window.anWallet.chainDefaults){
+    try{
+      const d=window.anWallet.chainDefaults();
+      if(!s.chain.addr)s.chain.addr=d.PROFILES;
+      if(!s.chain.itemsAddr)s.chain.itemsAddr=d.ITEMS;
+      if(!s.chain.arenaAddr)s.chain.arenaAddr=d.ARENA;
+    }catch(e){}
+  }
   if(s.wallet&&typeof s.wallet==="object"&&s.wallet.pk!==undefined)s.wallet=null; // v8: миграция с Ed25519 на bee-sdk
   if(s.wallet===undefined)s.wallet=null;                       // v8: bee-sdk сессия
   if(s.balance===undefined)s.balance=null;                     // v7: баланс
@@ -1234,6 +1255,14 @@ function toast(msg, ms){
 function genericModal(html){
   document.getElementById("genericBox").innerHTML = html; openModal("mGeneric");
 }
+/* Экранирование пользовательского ввода перед вставкой в HTML (защита от XSS) */
+function esc(s){
+  return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+/* Грубая проверка формата адреса Acki Nacki: hex64::hex64 или 0:hex64 */
+function isAddrLike(a){
+  return /^[0-9a-fA-F]{64}::[0-9a-fA-F]{64}$/.test(a||"") || /^0:[0-9a-fA-F]{64}$/.test(a||"");
+}
 
 /* ---------- SPLASH ---------- */
 function renderSplash(){
@@ -1243,7 +1272,7 @@ function renderSplash(){
   if(!status || !btn) return;
   if(hasWallet()){
     status.innerHTML = '<div style="color:var(--green);font-size:13px">✅ Кошелёк подключён</div>';
-    btn.textContent = "进入 ИГРУ →";
+    btn.textContent = "В ИГРУ →";
     btn.onclick = ()=>show("scr-hub");
     return;
   }
@@ -1289,17 +1318,59 @@ async function splashManualConnect(){
     const info = await window.anWallet.connectByName(walletName);
     status.innerHTML='<div style="font-size:11px;color:var(--sand)">[2/3] Получаю баланс...</div>';
     const balances = await window.anWallet.getBalance(info.walletAddress);
-    const conn = { walletName: info.walletName, walletAddress: info.walletAddress, balances, connectedAt: Date.now() };
+    const conn = { walletName: info.walletName, walletAddress: info.walletAddress,
+      balances, verified: !!info.verified, connectedAt: Date.now() };
     storeSession(conn);
+    // Шаг 3: если приложение зарегистрировано (APP_ID задан) — требуем
+    // криптографическое подтверждение владения через AN Wallet.
+    if(window.anWallet.authRequired && window.anWallet.authRequired()){
+      status.innerHTML='<div style="font-size:11px;color:var(--sand)">[3/4] Нужно подтверждение в AN Wallet...</div>';
+      const auth = await window.anWallet.startAuth(info.walletName);
+      showAuthConfirm(conn, auth);
+      return;
+    }
     status.innerHTML='<div style="font-size:11px;color:var(--green)">[3/3] Готово!</div>';
     setTimeout(()=> showWalletResult(conn, "scr-hub"), 400);
   }catch(e){
-    const msg = (e && e.message) ? e.message : String(e);
+    const msg = esc((e && e.message) ? e.message : String(e));
     status.innerHTML='<div style="color:var(--red);font-size:11px;margin:6px 0">❌ '+msg+'</div><div class="btn small" onclick="splashManualConnect()">Попробовать снова</div>';
   }finally{
     btn.disabled=false;
     btn.textContent="Войти →";
   }
+}
+
+/* Экран подтверждения владения: deep-link в AN Wallet + ожидание записи ключей */
+function showAuthConfirm(conn, auth){
+  const status = document.getElementById("splashStatus");
+  const btn = document.getElementById("splashBtnConnect");
+  const nameInput = document.getElementById("splashWalletName");
+  if(nameInput) nameInput.style.display="none";
+  status.innerHTML=`
+    <div style="background:rgba(255,196,107,.08);border:1px solid rgba(255,196,107,.25);border-radius:10px;padding:12px;margin-top:8px;text-align:left">
+      <div style="font-size:12px;color:var(--sand);margin-bottom:6px">🔐 Подтверди вход в <b>${esc(conn.walletName)}</b></div>
+      <div class="muted" style="font-size:11px;line-height:1.5;margin-bottom:8px">
+        Нажми кнопку — откроется AN Wallet. Подтверди привязку приложения,
+        затем нажми «Я подтвердил» здесь.</div>
+      <a href="${esc(auth.deepLink)}" class="btn primary" style="width:100%;text-decoration:none;box-sizing:border-box">Открыть AN Wallet →</a>
+      <div id="authWait" style="margin-top:8px"></div>
+    </div>`;
+  btn.textContent="Я подтвердил ✓";
+  btn.disabled=false;
+  btn.onclick=async ()=>{
+    const w=document.getElementById("authWait");
+    btn.disabled=true;
+    if(w)w.innerHTML='<div style="font-size:11px;color:var(--sand)">⏳ Проверяю запись ключей в блокчейне...</div>';
+    try{
+      await window.anWallet.confirmAuth(conn.walletName, auth);
+      conn.verified=true; conn.connectedAt=Date.now();
+      storeSession(conn);
+      showWalletResult(conn, "scr-hub");
+    }catch(e){
+      if(w)w.innerHTML='<div style="color:var(--red);font-size:11px">❌ '+esc((e&&e.message)?e.message:String(e))+'</div>';
+      btn.disabled=false;
+    }
+  };
 }
 
 function splashCancelAuth(){
@@ -1330,7 +1401,10 @@ function showWalletResult(conn, nextScreen){
     <div style="background:rgba(0,80,0,.15);border:1px solid rgba(0,200,0,.2);border-radius:10px;padding:12px;margin-top:8px;text-align:left">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
         <span style="color:var(--green);font-size:14px">✓</span>
-        <span style="color:var(--sand);font-size:13px;font-weight:600">${conn.walletName}</span>
+        <span style="color:var(--sand);font-size:13px;font-weight:600">${esc(conn.walletName)}</span>
+        ${conn.verified
+          ? '<span style="font-size:10px;color:var(--green);border:1px solid rgba(0,200,0,.35);border-radius:99px;padding:1px 7px">владение подтверждено</span>'
+          : '<span style="font-size:10px;color:var(--amber);border:1px solid rgba(255,196,107,.35);border-radius:99px;padding:1px 7px" title="Имя найдено в сети, но подпись владения не проверялась">только просмотр</span>'}
       </div>
       <div style="font-size:10px;color:var(--muted);font-family:monospace;word-break:break-all;margin-bottom:8px">${conn.walletAddress}</div>
       <div style="display:flex;gap:6px">
@@ -1348,7 +1422,7 @@ function showWalletResult(conn, nextScreen){
         </div>
       </div>
     </div>`;
-  btn.textContent="进入 ИГРУ →";
+  btn.textContent="В ИГРУ →";
   btn.disabled=false;
   btn.onclick=()=>show(nextScreen);
   if(nameInput) nameInput.style.display="none";
@@ -2540,9 +2614,21 @@ function hire(i){
 
 /* ---------- ПРОФИЛЬ / ACKI NACKI ---------- */
 function openProfile(){
+  // v20: дефолтные адреса деплоя (первый script выполняется раньше anWallet)
+  try{
+    if(window.anWallet&&window.anWallet.chainDefaults){
+      const d=window.anWallet.chainDefaults();
+      if(!S.chain.addr)S.chain.addr=d.PROFILES;
+      if(!S.chain.itemsAddr)S.chain.itemsAddr=d.ITEMS;
+      if(!S.chain.arenaAddr)S.chain.arenaAddr=d.ARENA;
+      save();
+    }
+  }catch(e){}
   document.getElementById("nickInput").value=S.nick;
   document.getElementById("chainEndpoint").value=S.chain.endpoint;
   document.getElementById("chainAddr").value=S.chain.addr;
+  document.getElementById("chainItemsAddr").value=S.chain.itemsAddr||"";
+  document.getElementById("chainArenaAddr").value=S.chain.arenaAddr||"";
   document.getElementById("profStats").innerHTML=
     `<span class="tag">🏆 Рейтинг <b>${S.rating}</b></span>
      <span class="tag">Боёв <b>${S.battles}</b></span>
@@ -2561,6 +2647,9 @@ function chainPayload(){
   return {
     game:"RESERVATION_PERIMETER_V1", nick:S.nick,
     wallet: conn ? conn.walletAddress : "(не подключён)",
+    walletVerified: conn ? !!conn.verified : false,
+    contracts:{ profiles:S.chain.addr, items:S.chain.itemsAddr||"", arena:S.chain.arenaAddr||"" },
+    pending: window.anWallet ? window.anWallet.getPendingTxs() : [],
     lastBattleHash:S.lastHash, ts: Math.floor(Date.now()/1000)
   };
 }
@@ -2586,20 +2675,31 @@ async function chainPing(){
 async function chainSync(){
   const st=document.getElementById("chainStatus");
   S.chain.endpoint=document.getElementById("chainEndpoint").value.trim();
-  S.chain.addr=document.getElementById("chainAddr").value.trim(); save();
+  S.chain.addr=document.getElementById("chainAddr").value.trim();
+  S.chain.itemsAddr=(document.getElementById("chainItemsAddr").value||"").trim();
+  S.chain.arenaAddr=(document.getElementById("chainArenaAddr").value||"").trim();
+  save();
   if(!S.chain.addr){
-    st.textContent="Статус: укажи адрес контракта TIOProfiles (деплой — см. README/chain).";
+    st.textContent="Статус: укажи адрес контракта PerimeterProfiles (деплой — см. README/chain).";
     showPayload(); return;
+  }
+  if(!isAddrLike(S.chain.addr)){
+    st.textContent="Статус: ❌ адрес не похож на адрес Acki Nacki (ожидается hex64::hex64 или 0:hex64).";
+    return;
   }
   st.textContent="Статус: читаю состояние контракта…";
   try{
-    const q=`query{blockchain{account(address:"${S.chain.addr}"){info{balance acc_type_name}}}}`;
+    const q=`query{blockchain{account(address:"${S.chain.addr}"){info{balance acc_type_name last_trans_lt}}}}`;
     const r=await fetch(S.chain.endpoint,{method:"POST",
       headers:{"Content-Type":"application/json"},body:JSON.stringify({query:q})});
     const j=await r.json();
     const info=j.data&&j.data.blockchain&&j.data.blockchain.account&&j.data.blockchain.account.info;
     if(!info){ st.textContent="Статус: контракт не найден по адресу. Проверь адрес/сеть."; return; }
-    st.textContent=`Статус: ✅ контракт найден (${info.acc_type_name}). Отправка транзакции выполняется подписанным сообщением через скрипт chain/sync.mjs (TVM SDK) — payload готов ниже.`;
+    const pend = window.anWallet.getPendingTxs().length;
+    st.textContent=`Статус: ✅ контракт найден (${info.acc_type_name}).`
+      + (info.acc_type_name!=="Active" ? " Контракт не Active — сначала задеплой его в Shellnet." : "")
+      + (pend ? ` Ожидают отправки: ${pend} (см. ниже, отправка — chain/sync.mjs).` : " Очередь пуста — сыграй бой, результат запишется автоматически.")
+      + ` Отправка транзакций выполняется подписанным сообщением через скрипт chain/sync.mjs (TVM SDK) — payload готов ниже.`;
     showPayload();
   }catch(e){
     st.textContent="Статус: ❌ нет связи ("+e.message+"). Payload сохранён локально и уйдёт при следующей синхронизации.";
@@ -2632,7 +2732,10 @@ function renderWalletInfo(){
     el.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <span class="wallet-badge on">● Подключён</span>
-        <span style="font-size:13px;color:var(--sand)">${conn.walletName}</span>
+        <span style="font-size:13px;color:var(--sand)">${esc(conn.walletName||'')}</span>
+        ${conn.verified
+          ? '<span style="font-size:10px;color:var(--green)">✓ подтверждён</span>'
+          : '<span style="font-size:10px;color:var(--amber)" title="Владение именем не подтверждено подписью">только просмотр</span>'}
       </div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:monospace;word-break:break-all">${conn.walletAddress}</div>
       <div style="display:flex;gap:6px;margin-bottom:8px">
@@ -2664,7 +2767,11 @@ async function walletConnectByName(){
   if(!name){ if(status) status.innerHTML='<div style="color:var(--red);font-size:12px">Введи имя</div>'; return; }
   if(status) status.innerHTML='<div style="font-size:11px;color:var(--sand)">Подключение...</div>';
   try{
-    const conn = await window.anWallet.connectByName(name);
+    const info = await window.anWallet.connectByName(name);
+    const balances = await window.anWallet.getBalance(info.walletAddress);
+    const conn = { walletName: info.walletName, walletAddress: info.walletAddress,
+      balances, verified: !!info.verified, connectedAt: Date.now() };
+    storeSession(conn);
     setSaveKeyForWallet(conn.walletAddress);
     load();
     if(!S.nick || S.nick.startsWith("Сталкер-")){
@@ -2674,7 +2781,7 @@ async function walletConnectByName(){
     toast("✅ "+conn.walletName);
     renderWalletInfo();
   }catch(e){
-    if(status) status.innerHTML='<div style="color:var(--red);font-size:12px">'+(e.message||e)+'</div>';
+    if(status) status.innerHTML='<div style="color:var(--red);font-size:12px">'+esc((e&&e.message)?e.message:String(e))+'</div>';
   }
 }
 
@@ -2714,10 +2821,12 @@ function renderGameKeyInfo(){
       background:rgba(255,196,107,.08);padding:8px 10px;border-radius:10px;margin-top:6px;
       border:1px solid rgba(255,196,107,.15)">
       <div style="font-size:10px;color:var(--dim);margin-bottom:4px">Адрес кошелька:</div>
-      ${s.walletAddress}
+      ${esc(s.walletAddress)}
     </div>
     <div class="muted" style="margin-top:6px;font-size:11px">
-      Авторизован через AN Wallet. Майнинг-ключи привязаны к контракту.
+      ${s.verified
+        ? "✅ Владение подтверждено через AN Wallet. Майнинг-ключи привязаны к контракту."
+        : "👁 Режим просмотра: имя найдено в сети. Для подписи он-чейн действий задай APP_ID (см. README) и подтверди вход."}
     </div>`;
 }
 
@@ -2729,8 +2838,9 @@ function showGameKey(){
   el.innerHTML = `
     <div style="font-family:monospace;font-size:10px;color:var(--sand);word-break:break-all;
       background:rgba(0,0,0,.4);padding:10px;border-radius:10px;border:1px solid var(--line);margin-top:6px">
-      <div><b style="color:var(--amber)">Адрес:</b><br>${s.walletAddress}</div>
-      <div style="margin-top:6px"><b style="color:var(--amber)">Имя:</b> ${s.walletName}</div>
+      <div><b style="color:var(--amber)">Адрес:</b><br>${esc(s.walletAddress)}</div>
+      <div style="margin-top:6px"><b style="color:var(--amber)">Имя:</b> ${esc(s.walletName)}</div>
+      <div style="margin-top:6px"><b style="color:var(--amber)">Статус:</b> ${s.verified?"✅ владение подтверждено":"👁 только просмотр (без APP_ID)"}</div>
     </div>`;
 }
 
@@ -2752,11 +2862,18 @@ function refreshPendingTxs(){
   }
   el.innerHTML = txs.map((tx) => {
     const age = Math.floor((Date.now() - (tx.ts||tx.timestamp||0)) / 60000);
-    const fn = tx.fn || tx.payload?.function || 'unknown';
+    const fn = esc(tx.fn || tx.function || 'unknown');
+    let detail = '';
+    try{
+      const inp = tx.input || tx.payload?.input || {};
+      if(fn==='reportBattle') detail = (inp.win===true||inp.win==='true'||inp.win===1 ? '🏆 победа' : '💀 поражение') + ' · hash ' + esc(inp.battleHash ?? inp.hash ?? '');
+      else detail = esc(JSON.stringify(inp)).slice(0,120);
+    }catch(e){}
     return `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)">
       <div style="flex:1;font-size:12px">
         <div style="color:var(--sand)">${fn}</div>
-        <div class="muted">${age} мин назад</div>
+        ${detail?`<div class="muted">${detail}</div>`:""}
+        <div class="muted">${age} мин назад · отправка: chain/sync.mjs battle</div>
       </div>
       <div style="font-size:10px;color:var(--dim)">⏳</div>
     </div>`;
@@ -3624,6 +3741,8 @@ function finishBattle(win){
       <span class="tag">hash боя: ${hash}</span></div>`;
   }
   html+=`<div class="btn primary" style="width:100%;margin-top:14px" onclick="closeModal('mResult');show('scr-hub')">В ШТАБ</div>`;
+  /* Он-чейн: результат боя уходит в очередь reportBattle (рейтинг посчитает контракт: +25/−15) */
+  try{ if(window.anWallet&&window.anWallet.reportBattleOffline) window.anWallet.reportBattleOffline(win,hash); }catch(e){}
   save();
   setTimeout(()=>{document.getElementById("resultBox").innerHTML=html;openModal("mResult");},600);
 }
@@ -5577,15 +5696,36 @@ if("serviceWorker"in navigator){
 </script>
 
 <!-- =========================================================
-     AN WALLET — Bee SDK (WASM) + ключи + GraphQL
+     AN WALLET — Bee SDK (WASM) + GraphQL Shellnet
+     Поток авторизации (см. README, раздел «Кошелёк»):
+       1) validate_name + check_name_availability — кошелёк существует
+       2) если задан RP_CHAIN.APP_ID (регистрация приложения у команды
+          Acki Nacki): gen_mining_keys → deep_link в AN Wallet →
+          ensure_mining_keys_propagated → add_tap (проверка владения)
+       3) без APP_ID — честный режим «только просмотр» (без подписи
+          владения), он-чейн записи копятся в очереди rp-pending-txs
+     AN Wallet НЕ подписывает произвольные вызовы контрактов
+     (системный DAPP_ID mvsystem): запись результатов идёт подписанными
+     внешними сообщениями через chain/sync.mjs (контракт сам платит газ).
      ========================================================= -->
 <script>
 const BEE_SDK_URL = 'https://unpkg.com/@teamgosh/bee-sdk@5.1.1/bee_sdk.js';
 const BEE_WASM_URL = 'https://unpkg.com/@teamgosh/bee-sdk@5.1.1/bee_sdk_bg.wasm';
 const SESSION_KEY = 'rp-wallet-session';
+const PENDING_KEY = 'rp-pending-txs';
 const AN_API = 'https://app-backend-dev.ackinacki.org/api';
+/* APP_ID = app_dapp_id твоего приложения. Как получить: напиши команде
+   Acki Nacki (https://t.me/EugeneDAO): имя приложения + ссылка + логотип webp.
+   Пока пусто — вход работает в режиме просмотра баланса без подтверждения. */
 const APP_ID = '';
 const ENDPOINTS = ['https://mainnet.ackinacki.org'];
+/* Предвычисленные адреса контрактов (обновятся после деплоя, см. Profile) */
+const RP_DEFAULTS = {
+  ENDPOINT: 'https://shellnet.ackinacki.org/graphql',
+  PROFILES: '86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c::86ca05001af647f241857371c1aab21895604ce95526393c5dbe437a73f8a71c',
+  ITEMS: '0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775::0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775',
+  ARENA: 'fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74::fa598be10db0f9dd13d63d83cb8c87c2e0df5b2f727b03dc6e0e35328bb50d74',
+};
 
 let sdkMod = null;
 let sdkReady = false;
@@ -5606,11 +5746,13 @@ async function loadSdk(){
 function parseBalances(b){
   const out={ nackl:'0', shell:'0', usdc:'0' };
   if(b && b.ecc){
-    out.nackl = (BigInt(b.ecc['1']||'0')/1000000000n).toString();
-    out.shell = (BigInt(b.ecc['2']||'0')/1000000000n).toString();
-    out.usdc  = (BigInt(b.ecc['3']||'0')/1000000000n).toString();
+    try{
+      out.nackl = (BigInt(b.ecc['1']||'0')/1000000000n).toString();
+      out.shell = (BigInt(b.ecc['2']||'0')/1000000000n).toString();
+      out.usdc  = (BigInt(b.ecc['3']||'0')/1000000000n).toString();
+    }catch(e){}
   }
-  if(b && b.native) out.shell = (BigInt(b.native)/1000000000n).toString();
+  try{ if(b && b.native) out.shell = (BigInt(b.native)/1000000000n).toString(); }catch(e){}
   return out;
 }
 
@@ -5621,45 +5763,113 @@ function storeSession(c){
   if(c) localStorage.setItem(SESSION_KEY, JSON.stringify(c));
   else localStorage.removeItem(SESSION_KEY);
 }
+function clientConfig(){
+  return { network: { endpoints: ENDPOINTS } };
+}
+function newWallet(sdk){
+  return new sdk.Wallet(ENDPOINTS, null, AN_API, APP_ID);
+}
+
+/* ─── очередь он-чейн записей (рейтинг считает контракт, клиент шлёт только win+hash) ─── */
+function queueTx(fn, input){
+  try{
+    const pending=JSON.parse(localStorage.getItem(PENDING_KEY)||'[]');
+    pending.push({fn, input, ts:Date.now()});
+    localStorage.setItem(PENDING_KEY,JSON.stringify(pending.slice(-200)));
+  }catch(e){}
+}
 
 /* ─── public API ─── */
 window.anWallet = {
   sdkReady: ()=>sdkReady,
   getSession: getStoredSession,
+  authRequired: ()=>APP_ID !== '',
+  chainDefaults: ()=>({ ...RP_DEFAULTS }),
 
+  /* Шаг 1: проверка имени + существования кошелька (без доказательства владения) */
   async connectByName(walletName){
+    const name = String(walletName||'').trim();
+    if(!/^[A-Za-z0-9_-]{3,32}$/.test(name)) throw new Error('Имя кошелька: 3–32 символа (латиница, цифры, - _)');
     const sdk = await loadSdk();
-    let wallet;
-    try{ wallet = new sdk.Wallet(ENDPOINTS, null, AN_API, APP_ID); }
-    catch(e){ throw new Error('Не удалось подключиться к блокчейну'); }
-    const nameInfo = await wallet.check_name_availability(walletName);
-    if(nameInfo.is_available){ wallet.free(); throw new Error('Кошелёк "'+walletName+'" не найден'); }
-    const addr = nameInfo.multifactor_address;
-    if(!addr){ wallet.free(); throw new Error('Адрес кошелька не найден'); }
-    wallet.free();
-    return { walletName, walletAddress: addr };
+    const wallet = newWallet(sdk);
+    try{
+      try{
+        const v = wallet.validate_name(name);
+        if(v && v.is_valid === false) throw new Error('Недопустимое имя кошелька');
+      }catch(e){ if(/Недопустимое имя/.test(e.message)) throw e; /* validate_name может отсутствовать */ }
+      const nameInfo = await wallet.check_name_availability(name);
+      if(nameInfo.is_available) throw new Error('Кошелёк "'+name+'" не найден');
+      const addr = nameInfo.multifactor_address;
+      if(!addr) throw new Error('Адрес кошелька не найден');
+      return { walletName: name, walletAddress: addr, verified: false };
+    }finally{ try{wallet.free();}catch(e){} }
+  },
+
+  /* Шаг 2 (только при заданном APP_ID): сгенерировать майнинг-ключи, вернуть deep-link */
+  async startAuth(walletName){
+    if(!APP_ID) throw new Error('APP_ID не задан — подтверждение недоступно');
+    const sdk = await loadSdk();
+    const keys = await sdk.gen_mining_keys(APP_ID);
+    return { deepLink: keys.deep_link, publicKey: keys.public, secretKey: keys.secret };
+  },
+
+  /* Шаг 3: дождаться записи ключей в Miner-контракт + проверочный tap */
+  async confirmAuth(walletName, auth){
+    if(!auth || !auth.publicKey || !auth.secretKey) throw new Error('Нет данных авторизации');
+    const sdk = await loadSdk();
+    const minerAddr = await sdk.get_miner_address_by_wallet_name({
+      client_config: clientConfig(), wallet_name: walletName });
+    if(!minerAddr) throw new Error('Miner-контракт не найден');
+    await sdk.ensure_mining_keys_propagated({
+      client_config: clientConfig(),
+      miner_address: minerAddr,
+      app_id: APP_ID,
+      expected_owner_public: auth.publicKey,
+      max_attempts: 60, interval_ms: 2000,
+    });
+    const miner = await sdk.Miner.new(ENDPOINTS, APP_ID, minerAddr, auth.publicKey, auth.secretKey);
+    try{ miner.add_tap(1, 1); }finally{ try{miner.free();}catch(e){} }
+    // секрет майнинг-ключа храним только в памяти сессии? Нет — нужен для тапов
+    // в следующих сессиях, поэтому сохраняем локально (ключи не секретны сами по себе:
+    // чужое использование лишь майнит в пользу владельца).
+    try{ sessionStorage.setItem('rp-mining-secret', auth.secretKey); }catch(e){}
+    return { minerAddress: minerAddr, verified: true };
   },
 
   async getBalance(walletAddress){
     const sdk = await loadSdk();
-    const wallet = new sdk.Wallet(ENDPOINTS, null, AN_API, APP_ID);
+    const wallet = newWallet(sdk);
     try{
       const b = await wallet.get_multifactor_balances({ multifactor_address: walletAddress });
       return parseBalances(b);
     }catch{return {nackl:'0',shell:'0',usdc:'0'};}
-    finally{wallet.free();}
+    finally{try{wallet.free();}catch(e){}}
   },
 
-  async disconnect(){ storeSession(null); },
+  /* Состояние аккаунта контракта в Shellnet (для экрана Profile) */
+  async chainAccount(address, endpoint){
+    const ep = endpoint || RP_DEFAULTS.ENDPOINT;
+    if(!isAddrLike(address)) throw new Error('Некорректный адрес');
+    const q = `query{blockchain{account(address:"${address}"){info{balance acc_type_name}}}}`;
+    const r = await fetch(ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})});
+    const j = await r.json();
+    if(j.errors) throw new Error(j.errors.map(e=>e.message).join('; '));
+    const info = j.data&&j.data.blockchain&&j.data.blockchain.account&&j.data.blockchain.account.info;
+    if(!info) throw new Error('Аккаунт не найден');
+    return info;
+  },
 
-  reportBattleOffline(win, newRating, hash){
-    const pending=JSON.parse(localStorage.getItem('rp-pending-txs')||'[]');
-    pending.push({fn:'reportBattle',input:{win,newRating,hash:String(hash)},ts:Date.now()});
-    localStorage.setItem('rp-pending-txs',JSON.stringify(pending));
+  async disconnect(){ storeSession(null); try{sessionStorage.removeItem('rp-mining-secret');}catch(e){} },
+
+  /* Результат боя → очередь reportBattle(win, battleHash). Рейтинг (+25/−15)
+     и анти-реплей считает контракт PerimeterProfiles, клиент цену не шлёт. */
+  reportBattleOffline(win, hash){
+    queueTx('reportBattle', { win: !!win, battleHash: String(hash) });
     return {ok:true};
   },
-  getPendingTxs(){ try{return JSON.parse(localStorage.getItem('rp-pending-txs')||'[]');}catch{return[];} },
-  clearPendingTxs(){ localStorage.removeItem('rp-pending-txs'); },
+  queueMarketTx(fn, input){ queueTx(fn, input); return {ok:true}; },
+  getPendingTxs(){ try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'[]');}catch{return[];} },
+  clearPendingTxs(){ localStorage.removeItem(PENDING_KEY); },
 };
 
 console.log('[RP] anWallet API registered');
