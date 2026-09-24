@@ -728,8 +728,8 @@ function overBadge(load, limit){
 }
 /* лимит переноски бойца: 16 + 2 за уровень (ур.1 → 16, ур.20 → 54) —
    миниган и экзо-комбез таскают только прокачанные */
-/* лимит переноски: 350 + 55 за уровень (ур.1 → 350, ур.20 → 1395, шкала как в оригинале ~1200) */
-function carryLimit(m){ return 350 + 55*((m.level||1)-1); }
+/* лимит переноски: 750 + 55 за уровень (ур.1 → 750, ур.20 → 1795) */
+function carryLimit(m){ return 750 + 55*((m.level||1)-1); }
 /* текущий носимый вес: оружие + броня + импланты + пояс */
 function mercLoad(m){
   let w = 0;
@@ -754,7 +754,7 @@ function unitBattleLoad(u){
   Object.keys(u.spare||{}).forEach(t => { w += (u.spare[t]||0) * ((AMMO[t]||{}).wpr||1); });
   return w;
 }
-function unitCarryLimit(u){ return 350 + 55*((u.lvl||1)-1); }
+function unitCarryLimit(u){ return 750 + 55*((u.lvl||1)-1); }
 /* шкала веса для карточек */
 function weightBar(load, limit){
   load=wtFmt(load);
