@@ -3648,6 +3648,13 @@ function doAttack(att,def){
   } else att._burst=0;
   att.ap-=weaponAp(att);
   const ch=hitChance(att,def);
+  /* дульная вспышка: звезда + свет на земле в сторону цели */
+  if(g){
+    const style=w.splash?"rocket":w.skill==="sniper"?"sniper":
+      w.skill==="heavy"?"heavy":((w.shots||1)>=3?"auto":"light");
+    addEffect({type:"muzzle",x:att.x+(def.x-att.x)*0.22,y:att.y+(def.y-att.y)*0.22,
+      style,t:now()});
+  }
   let total=0,hits=0,crit=false,armoredAny=false;
   const shots=att._burst||w.shots||1;
   att._burst=0;
@@ -4535,11 +4542,47 @@ function deathDecal(u,info){
   g.beginPath();g.moveTo(-cam.tw*0.10,cam.th*0.10);g.lineTo(-cam.tw*0.26,cam.th*0.16);g.stroke();
   g.restore();
 }
+/* взрыв: выжженное пятно запекается в землю до конца боя */
+function bakeScorch(bx,by){
+  if(!groundCv)return;
+  const g=groundCv.getContext("2d");
+  const dpr=Math.min(window.devicePixelRatio||1,1.5);
+  g.save();
+  g.setTransform(dpr,0,0,dpr,0,0);
+  const ox=groundCv._w/2, oy=40;
+  const cx=ox+(bx-by)*cam.tw/2, cy=oy+(bx+by)*cam.th/2+cam.th/2;
+  const n=hash2(bx*3+1,by*5+2);
+  g.fillStyle="rgba(12,8,5,0.55)";
+  g.beginPath();g.ellipse(cx,cy,cam.tw*0.30,cam.th*0.20,n*3,0,7);g.fill();
+  g.fillStyle="rgba(30,16,8,0.45)";
+  g.beginPath();g.ellipse(cx+(n-0.5)*8,cy,cam.tw*0.18,cam.th*0.12,0,0,7);g.fill();
+  /* тлеющая кромка */
+  g.strokeStyle="rgba(200,90,30,0.30)";g.lineWidth=1.6;
+  g.beginPath();g.ellipse(cx,cy,cam.tw*0.28,cam.th*0.185,n*3,0,7);g.stroke();
+  g.restore();
+}
 function initDust(){
   dust=[];
-  for(let i=0;i<26;i++){
-    dust.push({x:Math.random(),y:Math.random(),vx:(Math.random()-0.5)*0.0004,
-      vy:-0.0002-Math.random()*0.0004,a:0.04+Math.random()*0.08,s:1+Math.random()*2.2});
+  const bio=B_BIOME||"waste";
+  const n=bio==="forest"?70:bio==="desert"?46:bio==="industrial"?30:34;
+  for(let i=0;i<n;i++){
+    if(bio==="forest"){ /* дождь: быстрые наклонные капли */
+      dust.push({mode:"rain",x:Math.random(),y:Math.random(),
+        vx:0.0012,vy:0.022+Math.random()*0.014,a:0.10+Math.random()*0.12,
+        s:4+Math.random()*6});
+    }else if(bio==="desert"){ /* позёмка: длинные горизонтальные полосы */
+      dust.push({mode:"sand",x:Math.random(),y:Math.random(),
+        vx:0.004+Math.random()*0.006,vy:(Math.random()-0.5)*0.0006,
+        a:0.05+Math.random()*0.07,s:8+Math.random()*16});
+    }else if(bio==="industrial"){ /* искры/окалина вверх */
+      dust.push({mode:"ember",x:Math.random(),y:Math.random(),
+        vx:(Math.random()-0.5)*0.0008,vy:-0.001-Math.random()*0.002,
+        a:0.25+Math.random()*0.4,s:1+Math.random()*1.6,ph:Math.random()*6.28});
+    }else{ /* пустошь: пепел */
+      dust.push({mode:"ash",x:Math.random(),y:Math.random(),
+        vx:(Math.random()-0.5)*0.0006,vy:-0.0002-Math.random()*0.0005,
+        a:0.05+Math.random()*0.09,s:1+Math.random()*2.4,ph:Math.random()*6.28});
+    }
   }
 }
 /* детерминированный шум для текстур */
@@ -4758,6 +4801,25 @@ function prerenderGround(){
         g.lineTo(cx,cy+cam.th*0.06);g.lineTo(cx+cam.tw*0.18,cy+cam.th*0.2);
         g.stroke();
       }
+      /* азурит: светящиеся кристаллы — редкие жилы пустоши */
+      if(B_BIOME==="waste"&&n>0.90){
+        const bx=cx+(n-0.93)*60, by=cy+(hash2(x*3,y*5)-0.5)*10;
+        g.save();
+        g.shadowColor="rgba(90,200,255,0.9)";g.shadowBlur=7;
+        g.fillStyle="rgba(140,220,255,0.95)";
+        for(let sh=0;sh<3;sh++){
+          const sx=bx+sh*4-4, sy=by-(sh%2)*3;
+          const hh=5+hash2(x+sh,y-sh)*7;
+          g.beginPath();
+          g.moveTo(sx-2.2,sy);g.lineTo(sx,sy-hh);g.lineTo(sx+2.2,sy);g.closePath();g.fill();
+          g.fillStyle="rgba(220,245,255,0.9)";
+          g.fillRect(sx-0.6,sy-hh+1,1.2,hh*0.5);
+          g.fillStyle="rgba(140,220,255,0.95)";
+        }
+        g.restore();
+        g.fillStyle="rgba(90,180,230,0.18)";
+        g.beginPath();g.ellipse(bx,by+2,cam.tw*0.14,cam.th*0.09,0,0,7);g.fill();
+      }
       g.restore();
       g.strokeStyle="rgba(255,230,180,0.05)";g.lineWidth=1;
       g.beginPath();g.moveTo(cx-cam.tw/2,cy);g.lineTo(cx,cy-cam.th/2);g.lineTo(cx+cam.tw/2,cy);g.stroke();
@@ -4834,6 +4896,13 @@ function draw(){
       ctx.fillStyle="rgba(255,196,107,.30)";ctx.fill();
       ctx.strokeStyle="rgba(255,214,130,.95)";ctx.lineWidth=2;ctx.stroke();
       const cx=isoX(mp.tx,mp.ty),cy=isoY(mp.tx,mp.ty)+cam.th/2,s=cam.tw;
+      /* расходящийся радарный круг на цели */
+      const ping=(t/550)%1;
+      ctx.strokeStyle=`rgba(255,214,130,${(0.55*(1-ping)).toFixed(3)})`;
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.ellipse(cx,cy,cam.tw*(0.3+ping*0.55),cam.th*(0.3+ping*0.55),0,0,7);
+      ctx.stroke();
       const label=mp.cost+" ОД";
       ctx.font=`bold ${Math.round(s*0.24)}px sans-serif`;
       ctx.textAlign="center";ctx.textBaseline="middle";
@@ -6200,6 +6269,38 @@ function drawEffects(t){
       ctx.restore();
       return true;
     }
+    /* дульная вспышка: звезда + пятно света на земле, ~130 мс */
+    if(e.type==="muzzle"){
+      if(age>140)return false;
+      const k=1-age/140;
+      const x=isoX(e.x,e.y),y=isoY(e.x,e.y)+cam.th/2-cam.tw*0.28;
+      const r=cam.tw*(0.16+0.10*k);
+      const col=e.style==="sniper"?"190,225,255":e.style==="heavy"||e.style==="rocket"?"255,170,70":"255,215,120";
+      ctx.save();ctx.globalCompositeOperation="lighter";
+      const mg=ctx.createRadialGradient(x,y,0,x,y,r*2.1);
+      mg.addColorStop(0,`rgba(255,250,230,${0.85*k})`);
+      mg.addColorStop(0.35,`rgba(${col},${0.55*k})`);
+      mg.addColorStop(1,`rgba(${col},0)`);
+      ctx.fillStyle=mg;
+      ctx.beginPath();ctx.arc(x,y,r*2.1,0,7);ctx.fill();
+      /* лучи звезды */
+      ctx.strokeStyle=`rgba(255,246,220,${0.9*k})`;
+      ctx.lineWidth=Math.max(1,cam.tw*0.035*k);ctx.lineCap="round";
+      const rays=e.style==="sniper"?4:6;
+      for(let i=0;i<rays;i++){
+        const an=(i*Math.PI*2/rays)+(e.x*3+e.y*7);
+        const rl=r*(i%2?0.9:1.5);
+        ctx.beginPath();
+        ctx.moveTo(x-Math.cos(an)*r*0.3,y-Math.sin(an)*r*0.3);
+        ctx.lineTo(x+Math.cos(an)*rl,y+Math.sin(an)*rl);
+        ctx.stroke();
+      }
+      /* свет лёг на землю */
+      ctx.fillStyle=`rgba(${col},${0.10*k})`;
+      ctx.beginPath();ctx.ellipse(x,y+cam.tw*0.22,r*1.7,r*0.8,0,0,7);ctx.fill();
+      ctx.restore();
+      return true;
+    }
     if(e.type==="text"){
       if(age<0)return true;
       if(age>1050)return false;
@@ -6224,8 +6325,8 @@ function drawEffects(t){
       const x=isoX(e.x,e.y),y=isoY(e.x,e.y)+cam.th/2;
       const pr=age/650;
       const r=cam.tw*(0.34+pr*1.45);
-      /* разовые события: вспышка экрана + дым + звук */
-      if(!e.flashed){e.flashed=1;whiteFlash=Math.min(0.22,whiteFlash+0.15);spawnSmoke(x,y,cam.tw);sfx("boom");}
+      /* разовые события: вспышка экрана + дым + выжженная земля + звук */
+      if(!e.flashed){e.flashed=1;whiteFlash=Math.min(0.22,whiteFlash+0.15);spawnSmoke(x,y,cam.tw);bakeScorch(e.x,e.y);sfx("boom");}
       /* ударная волна */
       if(pr<0.72){
         ctx.save();ctx.globalCompositeOperation="lighter";
@@ -6290,14 +6391,36 @@ function drawParticles(){
 }
 function drawDust(w,h){
   const dc=(BIOMES[B_BIOME]||BIOMES.waste).dust;
+  const t=now();
   dust.forEach(d=>{
     d.x+=d.vx;d.y+=d.vy;
-    if(d.y<0)d.y=1;
-    if(d.x<0)d.x=1;if(d.x>1)d.x=0;
-    ctx.globalAlpha=d.a;
-    ctx.fillStyle=`rgb(${dc})`;
-    ctx.fillRect(d.x*w,d.y*h,d.s,d.s);
-    ctx.globalAlpha=1;
+    if(d.y<0)d.y=1; if(d.y>1)d.y=0;
+    if(d.x<0)d.x=1; if(d.x>1)d.x=0;
+    const px=d.x*w, py=d.y*h;
+    if(d.mode==="rain"){
+      ctx.globalAlpha=d.a;
+      ctx.strokeStyle="#9fb6c8";ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px-d.s*0.18,py+d.s);ctx.stroke();
+      ctx.globalAlpha=1;
+    }else if(d.mode==="sand"){
+      ctx.globalAlpha=d.a;
+      ctx.fillStyle=`rgb(${dc})`;
+      ctx.fillRect(px,py,d.s,1.2);
+      ctx.globalAlpha=1;
+    }else if(d.mode==="ember"){
+      const tw2=0.6+0.4*Math.sin(t/300+d.ph);
+      ctx.save();ctx.globalCompositeOperation="lighter";
+      ctx.globalAlpha=d.a*tw2;
+      ctx.fillStyle="#ff9a3c";
+      ctx.beginPath();ctx.arc(px,py,d.s,0,7);ctx.fill();
+      ctx.restore();
+      ctx.globalAlpha=1;
+    }else{ /* ash */
+      ctx.globalAlpha=d.a*(0.7+0.3*Math.sin(t/700+d.ph));
+      ctx.fillStyle=`rgb(${dc})`;
+      ctx.fillRect(px,py,d.s,d.s);
+      ctx.globalAlpha=1;
+    }
   });
 }
 
