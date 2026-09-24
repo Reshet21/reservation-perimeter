@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#07090e">
-<title>RESERVATION: PERIMETER — пошаговая тактика в Зоне</title>
+<title>RESERVATION: PERIMETER — turn-based tactics in the Zone</title>
 <link rel="manifest" href="manifest.json">
 <style>
   :root{
@@ -311,7 +311,7 @@
   </header>
   <div class="scroll">
     <div class="card">
-      <div class="row"><div class="grow"><h3 id="hubNick">Сталкер</h3>
+      <div class="row"><div class="grow"><h3 id="hubNick">Stalker</h3>
       <div class="muted" data-tr="Зона добычи азурита. Корпорация «Вектор» платит за зачистку.|Azurite mining zone. The “Vector” corp pays for clearing.">Зона добычи азурита. Корпорация «Вектор» платит за зачистку.</div></div>
       <div style="font-size:36px">🧿</div></div>
       <div class="statline" id="hubStats"></div>
@@ -338,7 +338,7 @@
         </div>
       </div>
       <div style="margin-top:6px;text-align:right">
-        <span style="font-size:10px;color:var(--blue);cursor:pointer" onclick="hubRefreshWallet()">🔄 обновить</span>
+        <span style="font-size:10px;color:var(--blue);cursor:pointer" onclick="hubRefreshWallet()" data-tr="🔄 обновить|🔄 refresh">🔄 обновить</span>
       </div>
     </div>
     <div class="hero" onclick="openMissions()">
@@ -360,7 +360,7 @@
       <div class="tile" onclick="openMarket()"><div class="ico">🏪</div><b data-tr="РЫНОК|MARKET">РЫНОК</b><div data-tr="Барахолка · мои лоты|Flea market · my lots">Барахолка · мои лоты</div></div>
       <div class="tile" style="grid-column:1/-1;display:flex;align-items:center;gap:12px" onclick="openProfile()">
         <div class="ico" style="margin-bottom:0">⛓️</div>
-        <div style="flex:1"><b>ACKI NACKI</b><div>Кошелёк и он-чейн</div></div>
+        <div style="flex:1"><b>ACKI NACKI</b><div data-tr="Кошелёк и он-чейн|Wallet and on-chain">Кошелёк и он-чейн</div></div>
         <div style="color:var(--dim);font-size:18px">›</div>
       </div>
     </div>
@@ -404,7 +404,7 @@
 
 <!-- ===================== EQUIP (инвентарь бойца) ===================== -->
 <div class="screen" id="scr-equip">
-  <header class="topbar"><span class="back" onclick="openBarracks()">‹</span><h1 id="eqTitle">ЭКИПИРОВКА</h1>
+  <header class="topbar"><span class="back" onclick="openBarracks()">‹</span><h1 id="eqTitle" data-tr="ЭКИПИРОВКА|GEAR">ЭКИПИРОВКА</h1>
     <span class="chip">💰 <b class="crview">0</b></span></header>
   <div class="scroll" id="eqBody"></div>
 </div>
@@ -448,7 +448,7 @@
         <div class="btn small" onclick="saveNick()">OK</div>
       </div>
       <div class="row" style="margin-top:8px">
-        <div class="muted" style="font-size:12px">🌐 Язык / Language:</div>
+        <div class="muted" style="font-size:12px" data-tr="🌐 Язык / Language:|🌐 Language / Язык:">🌐 Язык / Language:</div>
         <div class="btn small grow" id="langBtnRu" onclick="setLang('ru')">🇷🇺 RU</div>
         <div class="btn small grow" id="langBtnEn" onclick="setLang('en')">🇬🇧 EN</div>
       </div>
@@ -474,16 +474,16 @@
 
     <div class="card">
       <h3 data-tr="⛓️ Acki Nacki (Shellnet)|⛓️ Acki Nacki (Shellnet)">⛓️ Acki Nacki (Shellnet)</h3>
-      <div class="muted" style="margin:6px 0">Контракты <b>PerimeterProfiles / PerimeterItems / PerimeterArena</b>
+      <div class="muted" style="margin:6px 0" data-tr="Контракты <b>PerimeterProfiles / PerimeterItems / PerimeterArena</b> в тестовой сети Shellnet. Адреса впишутся автоматически после деплоя — или укажи вручную для он-чейн синхронизации.|<b>PerimeterProfiles / PerimeterItems / PerimeterArena</b> contracts on Shellnet testnet. Addresses fill in automatically after deploy — or set manually for on-chain sync.">Контракты <b>PerimeterProfiles / PerimeterItems / PerimeterArena</b>
         в тестовой сети Shellnet. Адреса впишутся автоматически после деплоя —
         или укажи вручную для он-чейн синхронизации.</div>
       <div style="margin:8px 0 4px;font-size:13px">GraphQL endpoint:</div>
       <input type="text" id="chainEndpoint">
-      <div style="margin:8px 0 4px;font-size:13px">Адрес контракта PerimeterProfiles:</div>
+      <div style="margin:8px 0 4px;font-size:13px" data-tr="Адрес контракта PerimeterProfiles:|PerimeterProfiles contract address:">Адрес контракта PerimeterProfiles:</div>
       <input type="text" id="chainAddr" placeholder="hex64::hex64">
-      <div style="margin:8px 0 4px;font-size:13px">Адрес контракта PerimeterItems:</div>
+      <div style="margin:8px 0 4px;font-size:13px" data-tr="Адрес контракта PerimeterItems:|PerimeterItems contract address:">Адрес контракта PerimeterItems:</div>
       <input type="text" id="chainItemsAddr" placeholder="hex64::hex64">
-      <div style="margin:8px 0 4px;font-size:13px">Адрес контракта PerimeterArena:</div>
+      <div style="margin:8px 0 4px;font-size:13px" data-tr="Адрес контракта PerimeterArena:|PerimeterArena contract address:">Адрес контракта PerimeterArena:</div>
       <input type="text" id="chainArenaAddr" placeholder="hex64::hex64">
       <div class="row" style="margin-top:10px">
         <div class="btn primary grow" onclick="chainSync()" data-tr="📡 Синхронизировать|📡 Synchronize">📡 Синхронизировать</div>
@@ -492,7 +492,7 @@
         <div class="btn small grow" onclick="chainPing()" data-tr="Проверить связь|Check connection">Проверить связь</div>
         <div class="btn small grow" onclick="showPayload()" data-tr="Payload|Payload">Payload</div>
       </div>
-      <div class="muted" id="chainStatus" style="margin-top:8px">Статус: офлайн</div>
+      <div class="muted" id="chainStatus" style="margin-top:8px" data-tr="Статус: офлайн|Status: offline">Статус: офлайн</div>
       <textarea id="payloadBox" style="display:none;margin-top:8px" readonly></textarea>
     </div>
 
@@ -528,7 +528,7 @@
         <div class="hpbar"><i id="uiHp" style="width:100%"></i></div>
         <div class="apdots" id="uiAp"></div>
       </div>
-      <div style="text-align:right;font-size:12px" class="muted" id="uiHint">Ход 1</div>
+      <div style="text-align:right;font-size:12px" class="muted" id="uiHint">Turn 1</div>
     </div>
     <div id="bbtns">
       <div class="btn" id="btnMed" onclick="useMedkit()">💉<span id="medCnt"></span></div>
@@ -536,7 +536,7 @@
       <div class="btn" id="btnSwap" onclick="swapWeapon()">🔁</div>
       <div class="btn" id="btnReload" onclick="reloadUnit()">🔄<span id="magCnt"></span></div>
       <div class="btn" onclick="nextUnit()">👤</div>
-      <div class="btn primary" onclick="endPlayerTurn()">⏭ Ход</div>
+      <div class="btn primary" onclick="endPlayerTurn()" data-tr="⏭ Ход|⏭ Turn">⏭ Ход</div>
       <div class="btn" style="flex:0 0 42px" id="btnSnd" onclick="toggleSnd()">🔊</div>
       <div class="btn danger" style="flex:0 0 40px" onclick="surrender()">🏳</div>
     </div>
@@ -548,8 +548,8 @@
   <h2>${tr("Выбор отряда (до 3)","Squad pick (up to 3)")}</h2>
   <div id="squadPick"></div>
   <div class="row" style="margin-top:10px">
-    <div class="btn grow" onclick="closeModal('mSquad')">Отмена</div>
-    <div class="btn primary grow" id="btnDeploy" onclick="deploySquad()">В БОЙ ⚔️</div>
+    <div class="btn grow" onclick="closeModal('mSquad')" data-tr="Отмена|Cancel">Отмена</div>
+    <div class="btn primary grow" id="btnDeploy" onclick="deploySquad()" data-tr="В БОЙ ⚔️|TO BATTLE ⚔️">В БОЙ ⚔️</div>
   </div>
 </div></div>
 
@@ -728,9 +728,9 @@ function itemWt(type,id){
 function overInfo(load, limit){
   if(load<=limit) return {tier:0, name:"", pen:0};
   const r=load/Math.max(1,limit);
-  if(r<=1.25) return {tier:1, name:"лёгкий перегруз", pen:2};
-  if(r<=1.6)  return {tier:2, name:"средний перегруз", pen:4};
-  return {tier:3, name:"тяжёлый перегруз", pen:6};
+  if(r<=1.25) return {tier:1, name:tr("лёгкий перегруз","light overload"), pen:2};
+  if(r<=1.6)  return {tier:2, name:tr("средний перегруз","medium overload"), pen:4};
+  return {tier:3, name:tr("тяжёлый перегруз","heavy overload"), pen:6};
 }
 function overBadge(load, limit){
   const o=overInfo(load,limit);
@@ -771,7 +771,7 @@ function weightBar(load, limit){
   load=wtFmt(load);
   const pct = Math.min(100, Math.round(100*load/Math.max(1,limit)));
   const col = load > limit ? "var(--red)" : pct >= 85 ? "var(--amber)" : "var(--green)";
-  return `<div style="margin-top:6px"><div class="row" style="font-size:11px"><span>⚖️ Вес</span>
+  return `<div style="margin-top:6px"><div class="row" style="font-size:11px"><span>⚖️ ${tr("Вес","Weight")}</span>
     <span class="grow"></span><b style="color:${col}">${load}/${limit}</b></div>
     <div style="height:6px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:3px">
     <div style="height:6px;border-radius:3px;width:${pct}%;background:${col}"></div></div></div>`;
@@ -1561,11 +1561,11 @@ function renderSplash(){
   if(!status || !btn) return;
   if(hasWallet()){
     status.innerHTML = `<div style="color:var(--green);font-size:13px">${tr('✅ Кошелёк подключён','✅ Wallet connected')}</div>`;
-    btn.textContent = "В ИГРУ →";
+    btn.textContent = tr("В ИГРУ →","TO GAME →");
     btn.onclick = ()=>show("scr-hub");
     return;
   }
-  btn.textContent = "Подключить AN Wallet →";
+  btn.textContent = tr("Подключить AN Wallet →","Connect AN Wallet →");
   btn.onclick = splashConnectQR;
   status.innerHTML = "";
   // Показываем статус загрузки SDK
@@ -1764,7 +1764,7 @@ async function hubRefreshWallet(){
     document.getElementById("hubBalShell").textContent = bal.shell || "0";
     document.getElementById("hubBalUsdc").textContent = bal.usdc || "0";
     toast(tr("🔄 Баланс обновлён","🔄 Balance updated"));
-  }catch(e){ toast("❌ Ошибка обновления"); }
+  }catch(e){ toast(tr("❌ Ошибка обновления","❌ Refresh failed")); }
 }
 
 /* ---------- МИССИИ ---------- */
@@ -1800,7 +1800,7 @@ function renderSquadPick(){
     return `<div class="pickrow ${sel?"sel":""}" onclick="togglePick('${m.id}')">
       <div class="e">${CLASSES[m.cls].emoji}</div>
       <div class="grow"><b>${m.name}</b> <span class="muted">${tr("ур.","lvl ")}${m.level} ${CLASSES[m.cls].name}</span>
-      <div class="muted">${w.emoji}${w.name} (${skillRank(sk)} ${sk})${m.weapon2?` +${WEAPONS[m.weapon2].emoji}`:""} · HP ${st.hp} · ОД ${st.ap}${beltStr}</div>
+      <div class="muted">${w.emoji}${w.name} (${skillRank(sk)} ${sk})${m.weapon2?` +${WEAPONS[m.weapon2].emoji}`:""} · HP ${st.hp} · ${tr("ОД","AP")} ${st.ap}${beltStr}</div>
       <div style="margin-top:3px">${overBadge(mercLoad(m),carryLimit(m))}</div></div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
         <div>${sel?"✅":"⬜"}</div>
@@ -1852,8 +1852,8 @@ function openBarracks(){
         <div class="muted">${c.name} — ${c.desc}</div></div></div>
       <div class="statline">
         <span class="tag">HP <b>${st.hp}</b></span><span class="tag">${tr("ОД","AP")} <b>${st.ap}</b></span>
-        <span class="tag">Точн <b>${st.acc}+${skillAccBonus(sk)}</b></span><span class="tag">${tr("Броня","Armor")} <b>-${st.armor}</b></span>
-        <span class="tag">👁 Зрение <b>${st.sight}</b></span>
+        <span class="tag">${tr("Точн","Acc")} <b>${st.acc}+${skillAccBonus(sk)}</b></span><span class="tag">${tr("Броня","Armor")} <b>-${st.armor}</b></span>
+        <span class="tag">👁 ${tr("Зрение","Vision")} <b>${st.sight}</b></span>
         <span class="tag">XP <b>${m.xp}/${xpNeed(m.level)}</b></span>
       </div>
       <div class="xpbar"><i style="width:${Math.min(100,100*m.xp/xpNeed(m.level))}%"></i></div>
@@ -1861,10 +1861,10 @@ function openBarracks(){
       <div class="statline" style="margin-top:8px">
         <span class="tag">🔫 <b>${w.emoji}${w.name}</b></span>
         ${w2?`<span class="tag">🔁 ${w2.emoji}${w2.name}</span>`:""}
-        <span class="tag">🦺 −${st.armor} ${gearList(m).map(a=>a.name).join(" + ")||"без брони"}</span>
+        <span class="tag">🦺 −${st.armor} ${gearList(m).map(a=>a.name).join(" + ")||tr("без брони","no armor")}</span>
         <span class="tag">💉×${m.belt.medkit} 💣×${m.belt.grenade}</span>
       </div>
-      <div class="btn primary" style="width:100%;margin-top:10px" onclick="openEquip('${m.id}')">🎒 ЭКИПИРОВКА</div>
+      <div class="btn primary" style="width:100%;margin-top:10px" onclick="openEquip('${m.id}')">${tr("🎒 ЭКИПИРОВКА","🎒 GEAR")}</div>
     </div>`;
   }).join("");
   show("scr-barracks");
@@ -1907,7 +1907,7 @@ function openEquip(mid){
     const id=m.gear[s], a=id?ARMORS[id]:null, sd=SLOTS[s];
     gearSlotsHtml+=`<div class="slot" onclick="pickArmorModal('${s}')">
       ${id?svgIcon("armor",id):emptySlotSvg(s)}
-      <div><div class="sl">${isDog?"Попона 🐕":sd.emoji+" "+sd.name}</div>
+      <div><div class="sl">${isDog?tr("Попона 🐕","Barding 🐕"):sd.emoji+" "+sd.name}</div>
       <div class="sn">${a?a.name:tr("— пусто —","— empty —")}</div>
       <div class="sd">${a?tr("Защита","Armor")+" -"+a.red+(a.slot==="all"?tr(" · комбез"," · suit"):"")+` · ⚖️${itemWt("armor",id)}`:tr("не защищён","unprotected")}</div></div>
     </div>`;
@@ -1944,8 +1944,8 @@ function openEquip(mid){
     const have=S.inv.implants[k]||0;
     if(have>0&&!m.implants.includes(k)&&m.implants.length<2)
       html+=`<div class="row" style="margin-top:6px"><div style="width:30px">${svgIcon("implant",k)}</div>
-        <div class="grow">${IMPLANTS[k].name} <span class="muted">${IMPLANTS[k].desc} · склад ×${have}</span></div>
-        <div class="btn small primary" onclick="eqImp('${k}')">Установить</div></div>`;
+        <div class="grow">${IMPLANTS[k].name} <span class="muted">${IMPLANTS[k].desc} · ${tr("склад","stock")} ×${have}</span></div>
+        <div class="btn small primary" onclick="eqImp('${k}')">${tr("Установить","Install")}</div></div>`;
   });
   if(!m.implants.length&&!Object.keys(IMPLANTS).some(k=>(S.inv.implants[k]||0)>0))
     html+=`<div class="muted" style="margin-top:4px">${tr("Импланты продаются в магазине.","Implants are sold at the shop.")}</div>`;
@@ -2026,8 +2026,8 @@ function pickWeaponModal(slot){
     ${cards?`<div class="igrid">${cards}</div>`:`<div class="muted">${tr("На складе нет оружия. Купи в магазине или скрафти — человеку подходит ЛЮБОЕ оружие!","No guns on stock. Buy at the shop or craft — humans fit ANY gun!")}</div>`}
     <div class="row" style="margin-top:8px">
       <div class="btn grow" onclick="closeModal('mGeneric')">${tr("Закрыть","Close")}</div>
-      ${slot==="main"&&m.weapon!=="fists"?`<div class="btn grow" onclick="closeModal('mGeneric');unequipMain()">📦 Снять ${m.weapon2?"(взять запасное)":"(кулаки 👊)"}</div>`:""}
-      ${slot==="second"&&m.weapon2?`<div class="btn grow" onclick="closeModal('mGeneric');unequipSecond()">📦 Снять</div>`:""}
+      ${slot==="main"&&m.weapon!=="fists"?`<div class="btn grow" onclick="closeModal('mGeneric');unequipMain()">📦 ${tr("Снять","Remove")} ${m.weapon2?tr("(взять запасное)","(take spare)"):tr("(кулаки 👊)","(fists 👊)")}</div>`:""}
+      ${slot==="second"&&m.weapon2?`<div class="btn grow" onclick="closeModal('mGeneric');unequipSecond()">${tr("📦 Снять","📦 Remove")}</div>`:""}
     </div>`);
 }
 function pickArmorModal(slot){
@@ -2047,7 +2047,7 @@ function pickArmorModal(slot){
       `<div class="muted">${isDog?tr("Попоны крафтятся в мастерской из шкур мутантов!","Bardings are crafted in the workshop from mutant hides!"):tr("На складе пусто — купи в магазине или скрафти.","Stock empty — buy at the shop or craft.")}</div>`}
     <div class="row" style="margin-top:8px">
       <div class="btn grow" onclick="closeModal('mGeneric')">${tr("Закрыть","Close")}</div>
-      ${m.gear[slot]?`<div class="btn grow danger" onclick="closeModal('mGeneric');unequipArmor('${slot}')">📦 Снять${ARMORS[m.gear[slot]].slot==="all"?" комбез":""}</div>`:""}
+      ${m.gear[slot]?`<div class="btn grow danger" onclick="closeModal('mGeneric');unequipArmor('${slot}')">📦 ${tr("Снять","Remove")}${ARMORS[m.gear[slot]].slot==="all"?tr(" комбез"," suit"):""}</div>`:""}
     </div>`);
 }
 /* список оружия со склада, подходящего бойцу */
@@ -2058,8 +2058,8 @@ function listEquippable(m,slot){
     if(cnt>0&&WEAPONS[k].classes.includes(m.cls)){
       const wk=WEAPONS[k];
       html+=`<div class="row" style="margin-top:6px"><div style="font-size:20px">${wk.emoji}</div>
-        <div class="grow">${wk.name} <span class="muted">${weaponDesc(wk)} · склад ×${cnt}</span></div>
-        <div class="btn small primary" onclick="${slot==="main"?`eqMain('${k}')`:`eqSecond('${k}')`}">Взять</div></div>`;
+        <div class="grow">${wk.name} <span class="muted">${weaponDesc(wk)} · ${tr("склад","stock")} ×${cnt}</span></div>
+        <div class="btn small primary" onclick="${slot==="main"?`eqMain('${k}')`:`eqSecond('${k}')`}">${tr("Взять","Take")}</div></div>`;
     }
   });
   if(!html)html=`<div class="muted" style="margin-top:6px">${tr("На складе нет подходящего оружия — загляни в магазин.","No fitting gun on stock — check the shop.")}</div>`;
@@ -2173,7 +2173,7 @@ function beltRemove(k){
    ========================================================= */
 let invMercId=null;
 function openInv(){
-  if(!S.roster.length){toast("Отряд пуст");return;}
+  if(!S.roster.length){toast(tr("Отряд пуст","Squad empty"));return;}
   if(!S.roster.find(x=>x.id===invMercId))invMercId=S.roster[0].id;
   renderInv(); show("scr-inv");
 }
@@ -2228,8 +2228,8 @@ function renderInv(){
       `<div class="btn small" onclick="eqBack='inv';pickWeaponModal('second')">🔁</div>
        <div class="btn small" onclick="unequipSecond()">📦</div>
        <div class="btn small danger" onclick="invDropSecond()">🗑</div>`)
-    :`<div class="muted" style="font-size:12px;margin-top:4px">Запасное: — пусто —
-      <span class="btn small" style="margin-left:6px" onclick="eqBack='inv';pickWeaponModal('second')">Взять со склада</span></div>`;
+    :`<div class="muted" style="font-size:12px;margin-top:4px">${tr("Запасное: — пусто —","Spare: — empty —")}
+      <span class="btn small" style="margin-left:6px" onclick="eqBack='inv';pickWeaponModal('second')">${tr("Взять со склада","Take from stock")}</span></div>`;
   }
   html+=`</div>`;
   /* --- броня --- */
@@ -2248,7 +2248,7 @@ function renderInv(){
        <div class="btn small danger" onclick="invDropArmor('${s}')">🗑</div>`);
   });
   if(!anyArmor)html+=`<div class="muted">Без брони.
-    <span class="btn small" style="margin-left:6px" onclick="eqBack='inv';pickArmorModal('${slots[0]}')">Надеть со склада</span></div>`;
+    <span class="btn small" style="margin-left:6px" onclick="eqBack='inv';pickArmorModal('${slots[0]}')">${tr("Надеть со склада","Equip from stock")}</span></div>`;
   html+=`</div>`;
   /* --- импланты --- */
   html+=`<div class="card"><h3>${tr("🧠 Импланты","🧠 Implants")} <span class="muted">(${m.implants.length}/2)</span></h3>`;
@@ -2287,7 +2287,7 @@ function c_emoji(r){ return (CLASSES[r.cls]||{}).emoji||"🪖"; }
 function invDropMain(){
   const m=invM(); if(!m)return;
   if(m.weapon==="fists"){toast(tr("Уже безоружен","Already unarmed"));return;}
-  if(WEAPONS[m.weapon].natural&&m.weapon!=="fists"){toast("Естественное оружие не выкинуть");return;}
+  if(WEAPONS[m.weapon].natural&&m.weapon!=="fists"){toast(tr("Естественное оружие не выкинуть","Natural weapons can't be dropped"));return;}
   if(!confirm(tr(`Выкинуть ${WEAPONS[m.weapon].name} навсегда?`,`Drop ${WEAPONS[m.weapon].name} forever?`)))return;
   if(m.weapon2){ m.weapon=m.weapon2; m.weapon2=null; }
   else m.weapon="fists";
@@ -2485,7 +2485,7 @@ function renderWaitingSquad(){
     html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px;background:rgba(0,0,0,.2);border-radius:6px;margin-bottom:4px">
       <span style="font-size:16px">${CLASSES[m.cls]?.icon||"?"}</span>
       <div style="flex:1">
-        <div style="font-size:12px;font-weight:600;color:var(--sand)">${m.name} <span class="muted">у.${m.lvl}</span></div>
+        <div style="font-size:12px;font-weight:600;color:var(--sand)">${m.name} <span class="muted">${tr("у.","lvl ")}${m.lvl}</span></div>
         <div style="font-size:10px;color:var(--muted)">${w.name} · ${m.hp||100}HP</div>
       </div>
     </div>`;
@@ -2506,7 +2506,7 @@ function joinRoom(i){
   const r=roomsList[i]; if(!r)return;
   const md=ROOM_MODES[r.mode||roomMode];
   if(S.roster.length<md.units){toast(tr("Нужно бойцов: ","Fighters needed: ")+md.units+tr(" — найми ещё"," — hire more"));return;}
-  if(r.stake>S.credits){toast("Не хватает на ставку ("+r.stake+")");return;}
+  if(r.stake>S.credits){toast(tr("Не хватает на ставку (","Not enough for stake (")+r.stake+")");return;}
   if(waitingForOpponent && myCreatedRoom){
     waitingForOpponent = false;
     myCreatedRoom = null;
@@ -2608,7 +2608,7 @@ function startPvpBattle(){
    logLines=[];effects=[];particles=[];initDust();
    recomputeFog();
    loadMags();
-   blog(`🎮 ${pvpCtx.mode} против ${hostName}${naked?" · 🚿":""}${stake?` · ставка ${stake}💰`:""}`);
+   blog(tr(`🎮 ${pvpCtx.mode} против ${hostName}${naked?" · 🚿":""}${stake?` · ставка ${stake}💰`:""}`,`🎮 ${pvpCtx.mode} vs ${hostName}${naked?" · 🚿":""}${stake?` · stake ${stake}💰`:""}`));
   units.filter(u=>u.side==="p"&&u.over>0).forEach(u=>
     blog(tr(`🎒 ${u.name}: перегруз, ОД на весь бой −${u.over}`,`🎒 ${u.name}: overloaded, −${u.over} AP all battle`)));
   selectUnit(B.units.find(u=>u.side==="p"));
@@ -2703,16 +2703,16 @@ function whoUses(type,id){
 function openWarehouse(){
   const el=document.getElementById("whList");
   let html=`<div class="card"><h3>⛓️ Он-чейн активы</h3>
-    <div class="muted">Каждый предмет склада — токен в контракте <b>PerimeterItems</b> (Acki Nacki Shellnet).
-    «Выставить» создаёт листинг на он-чейн рынке: другие игроки могут купить твою вещь за кредиты.
-    Подписанные транзакции уходят через chain/sync.mjs.</div>
+    <div class="muted">Каждый предмет склада — токен в контракте <b>PerimeterItems</b> (Acki Nacki Shellnet).</div>
+    <div class="muted">${tr("«Выставить» создаёт листинг на он-чейн рынке: другие игроки могут купить твою вещь за кредиты.","“List” creates an on-chain market listing: other players can buy your stuff for credits.")}</div>
+    <div class="muted">${tr("Подписанные транзакции уходят через chain/sync.mjs.","Signed transactions go via chain/sync.mjs.")}</div>
     <div class="statline" style="margin-top:6px">
-      <span class="tag">Листингов: <b>${S.market.listed.length}</b></span>
-      <span class="tag">Синхронизация: <b>${S.market.synced?"✅ он-чейн":"⏳ локально"}</b></span>
+      <span class="tag">${tr("Листингов:","Listings:")} <b>${S.market.listed.length}</b></span>
+      <span class="tag">${tr("Синхронизация:","Sync:")} <b>${S.market.synced?tr("✅ он-чейн","✅ on-chain"):tr("⏳ локально","⏳ local")}</b></span>
     </div>
     <div class="row" style="margin-top:8px">
-      <div class="btn small grow primary" onclick="openMarket()">🏪 Рынок</div>
-      <div class="btn small grow" onclick="marketSync()">📡 Синхронизировать</div>
+      <div class="btn small grow primary" onclick="openMarket()">${tr("🏪 Рынок","🏪 Market")}</div>
+      <div class="btn small grow" onclick="marketSync()">${tr("📡 Синхронизировать","📡 Synchronize")}</div>
     </div></div>`;
 
   /* активные листинги */
@@ -2767,7 +2767,7 @@ function openWarehouse(){
     ${itemCard("cons","grenade",{count:S.inv.grenade})}
   </div>
   <div class="muted" style="margin-bottom:8px">${tr("Раздай бойцам на пояс — в бой идёт только то, что на поясе!","Hand out to belts — only belt goes to battle!")}</div>
-  <h2 class="sub">🔸 Патроны на складе</h2>`;
+  <h2 class="sub">${tr("🔸 Патроны на складе","🔸 Ammo on stock")}</h2>`;
   const amkeys=Object.keys(S.inv.ammo||{}).filter(k=>S.inv.ammo[k]>0);
   if(amkeys.length){
     html+=`<div class="igrid">`+amkeys.map(k=>
@@ -2796,10 +2796,10 @@ function itemMenu(type,id,listIdx){
     const l=S.market.listed[listIdx];
     const it=getItemDef(l.type,l.id);
     genericModal(`<h2>🏷️ ${it.name}</h2>
-      <div class="muted">Выставлено за ${l.price} 💰 (листинг #${l.lid})</div>
+      <div class="muted">${tr("Выставлено за","Listed for")} ${l.price} 💰 (${tr("листинг","listing")} #${l.lid})</div>
       <div class="row" style="margin-top:12px">
         <div class="btn grow" onclick="closeModal('mGeneric')">${tr("Закрыть","Close")}</div>
-        <div class="btn danger grow" onclick="closeModal('mGeneric');unlistItem(${listIdx})">Снять с торгов</div>
+        <div class="btn danger grow" onclick="closeModal('mGeneric');unlistItem(${listIdx})">${tr("Снять с торгов","Delist")}</div>
       </div>`);
     return;
   }
@@ -2814,11 +2814,11 @@ function itemMenu(type,id,listIdx){
   genericModal(`<div style="display:flex;gap:12px;align-items:center">
       <div style="width:60px">${svgIcon(kind,id)}</div>
       <div><h2 style="margin:0">${it.name}</h2><div class="muted">${desc}</div>
-      <div class="muted">Свободно: ${free} шт</div></div></div>
+      <div class="muted">${tr("Свободно:","Free:")} ${free} ${tr("шт","pcs")}</div></div></div>
     <div class="row" style="margin-top:14px">
       <div class="btn grow" onclick="closeModal('mGeneric')">${tr("Закрыть","Close")}</div>
       <div class="btn grow ${free>0?"":"disabled"}" onclick="closeModal('mGeneric');sellItem('${type}','${id}')">💰 ${sellPrice(it.price)}</div>
-      <div class="btn primary grow" onclick="closeModal('mGeneric');listItem('${type}','${id}')">🏷️ На рынок</div>
+      <div class="btn primary grow" onclick="closeModal('mGeneric');listItem('${type}','${id}')">${tr("🏷️ На рынок","🏷️ To market")}</div>
     </div>`);
 }
 function getItemDef(type,id){
@@ -2842,17 +2842,17 @@ let lidSeq=1;
 function listItem(type,id){
   const b=invBucket(type);
   const free=(b[id]||0)-listedCount(type,id);
-  if(free<=0){toast("Свободных предметов нет");return;}
+  if(free<=0){toast(tr("Свободных предметов нет","No free items"));return;}
   const it=getItemDef(type,id);
   const def=Math.max(10,Math.round(it.price*0.8));
   const inp=prompt(`Цена листинга для «${it.name}» (кредиты):`, def);
   if(inp===null)return;
   const price=parseInt(inp,10);
-  if(!(price>0)){toast("Неверная цена");return;}
+  if(!(price>0)){toast(tr("Неверная цена","Bad price"));return;}
   S.market.listed.push({lid:Date.now()%1e6+(lidSeq++), type, id, price, ts:Math.floor(Date.now()/1000)});
   S.market.synced=false;
   save();
-  toast("Лот создан — виден в РЫНОК → 🏷️ Мои лоты");
+  toast(tr("Лот создан — виден в РЫНОК → 🏷️ Мои лоты","Lot created — see MARKET → 🏷️ My lots"));
 }
 function unlistItem(i,ctx){
   S.market.listed.splice(i,1);
@@ -2860,7 +2860,7 @@ function unlistItem(i,ctx){
   save();
   if(ctx==="market"){renderMarketList();}
   else openWarehouse();
-  toast("Лот снят");
+  toast(tr("Лот снят","Lot removed"));
 }
 function marketPayload(){
   return {
@@ -2933,21 +2933,21 @@ function openMarket(tab){
   const el=document.getElementById("marketBody");
   el.innerHTML=`
     <div class="card">
-      <h3>🏪 Барахолка «У Клеща»</h3>
-      <div class="muted">Барыги завозят товар раз в сутки — состав меняется каждый день.
+      <h3>${tr("🏪 Барахолка «У Клеща»","🏪 Tick flea market")}</h3>
+      <div class="muted">${tr("Барыги завозят товар раз в сутки — состав меняется каждый день.","Dealers restock daily — assortment changes every day.")}
       Со склада свои вещи выставляй через <b>СКЛАД → 🏷️ На рынок</b>, они появятся во вкладке «Мои лоты».</div>
       <div class="statline" style="margin-top:8px">
-        <span class="tag">Лотов: <b>${S.market.listed.length}</b></span>
-        <span class="tag">Синхронизация: <b>${S.market.synced?"✅ он-чейн":"⏳ локально"}</b></span>
+        <span class="tag">${tr("Лотов:","Lots:")} <b>${S.market.listed.length}</b></span>
+        <span class="tag">${tr("Синхронизация:","Sync:")} <b>${S.market.synced?tr("✅ он-чейн","✅ on-chain"):tr("⏳ локально","⏳ local")}</b></span>
       </div>
       <div class="row" style="margin-top:8px">
-        <div class="btn small grow" onclick="marketSync(true)">📡 Синхронизировать</div>
-        <div class="btn small grow" onclick="openWarehouse()">📦 На склад</div>
+        <div class="btn small grow" onclick="marketSync(true)">${tr("📡 Синхронизировать","📡 Synchronize")}</div>
+        <div class="btn small grow" onclick="openWarehouse()">${tr("📦 На склад","📦 To stock")}</div>
       </div>
     </div>
     <div class="modetab">
-      <div class="btn ${marketTab==="goods"?"on":""}" onclick="openMarket('goods')">🏪 Товары</div>
-      <div class="btn ${marketTab==="lots"?"on":""}" onclick="openMarket('lots')">🏷️ Мои лоты${S.market.listed.length?" · "+S.market.listed.length:""}</div>
+      <div class="btn ${marketTab==="goods"?"on":""}" onclick="openMarket('goods')">${tr("🏪 Товары","🏪 Goods")}</div>
+      <div class="btn ${marketTab==="lots"?"on":""}" onclick="openMarket('lots')">${tr("🏷️ Мои лоты","🏷️ My lots")}${S.market.listed.length?" · "+S.market.listed.length:""}</div>
     </div>
     <div id="marketList"></div>`;
   renderMarketList();
@@ -2992,19 +2992,18 @@ function renderMarketList(){
     el.innerHTML=chips+(html||`<div class="card"><div class="muted">${marketFilter==="all"?tr("Товар завезут завтра.","New goods tomorrow."):tr("В этой категории сегодня ничего нет — загляни завтра.","Nothing in this category today — check tomorrow.")}</div></div>`);
   }else{
     if(!S.market.listed.length){
-      el.innerHTML=`<div class="card"><div class="muted">Лотов нет.<br><br>
-        Открой <b>СКЛАД</b>, тапни по вещи и выбери <b>🏷️ На рынок</b> — лот появится здесь
-        и уйдёт в блокчейн при синхронизации.</div></div>`;
+      el.innerHTML=`<div class="card"><div class="muted">${tr("Лотов нет.","No lots.")}<br><br>
+        ${tr("Открой <b>СКЛАД</b>, тапни по вещи и выбери <b>🏷️ На рынок</b> — лот появится здесь и уйдёт в блокчейн при синхронизации.","Open <b>STOCK</b>, tap an item and pick <b>🏷️ To market</b> — the lot appears here and goes on-chain on sync.")}</div></div>`;
       return;
     }
     let html="";
     S.market.listed.forEach((l,i)=>{
       const it=getItemDef(l.type,l.id);
       const kind=l.type==="implant"?"implant":l.type;
-      html+=marketRow(svgIcon(kind,l.id),it.name,"Листинг #"+l.lid+
-        (S.market.synced?" · ✅ он-чейн":" · ⏳ ждёт синхронизации"),
-        `<span class="tag">Цена: <b>${l.price}💰</b></span>`,
-        `<div class="btn small danger" style="flex-shrink:0" onclick="unlistItem(${i},'market')">Снять</div>`);
+      html+=marketRow(svgIcon(kind,l.id),it.name,tr("Листинг #","Listing #")+l.lid+
+        (S.market.synced?tr(" · ✅ он-чейн"," · ✅ on-chain"):tr(" · ⏳ ждёт синхронизации"," · ⏳ awaiting sync")),
+        `<span class="tag">${tr("Цена:","Price:")} <b>${l.price}💰</b></span>`,
+        `<div class="btn small danger" style="flex-shrink:0" onclick="unlistItem(${i},'market')">${tr("Снять","Remove")}</div>`);
     });
     el.innerHTML=html;
   }
@@ -3038,10 +3037,8 @@ async function marketSync(fromMarket){
     toast(tr("✅ Сеть доступна — подпиши транзакции в chain/sync.mjs","✅ Network reachable — sign transactions in chain/sync.mjs"));
   }catch(e){
     S.market.synced=false; save();
-    genericModal(`<h2>📡 Офлайн-режим</h2>
-      <div class="muted" style="line-height:1.6">Сеть Shellnet недоступна из этого окружения.
-      Состояние склада и листинги сохранены локально и готовы к отправке.<br><br>
-      Payload для контракта <b>TIOItems</b>:</div>
+    genericModal(`<h2>${tr("📡 Офлайн-режим","📡 Offline mode")}</h2>
+      <div class="muted" style="line-height:1.6">${tr("Сеть Shellnet недоступна из этого окружения.","Shellnet is unreachable from here.")}<br>${tr("Состояние склада и листинги сохранены локально и готовы к отправке.","Stock and listings are saved locally, ready to send.")}<br><br>${tr("Payload для контракта","Payload for contract")} <b>TIOItems</b>:</div>
       <textarea readonly style="margin-top:8px">${JSON.stringify(marketPayload(),null,2)}</textarea>
       <div class="btn primary" style="width:100%;margin-top:10px" onclick="closeModal('mGeneric')">OK</div>`);
   }
@@ -3049,16 +3046,16 @@ async function marketSync(fromMarket){
 
 /* ---------- МАГАЗИН ---------- */
 function weaponDesc(w,id){
-  let d=`Урон ${w.dmg[0]}–${w.dmg[1]}${w.shots>1?" ×"+w.shots:""} · ${w.ap} ОД`;
+  let d=tr(`Урон ${w.dmg[0]}–${w.dmg[1]}${w.shots>1?" ×"+w.shots:""} · ${w.ap} ОД`,`Damage ${w.dmg[0]}–${w.dmg[1]}${w.shots>1?" ×"+w.shots:""} · ${w.ap} AP`);
   const g=id?gunSpec(id):null;
   if(g)d+=` · 🔸${g.mag} · ${ammoName(g.ammo)}`;
   if(id)d+=` · ⚖️${itemWt("weapon",id)}`;
-  if(w.melee)d+=" · ближний бой";
+  if(w.melee)d+=tr(" · ближний бой"," · melee");
   else{
-    d+=` · дальн. ${(w.min||1)>1?w.min+"–":""}${w.max}`;
-    if((w.min||1)>1)d+=` ⚠ в упор нельзя`;
+    d+=tr(` · дальн. ${(w.min||1)>1?w.min+"–":""}${w.max}`,` · range ${(w.min||1)>1?w.min+"–":""}${w.max}`);
+    if((w.min||1)>1)d+=tr(` ⚠ в упор нельзя`,` ⚠ no point-blank`);
   }
-  if(w.splash)d+=` · 💥 взрыв по площади`;
+  if(w.splash)d+=tr(` · 💥 взрыв по площади`,` · 💥 area blast`);
   return d;
 }
 function openShop(){
@@ -3132,7 +3129,7 @@ function sellAmmo(t){
   const a=AMMO[t];
   const gain=Math.max(1,Math.floor(a.price/a.box/2))*S.inv.ammo[t];
   S.credits+=gain; S.inv.ammo[t]=0;
-  save(); openWarehouse(); toast(`Продано: +${gain}💰`);
+  save(); openWarehouse(); toast(tr(`Продано: +${gain}💰`,`Sold: +${gain}💰`));
 }
 
 /* ---------- НАЁМ ---------- */
@@ -3146,7 +3143,7 @@ function openHire(){
       <div style="font-size:30px">${c.emoji}</div>
       <div class="grow"><h3>${m.name}</h3><div class="muted">${c.name} — ${c.desc}</div>
         <div class="statline"><span class="tag">HP <b>${st.hp}</b></span>
-        <span class="tag">ОД <b>${st.ap}</b></span><span class="tag">Точн <b>${st.acc}</b></span>
+        <span class="tag">${tr("ОД","AP")} <b>${st.ap}</b></span><span class="tag">${tr("Точн","Acc")} <b>${st.acc}</b></span>
         <span class="tag">👁 <b>${st.sight}</b></span></div></div>
       <div class="btn small ${S.credits>=c.hire?"primary":""}" onclick="hire(${i})">💰${c.hire}</div>
     </div></div>`;
@@ -3277,7 +3274,7 @@ function renderWalletInfo(){
     const bal = conn.balances || {};
     el.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <span class="wallet-badge on">● Подключён</span>
+        <span class="wallet-badge on">${tr("● Подключён","● Connected")}</span>
         <span style="font-size:13px;color:var(--sand)">${esc(conn.walletName||'')}</span>
         ${conn.verified
           ? '<span style="font-size:10px;color:var(--green)">${tr("✓ подтверждён кошельком","✓ wallet-confirmed")}</span>'
@@ -3299,8 +3296,8 @@ function renderWalletInfo(){
         </div>
       </div>
       <div class="row" style="margin-top:6px">
-        <div class="btn small grow" onclick="walletRefreshBalance()">🔄 Обновить</div>
-        <div class="btn small grow danger" onclick="walletDisconnect()">Отключить</div>
+        <div class="btn small grow" onclick="walletRefreshBalance()">${tr("🔄 Обновить","🔄 Refresh")}</div>
+        <div class="btn small grow danger" onclick="walletDisconnect()">${tr("Отключить","Disconnect")}</div>
       </div>`;
   }
 }
@@ -3366,8 +3363,8 @@ function showGameKey(){
   el.innerHTML = `
     <div style="font-family:monospace;font-size:10px;color:var(--sand);word-break:break-all;
       background:rgba(0,0,0,.4);padding:10px;border-radius:10px;border:1px solid var(--line);margin-top:6px">
-      <div><b style="color:var(--amber)">Адрес:</b><br>${esc(s.walletAddress)}</div>
-      <div style="margin-top:6px"><b style="color:var(--amber)">Имя:</b> ${esc(s.walletName)}</div>
+      <div><b style="color:var(--amber)">${tr("Адрес:","Address:")}</b><br>${esc(s.walletAddress)}</div>
+      <div style="margin-top:6px"><b style="color:var(--amber)">${tr("Имя:","Name:")}</b> ${esc(s.walletName)}</div>
       <div style="margin-top:6px"><b style="color:var(--amber)">Статус:</b> ${s.verified?tr("✅ подтверждено кошельком","✅ wallet-confirmed"):tr("⚠️ без подписи кошелька","⚠️ wallet unsigned")}</div>
     </div>`;
 }
@@ -3401,7 +3398,7 @@ function refreshPendingTxs(){
       <div style="flex:1;font-size:12px">
         <div style="color:var(--sand)">${fn}</div>
         ${detail?`<div class="muted">${detail}</div>`:""}
-        <div class="muted">${age} мин назад · отправка: chain/sync.mjs battle</div>
+        <div class="muted">${tr(`${age} мин назад · отправка: chain/sync.mjs battle`,`${age} min ago · send: chain/sync.mjs battle`)}</div>
       </div>
       <div style="font-size:10px;color:var(--dim)">⏳</div>
     </div>`;
@@ -3852,7 +3849,7 @@ function doAttack(att,def){
   gainSkill(att, 1 + (hits>0?1:0));
   if(total>0){
     applyDamage(def,total,att.name,{ax:att.x,ay:att.y,crit,armored:armoredAny&&hits===shots});
-    blog(`${att.emoji}${att.name} → ${def.emoji}${def.name}: ${hits}/${shots} попал, <b>${total}</b> урона${crit?" <b>КРИТ!</b>":""}`);
+    blog(tr(`${att.emoji}${att.name} → ${def.emoji}${def.name}: ${hits}/${shots} попал, <b>${total}</b> урона${crit?" <b>КРИТ!</b>":""}`,`${att.emoji}${att.name} → ${def.emoji}${def.name}: ${hits}/${shots} hits, <b>${total}</b> damage${crit?" <b>CRIT!</b>":""}`));
     B.log.push(`${att.name}>${def.name}:${total}`);
     if(!def.alive)gainSkill(att,2); // бонус за добивание
     /* взрыв ракеты по площади */
@@ -3927,7 +3924,7 @@ cv.addEventListener("click",ev=>{
   /* по скрытому врагу нельзя ни кликнуть, ни атаковать — игрок его «не видит» */
   if(u&&u.side==="e"&&enemyVisible(u)){
     if(canAttack(sel,u)){B.movePath=null;doAttack(sel,u);B.reach=reachable(sel);}
-    else toast(whyCantAttack(sel,u)||"Нельзя атаковать");
+    else toast(whyCantAttack(sel,u)||tr("Нельзя атаковать","Cannot attack"));
     return;
   }
   /* лут-ящик: вскрыть, если рядом (3 ОД) */
@@ -4047,25 +4044,25 @@ function crateTake(x,y,idx){
   if(!it)return;
   if(!u.lootBelt)u.lootBelt={medkit:0,grenade:0};
   if(it.type==="medkit"){
-    if(u.cls==="dog"){ items.splice(idx,1); u.hp=Math.min(u.maxhp,u.hp+40); blog(`📦 ${u.name} съел аптечку (+40 HP)`); }
+    if(u.cls==="dog"){ items.splice(idx,1); u.hp=Math.min(u.maxhp,u.hp+40); blog(tr(`📦 ${u.name} съел аптечку (+40 HP)`,`📦 ${u.name} ate a medkit (+40 HP)`)); }
     else{
-      if(unitBattleLoad(u)+itemWt("cons","medkit")>unitCarryLimit(u)){toast(`Перегруз! Несу ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)}`);return;}
+      if(unitBattleLoad(u)+itemWt("cons","medkit")>unitCarryLimit(u)){toast(tr(`Перегруз! Несу ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)}`,`Overloaded! Carrying ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)}`));return;}
       items.splice(idx,1); u.lootBelt.medkit++;
-      blog(`📦 ${u.name} взял <b>аптечку</b> (только на этот бой)`);
+      blog(tr(`📦 ${u.name} взял <b>аптечку</b> (только на этот бой)`,`📦 ${u.name} took a <b>medkit</b> (battle only)`));
     }
   }else if(it.type==="grenade"){
     if(u.cls==="dog"||u.cls==="mutant"){toast(tr("Не умеет пользоваться гранатами","Can't use grenades"));return;}
-    if(unitBattleLoad(u)+itemWt("cons","grenade")>unitCarryLimit(u)){toast(`Перегруз! Несу ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)}`);return;}
+    if(unitBattleLoad(u)+itemWt("cons","grenade")>unitCarryLimit(u)){toast(tr(`Перегруз! Несу ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)}`,`Overloaded! Carrying ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)}`));return;}
     items.splice(idx,1); u.lootBelt.grenade++;
-    blog(`📦 ${u.name} взял <b>гранату</b> (только на этот бой)`);
+    blog(tr(`📦 ${u.name} взял <b>гранату</b> (только на этот бой)`,`📦 ${u.name} took a <b>grenade</b> (battle only)`));
   }else if(it.type==="ammo"){
     if(u.cls!=="human"){toast(tr("Только люди таскают патроны","Only humans carry ammo"));return;}
     const wadd=it.n*((AMMO[it.ammo]||{}).wpr||1);
-    if(unitBattleLoad(u)+wadd>unitCarryLimit(u)){toast(`Перегруз! Несу ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)}`);return;}
+    if(unitBattleLoad(u)+wadd>unitCarryLimit(u)){toast(tr(`Перегруз! Несу ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)}`,`Overloaded! Carrying ${wtFmt(unitBattleLoad(u))}/${unitCarryLimit(u)}`));return;}
     items.splice(idx,1);
     if(!u.spare)u.spare={};
     u.spare[it.ammo]=(u.spare[it.ammo]||0)+it.n;
-    blog(`📦 ${u.name} взял патроны: <b>${ammoName(it.ammo)} ×${it.n}</b>`);
+    blog(tr(`📦 ${u.name} взял патроны: <b>${ammoName(it.ammo)} ×${it.n}</b>`,`📦 ${u.name} took ammo: <b>${ammoName(it.ammo)} ×${it.n}</b>`));
   }else{
     const w=WEAPONS[it.id];
     if(!w.classes.includes(u.cls)){toast(tr("Не может это использовать","Cannot use this"));return;}
@@ -4073,7 +4070,7 @@ function crateTake(x,y,idx){
       toast(`Перегруз! Несу ${unitBattleLoad(u)}/${unitCarryLimit(u)}`);return;
     }
     items.splice(idx,1);
-    if(u.trophy){ items.push({type:"weapon",id:u.weapon}); blog(`📦 ${u.name} положил ${WEAPONS[u.weapon].name} обратно в ящик`); }
+    if(u.trophy){ items.push({type:"weapon",id:u.weapon}); blog(tr(`📦 ${u.name} положил ${WEAPONS[u.weapon].name} обратно в ящик`,`📦 ${u.name} put ${WEAPONS[u.weapon].name} back into the crate`)); }
     else{ u.origWeapon=u.weapon; u.origWeapon2=u.weapon2; }
     if(!u.weapon2 && !WEAPONS[u.weapon].natural && !u.trophy){ u.weapon2=u.weapon; }
     u.weapon=it.id;
@@ -4083,7 +4080,7 @@ function crateTake(x,y,idx){
     u.mag=ng?ng.mag:0;
     if(!u.mags)u.mags={};
     if(ng)u.mags[it.id]=u.mag;
-    blog(`📦 ${u.name} взял трофей: ${w.emoji}<b>${w.name}</b>! (вынести из боя нельзя)`);
+    blog(tr(`📦 ${u.name} взял трофей: ${w.emoji}<b>${w.name}</b>! (вынести из боя нельзя)`,`📦 ${u.name} took trophy: ${w.emoji}<b>${w.name}</b>! (stays in battle)`));
   }
   B.reach=reachable(u);
   updateHud();
@@ -4310,7 +4307,7 @@ function aiGrenade(e,visible,players){
   spendBelt(e,"grenade");e.ap-=5;
   addEffect({type:"boom",x:bc.x,y:bc.y,t:now()});
   doShake(8,400);
-  blog(`💣 ${e.name} бросает гранату!`);
+  blog(tr(`💣 ${e.name} бросает гранату!`,`💣 ${e.name} throws a grenade!`));
   B.units.forEach(u=>{
     if(!u.alive)return;
     if(Math.abs(u.x-bc.x)<=1&&Math.abs(u.y-bc.y)<=1){
@@ -4524,7 +4521,7 @@ function updateHud(){
   const sk=uSkill(u);
   document.getElementById("uiFace").textContent=u.emoji;
   document.getElementById("uiName").textContent=u.name;
-  document.getElementById("uiWeap").textContent=` ${w.emoji}${w.name} ${weaponAp(u)}ОД · ${skillRank(sk)} ${sk}${gunSpec(u.weapon)?` · 🔸${u.mag||0}/${gunSpec(u.weapon).mag}`:""}`;
+  document.getElementById("uiWeap").textContent=` ${w.emoji}${w.name} ${weaponAp(u)}${tr("ОД","AP")} · ${skillRank(sk)} ${sk}${gunSpec(u.weapon)?` · 🔸${u.mag||0}/${gunSpec(u.weapon).mag}`:""}`;
   document.getElementById("magCnt").textContent=gunSpec(u.weapon)?(u.mag||0):"";
   document.getElementById("uiHp").style.width=Math.max(0,100*u.hp/u.maxhp)+"%";
   const apEl=document.getElementById("uiAp");
@@ -4610,7 +4607,7 @@ function sfx(kind){
 function toggleSnd(){
   S.snd=S.snd===false?true:false;save();
   document.getElementById("btnSnd").textContent=S.snd===false?"🔇":"🔊";
-  toast(S.snd===false?"Звук выключен":"Звук включён");
+  toast(S.snd===false?tr("Звук выключен","Sound off"):tr("Звук включён","Sound on"));
 }
 
 /* =========================================================
