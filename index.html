@@ -288,14 +288,10 @@
     <div id="splashWalletBox" style="width:100%;max-width:340px">
       <div class="card" style="text-align:left">
         <h3>🔑 Подключи кошелёк</h3>
-        <div class="muted" style="margin:6px 0">Введи имя своего <b>AN Wallet</b> для входа в Зону.</div>
+        <div class="muted" style="margin:6px 0">Нажми кнопку и подтверди вход в приложении <b>AN Wallet</b> — имя вводить не нужно, кошелёк сам назовётся.</div>
         <div id="splashSdkStatus" style="margin:8px 0;font-size:11px;color:var(--dim)"></div>
-        <div style="margin-top:10px">
-          <input id="splashWalletName" type="text" placeholder="МойWallet123" autocomplete="off"
-            style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.4);color:var(--sand);font-size:14px;outline:none;box-sizing:border-box">
-        </div>
-        <div class="row" style="margin-top:10px">
-          <div class="btn primary grow" id="splashBtnConnect" onclick="splashManualConnect()" style="width:100%">Войти →</div>
+        <div id="splashConnectBox" style="margin-top:10px">
+          <div class="btn primary grow" id="splashBtnConnect" onclick="splashConnectQR()" style="width:100%">Подключить AN Wallet →</div>
         </div>
         <div id="splashStatus" style="margin-top:10px;text-align:center"></div>
       </div>
@@ -1276,8 +1272,8 @@ function renderSplash(){
     btn.onclick = ()=>show("scr-hub");
     return;
   }
-  btn.textContent = "Войти →";
-  btn.onclick = splashManualConnect;
+  btn.textContent = "Подключить AN Wallet →";
+  btn.onclick = splashConnectQR;
   status.innerHTML = "";
   // Показываем статус загрузки SDK
   if(sdkStatus){
@@ -1298,95 +1294,101 @@ function renderSplash(){
 }
 
 /* SPLASH state */
-let _pendingAuth = null;
+let _connectToken = 0;
 
-async function splashManualConnect(){
-  const btn = document.getElementById("splashBtnConnect");
+/* Подключение через приложение AN Wallet (BeeConnect-сессия, как в официальном
+   примере miner-react): создаём сессию с challenge-nonce, открываем deep-link
+   в кошельке, ждём wait_wallet_hello. Имя и адрес приходят ИЗ КОШЕЛЬКА —
+   подставить чужое имя невозможно без чужого приложения в руках. */
+async function splashConnectQR(){
+  const box = document.getElementById("splashConnectBox");
   const status = document.getElementById("splashStatus");
-  const nameInput = document.getElementById("splashWalletName");
-  if(!btn || !status || !nameInput) return;
-  const walletName = nameInput.value.trim();
-  if(!walletName){
-    status.innerHTML='<div style="color:var(--red);font-size:12px">Введи имя кошелька</div>';
-    return;
-  }
-  btn.disabled=true;
-  btn.textContent="⏳ Подключение...";
-  status.innerHTML='<div style="font-size:11px;color:var(--sand)">[1/3] Проверяю кошелёк...</div>';
+  if(!box || !status) return;
+  status.innerHTML='<div style="font-size:11px;color:var(--sand)">Создаю сессию...</div>';
   try{
     if(!window.anWallet){ await waitForWallet(); }
-    const info = await window.anWallet.connectByName(walletName);
-    status.innerHTML='<div style="font-size:11px;color:var(--sand)">[2/3] Получаю баланс...</div>';
-    const balances = await window.anWallet.getBalance(info.walletAddress);
-    const conn = { walletName: info.walletName, walletAddress: info.walletAddress,
-      balances, verified: !!info.verified, connectedAt: Date.now() };
-    storeSession(conn);
-    // Шаг 3: если приложение зарегистрировано (APP_ID задан) — требуем
-    // криптографическое подтверждение владения через AN Wallet.
-    if(window.anWallet.authRequired && window.anWallet.authRequired()){
-      status.innerHTML='<div style="font-size:11px;color:var(--sand)">[3/4] Нужно подтверждение в AN Wallet...</div>';
-      const auth = await window.anWallet.startAuth(info.walletName);
-      showAuthConfirm(conn, auth);
-      return;
-    }
-    status.innerHTML='<div style="font-size:11px;color:var(--green)">[3/3] Готово!</div>';
-    setTimeout(()=> showWalletResult(conn, "scr-hub"), 400);
+    const sess = await window.anWallet.createConnectSession();
+    const token = ++_connectToken;
+    box.innerHTML=`
+      <a href="${esc(sess.deepLink)}" class="btn primary" style="width:100%;text-decoration:none;box-sizing:border-box">Открыть AN Wallet →</a>
+      <div class="muted" style="font-size:11px;margin:8px 0;line-height:1.5">
+        Подтверди вход в приложении кошелька, затем нажми «Я подтвердил».</div>
+      <div class="row">
+        <div class="btn small grow" onclick="splashCopyLink()">📋 Скопировать ссылку</div>
+        <div class="btn small grow danger" onclick="splashCancelConnect()">✕ Отмена</div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="btn primary grow" id="splashBtnConfirmed" onclick="splashCheckConfirm()">Я подтвердил ✓</div>
+      </div>`;
+    window._pendingSess = sess;
+    status.innerHTML='<div style="font-size:11px;color:var(--sand)">⏳ Жду подтверждения в AN Wallet...</div>';
   }catch(e){
-    const msg = esc((e && e.message) ? e.message : String(e));
-    status.innerHTML='<div style="color:var(--red);font-size:11px;margin:6px 0">❌ '+msg+'</div><div class="btn small" onclick="splashManualConnect()">Попробовать снова</div>';
-  }finally{
-    btn.disabled=false;
-    btn.textContent="Войти →";
+    status.innerHTML='<div style="color:var(--red);font-size:11px;margin:6px 0">❌ '+esc((e&&e.message)?e.message:String(e))+'</div>'
+      +'<div class="btn small" onclick="splashConnectQR()">Попробовать снова</div>';
   }
 }
 
-/* Экран подтверждения владения: deep-link в AN Wallet + ожидание записи ключей */
-function showAuthConfirm(conn, auth){
+function splashCopyLink(){
+  const s = window._pendingSess;
+  if(!s){ toast("Нет активной сессии"); return; }
+  if(navigator.clipboard){ navigator.clipboard.writeText(s.deepLink); toast("Ссылка скопирована"); }
+  else toast("Скопируй ссылку вручную");
+}
+
+function splashCancelConnect(){
+  _connectToken++;
+  window._pendingSess = null;
+  const box = document.getElementById("splashConnectBox");
   const status = document.getElementById("splashStatus");
-  const btn = document.getElementById("splashBtnConnect");
-  const nameInput = document.getElementById("splashWalletName");
-  if(nameInput) nameInput.style.display="none";
-  status.innerHTML=`
-    <div style="background:rgba(255,196,107,.08);border:1px solid rgba(255,196,107,.25);border-radius:10px;padding:12px;margin-top:8px;text-align:left">
-      <div style="font-size:12px;color:var(--sand);margin-bottom:6px">🔐 Подтверди вход в <b>${esc(conn.walletName)}</b></div>
-      <div class="muted" style="font-size:11px;line-height:1.5;margin-bottom:8px">
-        Нажми кнопку — откроется AN Wallet. Подтверди привязку приложения,
-        затем нажми «Я подтвердил» здесь.</div>
-      <a href="${esc(auth.deepLink)}" class="btn primary" style="width:100%;text-decoration:none;box-sizing:border-box">Открыть AN Wallet →</a>
-      <div id="authWait" style="margin-top:8px"></div>
-    </div>`;
-  btn.textContent="Я подтвердил ✓";
-  btn.disabled=false;
-  btn.onclick=async ()=>{
-    const w=document.getElementById("authWait");
-    btn.disabled=true;
-    if(w)w.innerHTML='<div style="font-size:11px;color:var(--sand)">⏳ Проверяю запись ключей в блокчейне...</div>';
+  if(box) box.innerHTML='<div class="btn primary grow" id="splashBtnConnect" onclick="splashConnectQR()" style="width:100%">Подключить AN Wallet →</div>';
+  if(status) status.innerHTML='';
+}
+
+async function splashCheckConfirm(){
+  const sess = window._pendingSess;
+  const status = document.getElementById("splashStatus");
+  const btn = document.getElementById("splashBtnConfirmed");
+  if(!sess){ if(status)status.innerHTML='<div style="color:var(--red);font-size:11px">Сессия истекла — начни заново</div>'; return; }
+  const token = _connectToken;
+  if(btn){ btn.disabled=true; btn.textContent="⏳ Проверяю..."; }
+  if(status) status.innerHTML='<div style="font-size:11px;color:var(--sand)">Проверяю ответ кошелька в блокчейне...</div>';
+  try{
+    const info = await window.anWallet.waitConnect(sess, 45, 2000);
+    if(token !== _connectToken) return; // отменили
+    const balances = await window.anWallet.getBalance(info.walletAddress);
+    const conn = { walletName: info.walletName, walletAddress: info.walletAddress,
+      profileAddress: info.profileAddress||"", balances,
+      verified: !!info.verified, connectedAt: Date.now() };
     try{
-      await window.anWallet.confirmAuth(conn.walletName, auth);
-      conn.verified=true; conn.connectedAt=Date.now();
-      storeSession(conn);
-      showWalletResult(conn, "scr-hub");
-    }catch(e){
-      if(w)w.innerHTML='<div style="color:var(--red);font-size:11px">❌ '+esc((e&&e.message)?e.message:String(e))+'</div>';
-      btn.disabled=false;
-    }
-  };
+      const prev = getStoredSession();
+      if(prev && prev.walletAddress && prev.walletAddress !== conn.walletAddress){
+        setSaveKeyForWallet(conn.walletAddress); load();
+      }
+    }catch(e){}
+    storeSession(conn);
+    window._pendingSess = null;
+    setTimeout(()=> showWalletResult(conn, "scr-hub"), 300);
+  }catch(e){
+    if(token !== _connectToken) return;
+    if(status) status.innerHTML='<div style="color:var(--red);font-size:11px;margin:6px 0">❌ '
+      +esc((e&&e.message)?e.message:String(e))
+      +'<br><span class="muted">Убедись, что подтвердил вход в AN Wallet, и попробуй ещё раз.</span></div>';
+    if(btn){ btn.disabled=false; btn.textContent="Я подтвердил ✓"; }
+  }
 }
 
 function splashCancelAuth(){
-  _pendingAuth = null;
+  _connectToken++;
+  window._pendingSess = null;
   const status = document.getElementById("splashStatus");
-  const btn = document.getElementById("splashBtnConnect");
-  const nameInput = document.getElementById("splashWalletName");
+  const box = document.getElementById("splashConnectBox");
   if(status) status.innerHTML='';
-  if(btn) btn.style.display='';
-  if(nameInput) nameInput.style.display='';
+  if(box) box.innerHTML='<div class="btn primary grow" id="splashBtnConnect" onclick="splashConnectQR()" style="width:100%">Подключить AN Wallet →</div>';
 }
 
 function showWalletResult(conn, nextScreen){
   const status = document.getElementById("splashStatus");
-  const btn = document.getElementById("splashBtnConnect");
-  const nameInput = document.getElementById("splashWalletName");
+  const box = document.getElementById("splashConnectBox");
   const bal = conn.balances||{};
 
   setSaveKeyForWallet(conn.walletAddress);
@@ -1403,8 +1405,8 @@ function showWalletResult(conn, nextScreen){
         <span style="color:var(--green);font-size:14px">✓</span>
         <span style="color:var(--sand);font-size:13px;font-weight:600">${esc(conn.walletName)}</span>
         ${conn.verified
-          ? '<span style="font-size:10px;color:var(--green);border:1px solid rgba(0,200,0,.35);border-radius:99px;padding:1px 7px">владение подтверждено</span>'
-          : '<span style="font-size:10px;color:var(--amber);border:1px solid rgba(255,196,107,.35);border-radius:99px;padding:1px 7px" title="Имя найдено в сети, но подпись владения не проверялась">только просмотр</span>'}
+          ? '<span style="font-size:10px;color:var(--green);border:1px solid rgba(0,200,0,.35);border-radius:99px;padding:1px 7px">подтверждено кошельком</span>'
+          : '<span style="font-size:10px;color:var(--amber);border:1px solid rgba(255,196,107,.35);border-radius:99px;padding:1px 7px" title="Кошелёк ответил, но подпись challenge отсутствует">без подписи</span>'}
       </div>
       <div style="font-size:10px;color:var(--muted);font-family:monospace;word-break:break-all;margin-bottom:8px">${conn.walletAddress}</div>
       <div style="display:flex;gap:6px">
@@ -1422,15 +1424,12 @@ function showWalletResult(conn, nextScreen){
         </div>
       </div>
     </div>`;
-  btn.textContent="В ИГРУ →";
-  btn.disabled=false;
-  btn.onclick=()=>show(nextScreen);
-  if(nameInput) nameInput.style.display="none";
+  if(box) box.innerHTML='<div class="btn primary grow" id="splashBtnConnect" onclick="show(\'scr-hub\')" style="width:100%">В ИГРУ →</div>';
 }
 
 function waitForWallet(){
   return new Promise((res,rej)=>{
-    const c=()=>{if(window.anWallet&&window.anWallet.connectByName){res();}else setTimeout(c,500);};
+    const c=()=>{if(window.anWallet&&window.anWallet.createConnectSession){res();}else setTimeout(c,500);};
     c(); setTimeout(()=>rej(new Error("SDK не загрузился. Проверь интернет.")),60000);
   });
 }
@@ -2718,15 +2717,10 @@ function renderWalletInfo(){
   try{ conn = (window.anWallet && window.anWallet.getSession) ? window.anWallet.getSession() : null; }catch(e){}
   if(!conn || !conn.walletAddress){
     el.innerHTML = `
-      <div class="muted" style="margin-bottom:10px">Подключи <b>AN Wallet</b> для он-чейн операций.</div>
-      <div class="row" style="margin-bottom:6px">
-        <input id="walletNameInput" type="text" placeholder="Имя кошелька" autocomplete="off"
-          style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.4);color:var(--sand);font-size:13px;outline:none">
-      </div>
+      <div class="muted" style="margin-bottom:10px">Подключи <b>AN Wallet</b> для он-чейн операций — вход подтверждается в приложении кошелька.</div>
       <div class="row">
-        <div class="btn primary grow" onclick="walletConnectByName()">Войти</div>
-      </div>
-      <div id="walletLoadStatus" style="margin-top:8px;text-align:center"></div>`;
+        <div class="btn primary grow" onclick="walletReconnect()">Подключить AN Wallet →</div>
+      </div>`;
   }else{
     const bal = conn.balances || {};
     el.innerHTML = `
@@ -2734,8 +2728,8 @@ function renderWalletInfo(){
         <span class="wallet-badge on">● Подключён</span>
         <span style="font-size:13px;color:var(--sand)">${esc(conn.walletName||'')}</span>
         ${conn.verified
-          ? '<span style="font-size:10px;color:var(--green)">✓ подтверждён</span>'
-          : '<span style="font-size:10px;color:var(--amber)" title="Владение именем не подтверждено подписью">только просмотр</span>'}
+          ? '<span style="font-size:10px;color:var(--green)">✓ подтверждён кошельком</span>'
+          : '<span style="font-size:10px;color:var(--amber)" title="Кошелёк ответил, но подпись challenge отсутствует">без подписи</span>'}
       </div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:monospace;word-break:break-all">${conn.walletAddress}</div>
       <div style="display:flex;gap:6px;margin-bottom:8px">
@@ -2759,30 +2753,12 @@ function renderWalletInfo(){
   }
 }
 
-async function walletConnectByName(){
-  const input = document.getElementById("walletNameInput");
-  const status = document.getElementById("walletLoadStatus");
-  if(!input)return;
-  const name = input.value.trim();
-  if(!name){ if(status) status.innerHTML='<div style="color:var(--red);font-size:12px">Введи имя</div>'; return; }
-  if(status) status.innerHTML='<div style="font-size:11px;color:var(--sand)">Подключение...</div>';
-  try{
-    const info = await window.anWallet.connectByName(name);
-    const balances = await window.anWallet.getBalance(info.walletAddress);
-    const conn = { walletName: info.walletName, walletAddress: info.walletAddress,
-      balances, verified: !!info.verified, connectedAt: Date.now() };
-    storeSession(conn);
-    setSaveKeyForWallet(conn.walletAddress);
-    load();
-    if(!S.nick || S.nick.startsWith("Сталкер-")){
-      S.nick = conn.walletName || S.nick;
-      save();
-    }
-    toast("✅ "+conn.walletName);
-    renderWalletInfo();
-  }catch(e){
-    if(status) status.innerHTML='<div style="color:var(--red);font-size:12px">'+esc((e&&e.message)?e.message:String(e))+'</div>';
-  }
+/* Переподключение — всегда через приложение кошелька (стартовый экран) */
+function walletReconnect(){
+  save();
+  try{ window.anWallet.disconnect(); }catch(e){}
+  currentSaveKey = SAVE_KEY_BASE;
+  show("scr-splash");
 }
 
 async function walletDisconnect(){
@@ -2825,8 +2801,8 @@ function renderGameKeyInfo(){
     </div>
     <div class="muted" style="margin-top:6px;font-size:11px">
       ${s.verified
-        ? "✅ Владение подтверждено через AN Wallet. Майнинг-ключи привязаны к контракту."
-        : "👁 Режим просмотра: имя найдено в сети. Для подписи он-чейн действий задай APP_ID (см. README) и подтверди вход."}
+        ? "✅ Вход подтверждён в приложении AN Wallet (подпись challenge). Майнинг-ключи можно привязать через startAuth."
+        : "⚠️ Кошелёк ответил, но подпись challenge отсутствует — считай такое подключение неподтверждённым."}
     </div>`;
 }
 
@@ -2840,7 +2816,7 @@ function showGameKey(){
       background:rgba(0,0,0,.4);padding:10px;border-radius:10px;border:1px solid var(--line);margin-top:6px">
       <div><b style="color:var(--amber)">Адрес:</b><br>${esc(s.walletAddress)}</div>
       <div style="margin-top:6px"><b style="color:var(--amber)">Имя:</b> ${esc(s.walletName)}</div>
-      <div style="margin-top:6px"><b style="color:var(--amber)">Статус:</b> ${s.verified?"✅ владение подтверждено":"👁 только просмотр (без APP_ID)"}</div>
+      <div style="margin-top:6px"><b style="color:var(--amber)">Статус:</b> ${s.verified?"✅ подтверждено кошельком":"⚠️ без подписи кошелька"}</div>
     </div>`;
 }
 
@@ -5697,13 +5673,15 @@ if("serviceWorker"in navigator){
 
 <!-- =========================================================
      AN WALLET — Bee SDK (WASM) + GraphQL Shellnet
-     Поток авторизации (см. README, раздел «Кошелёк»):
-       1) validate_name + check_name_availability — кошелёк существует
-       2) если задан RP_CHAIN.APP_ID (регистрация приложения у команды
-          Acki Nacki): gen_mining_keys → deep_link в AN Wallet →
-          ensure_mining_keys_propagated → add_tap (проверка владения)
-       3) без APP_ID — честный режим «только просмотр» (без подписи
-          владения), он-чейн записи копятся в очереди rp-pending-txs
+     Вход ТОЛЬКО через приложение AN Wallet (официальный flow
+     из примера miner-react, класс BeeConnect):
+       1) create_shared_key_session (с challenge-nonce) → deep-link
+       2) пользователь подтверждает вход В ПРИЛОЖЕНИИ кошелька
+       3) wait_wallet_hello → имя/адрес возвращает САМ КОШЕЛЁК,
+          подпись nonce = verified (владение доказано)
+     Ввода имени в игре НЕТ — чужое имя подставить невозможно.
+     Привязка майнинг-ключей (startAuth/confirmAuth) — отдельный шаг
+     для NACKL-майнинга, требует APP_ID приложения.
      AN Wallet НЕ подписывает произвольные вызовы контрактов
      (системный DAPP_ID mvsystem): запись результатов идёт подписанными
      внешними сообщениями через chain/sync.mjs (контракт сам платит газ).
@@ -5716,7 +5694,9 @@ const PENDING_KEY = 'rp-pending-txs';
 const AN_API = 'https://app-backend-dev.ackinacki.org/api';
 /* APP_ID = app_dapp_id твоего приложения. Как получить: напиши команде
    Acki Nacki (https://t.me/EugeneDAO): имя приложения + ссылка + логотип webp.
-   Пока пусто — вход работает в режиме просмотра баланса без подтверждения. */
+   Пока пусто — сессии создаются с нулевым ID (кошелёк может показать
+   приложение как «незарегистрированное», подтверждение всё равно работает).
+   APP_ID обязателен для привязки майнинг-ключей (NACKL-майнинг). */
 const APP_ID = '';
 const ENDPOINTS = ['https://mainnet.ackinacki.org'];
 /* Предвычисленные адреса контрактов (обновятся после деплоя, см. Profile) */
@@ -5779,6 +5759,12 @@ function queueTx(fn, input){
   }catch(e){}
 }
 
+function genNonce(){
+  const b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  return bytesToHex(b);
+}
+
 /* ─── public API ─── */
 window.anWallet = {
   sdkReady: ()=>sdkReady,
@@ -5786,23 +5772,53 @@ window.anWallet = {
   authRequired: ()=>APP_ID !== '',
   chainDefaults: ()=>({ ...RP_DEFAULTS }),
 
-  /* Шаг 1: проверка имени + существования кошелька (без доказательства владения) */
-  async connectByName(walletName){
-    const name = String(walletName||'').trim();
-    if(!/^[A-Za-z0-9_-]{3,32}$/.test(name)) throw new Error('Имя кошелька: 3–32 символа (латиница, цифры, - _)');
+  /* Connect-сессия (официальный flow из примера miner-react):
+     challenge-nonce + deep-link в приложение AN Wallet.
+     Имя/адрес возвращает САМ КОШЕЛЁК через wait_wallet_hello. */
+  async createConnectSession(){
     const sdk = await loadSdk();
-    const wallet = newWallet(sdk);
+    const bc = new sdk.BeeConnect();
     try{
+      const nonce = genNonce();
+      const appId = APP_ID || ('0x' + '00'.repeat(32));
+      const s = bc.create_shared_key_session(appId, 300, nonce);
+      return { deepLink: s.deep_link, sessionId: s.session_id,
+        description: s.description, clientDhSecret: s.client_dh_secret,
+        createdAt: s.created_at, nonce, appId };
+    }finally{ try{bc.free();}catch(e){} }
+  },
+
+  /* Ожидание подтверждения в кошельке. Возвращает имя/адрес ИЗ КОШЕЛЬКА +
+     verified=true, если кошелёк подписал наш challenge-nonce. */
+  async waitConnect(sess, maxAttempts, intervalMs){
+    if(!sess || !sess.sessionId) throw new Error('Нет активной сессии');
+    const sdk = await loadSdk();
+    const bc = new sdk.BeeConnect();
+    try{
+      const hello = await bc.wait_wallet_hello(
+        ENDPOINTS, sess.sessionId, sess.description, sess.clientDhSecret,
+        sess.createdAt, maxAttempts || 45, intervalMs || 2000);
+      if(!hello.wallet_address) throw new Error('Кошелёк не вернул адрес');
+      const verified = !!(hello.signature && hello.nonce && hello.nonce === sess.nonce);
+      return { walletName: hello.wallet_name || 'AN Wallet',
+        walletAddress: hello.wallet_address,
+        profileAddress: hello.profile_address || '',
+        verified,
+        sessionState: hello.session_state_json || '' };
+    }finally{ try{bc.free();}catch(e){} }
+  },
+
+  /* Завершить connect-сессию на стороне кошелька (при отключении) */
+  async closeConnectSession(conn){
+    try{
+      if(!conn || !conn.sessionId || !conn.description || !conn.sessionState) return;
+      const sdk = await loadSdk();
+      const bc = new sdk.BeeConnect();
       try{
-        const v = wallet.validate_name(name);
-        if(v && v.is_valid === false) throw new Error('Недопустимое имя кошелька');
-      }catch(e){ if(/Недопустимое имя/.test(e.message)) throw e; /* validate_name может отсутствовать */ }
-      const nameInfo = await wallet.check_name_availability(name);
-      if(nameInfo.is_available) throw new Error('Кошелёк "'+name+'" не найден');
-      const addr = nameInfo.multifactor_address;
-      if(!addr) throw new Error('Адрес кошелька не найден');
-      return { walletName: name, walletAddress: addr, verified: false };
-    }finally{ try{wallet.free();}catch(e){} }
+        await bc.disconnect_session(ENDPOINTS, conn.sessionId, conn.description,
+          conn.sessionState, 'user disconnect', 5, 1000);
+      }finally{ try{bc.free();}catch(e){} }
+    }catch(e){}
   },
 
   /* Шаг 2 (только при заданном APP_ID): сгенерировать майнинг-ключи, вернуть deep-link */
@@ -5859,7 +5875,10 @@ window.anWallet = {
     return info;
   },
 
-  async disconnect(){ storeSession(null); try{sessionStorage.removeItem('rp-mining-secret');}catch(e){} },
+  async disconnect(){
+    try{ const s = getStoredSession(); if(s) await window.anWallet.closeConnectSession(s); }catch(e){}
+    storeSession(null); try{sessionStorage.removeItem('rp-mining-secret');}catch(e){}
+  },
 
   /* Результат боя → очередь reportBattle(win, battleHash). Рейтинг (+25/−15)
      и анти-реплей считает контракт PerimeterProfiles, клиент цену не шлёт. */
