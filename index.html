@@ -1262,8 +1262,9 @@ let currentSaveKey = SAVE_KEY_BASE;
 let S = null;
 function blankSkills(){ return {light:0,auto:0,heavy:0,sniper:0,melee:0}; }
 function defaultSave(){
+  const enDef=(navigator.language||"ru").toLowerCase().startsWith("ru")?false:true;
   return {
-    nick: "Сталкер-" + (100 + Math.floor(Math.random()*900)),
+    nick: (enDef?"Stalker-":"Сталкер-") + (100 + Math.floor(Math.random()*900)),
     credits: 300, rating: 1000, wins: 0, losses: 0, battles: 0,
     lastHash: "",
     inv: { weapons:{}, armors:{}, implants:{}, medkit:1, grenade:1, ammo:{p9:60, r762:30} },
@@ -1281,7 +1282,6 @@ function defaultSave(){
     lang: (navigator.language||"ru").toLowerCase().startsWith("ru")?"ru":"en",
   };
 }
-let mercSeq = 1;
 function newMerc(cls, name){
   const c = CLASSES[cls];
   return { id: "m"+(Date.now()%1e7)+"_"+(mercSeq++), cls,
@@ -1717,7 +1717,7 @@ function showWalletResult(conn, nextScreen){
         </div>
       </div>
     </div>`;
-  if(box) box.innerHTML='<div class="btn primary grow" id="splashBtnConnect" onclick="show(\'scr-hub\')" style="width:100%">В ИГРУ →</div>';
+  if(box) box.innerHTML='<div class="btn primary grow" id="splashBtnConnect" onclick="show(\'scr-hub\')" style="width:100%">'+tr('В ИГРУ →','TO GAME →')+'</div>';
 }
 
 function waitForWallet(){
@@ -1917,7 +1917,7 @@ function openEquip(mid){
       <div class="slot" ${natural?"":`onclick="pickWeaponModal('main')"`}>
         ${svgIcon("weapon",m.weapon)}
         <div><div class="sl">${tr("Основное","Primary")}</div><div class="sn">${w.name}</div>
-        <div class="sd">${w.dmg[0]}–${w.dmg[1]}${w.shots>1?"×"+w.shots:""} · ${w.ap}ОД · ⚖️${itemWt("weapon",m.weapon)}</div></div>
+        <div class="sd">${w.dmg[0]}–${w.dmg[1]}${w.shots>1?"×"+w.shots:""} · ${w.ap}${tr("ОД","AP")} · ⚖️${itemWt("weapon",m.weapon)}</div></div>
       </div>
       ${(m.cls!=="dog"&&m.cls!=="mutant")?`
       <div class="slot" onclick="pickWeaponModal('second')">
@@ -2703,7 +2703,7 @@ function whoUses(type,id){
 function openWarehouse(){
   const el=document.getElementById("whList");
   let html=`<div class="card"><h3>⛓️ Он-чейн активы</h3>
-    <div class="muted">Каждый предмет склада — токен в контракте <b>PerimeterItems</b> (Acki Nacki Shellnet).</div>
+    <div class="muted" data-tr="Каждый предмет склада — токен в контракте <b>PerimeterItems</b> (Acki Nacki Shellnet).|Each stock item is a token in the <b>PerimeterItems</b> contract (Acki Nacki Shellnet).">Каждый предмет склада — токен в контракте <b>PerimeterItems</b> (Acki Nacki Shellnet).</div>
     <div class="muted">${tr("«Выставить» создаёт листинг на он-чейн рынке: другие игроки могут купить твою вещь за кредиты.","“List” creates an on-chain market listing: other players can buy your stuff for credits.")}</div>
     <div class="muted">${tr("Подписанные транзакции уходят через chain/sync.mjs.","Signed transactions go via chain/sync.mjs.")}</div>
     <div class="statline" style="margin-top:6px">
@@ -4067,7 +4067,7 @@ function crateTake(x,y,idx){
     const w=WEAPONS[it.id];
     if(!w.classes.includes(u.cls)){toast(tr("Не может это использовать","Cannot use this"));return;}
     if(unitBattleLoad(u)+itemWt("weapon",it.id)-(u.trophy?itemWt("weapon",u.weapon):0)>unitCarryLimit(u)){
-      toast(`Перегруз! Несу ${unitBattleLoad(u)}/${unitCarryLimit(u)}`);return;
+      toast(tr(`Перегруз! Несу ${unitBattleLoad(u)}/${unitCarryLimit(u)}`,`Overloaded! Carrying ${unitBattleLoad(u)}/${unitCarryLimit(u)}`));return;
     }
     items.splice(idx,1);
     if(u.trophy){ items.push({type:"weapon",id:u.weapon}); blog(tr(`📦 ${u.name} положил ${WEAPONS[u.weapon].name} обратно в ящик`,`📦 ${u.name} put ${WEAPONS[u.weapon].name} back into the crate`)); }
