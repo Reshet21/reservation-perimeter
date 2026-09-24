@@ -507,6 +507,13 @@
 
     <div class="card">
       <h3 data-tr="Данные|Data">Данные</h3>
+      <div class="muted" style="margin:6px 0" data-tr="Облачный сейв: выгрузи JSON, отправь в блокчейн командой ниже — и продолжай с любого устройства.|Cloud save: export JSON, send it on-chain with the command below — then continue from any device.">Облачный сейв: выгрузи JSON, отправь в блокчейн командой ниже — и продолжай с любого устройства.</div>
+      <div class="row" style="margin-top:8px">
+        <div class="btn small grow" onclick="exportSave()" data-tr="⬆ Выгрузить сейв|⬆ Export save">⬆ Выгрузить сейв</div>
+        <div class="btn small grow" onclick="showImportSave()" data-tr="⬇ Загрузить сейв|⬇ Import save">⬇ Загрузить сейв</div>
+      </div>
+      <textarea id="saveBox" style="display:none;margin-top:8px" readonly></textarea>
+      <div class="muted" id="saveHint" style="display:none;margin-top:6px;font-size:11px"></div>
       <div class="row" style="margin-top:8px">
         <div class="btn small grow danger" onclick="resetSave()" data-tr="Сбросить сохранение|Reset save">Сбросить сохранение</div>
       </div>
@@ -1366,6 +1373,45 @@ function resetSave(){
   localStorage.removeItem('rp-wallet-session');
   show("scr-splash");
   toast(tr("Прогресс сброшен","Progress reset"));
+}
+/* ---------- ОБЛАЧНЫЙ СЕЙВ: экспорт/импорт JSON, отправка через sync.mjs ---------- */
+function exportSave(){
+  const box=document.getElementById("saveBox");
+  const hint=document.getElementById("saveHint");
+  const blob=JSON.stringify(S);
+  box.style.display="block"; box.setAttribute("readonly",""); box.value=blob;
+  box.select();
+  try{ document.execCommand("copy"); }catch(e){}
+  if(navigator.clipboard){ navigator.clipboard.writeText(blob).catch(()=>{}); }
+  hint.style.display="block";
+  hint.innerHTML=tr(
+    `Скопировано (${blob.length} байт). Сохрани в файл и отправь в блокчейн:<br><b>node sync.mjs save game.json</b>`,
+    `Copied (${blob.length} bytes). Save to a file and send on-chain:<br><b>node sync.mjs save game.json</b>`);
+  toast(tr("Сейв скопирован","Save copied"));
+}
+function showImportSave(){
+  const box=document.getElementById("saveBox");
+  const hint=document.getElementById("saveHint");
+  box.style.display="block"; box.value=""; box.removeAttribute("readonly");
+  box.placeholder=tr("Вставь JSON сейва (из sync.mjs load или экспорта)…","Paste save JSON (from sync.mjs load or export)…");
+  box.focus();
+  hint.style.display="block";
+  hint.innerHTML=`<div class="btn primary grow" onclick="importSave()">${tr("Загрузить этот сейв","Load this save")}</div>
+    <div class="muted" style="margin-top:6px">${tr("Скачать из блокчейна: <b>node sync.mjs load game.json</b>","Download from chain: <b>node sync.mjs load game.json</b>")}</div>`;
+}
+function importSave(){
+  const box=document.getElementById("saveBox");
+  let data;
+  try{ data=JSON.parse(box.value); }
+  catch(e){ toast(tr("❌ Не JSON — проверь вставку","❌ Not JSON — check paste")); return; }
+  if(!data||!data.roster||!data.inv){ toast(tr("❌ Не похоже на сейв","❌ Doesn't look like a save")); return; }
+  if(!confirm(tr("Заменить текущий прогресс загруженным?","Replace current progress with loaded save?")))return;
+  S=migrate(data); save();
+  try{ applyDataLocale(); }catch(e){}
+  box.setAttribute("readonly",""); box.value="";
+  document.getElementById("saveHint").style.display="none";
+  renderHub(); openProfile();
+  toast(tr("✅ Сейв загружен","✅ Save loaded"));
 }
 
 /* ---------- ХАРАКТЕРИСТИКИ ---------- */

@@ -26,6 +26,8 @@ contract PerimeterProfiles {
         uint32  updatedAt;
         bool    exists;
         string  walletAddr; // адрес AN Wallet владельца (привязка кошелёк↔профиль)
+        string  saveBlob;   // облачный сейв (JSON игры, до 32 КБ)
+        uint32  saveUpdatedAt;
     }
 
     // pubkey игрока -> профиль
@@ -73,6 +75,19 @@ contract PerimeterProfiles {
         uint256 len = bytes(walletAddr).length;
         require(len >= 8 && len <= 256, 105);
         p.walletAddr = walletAddr;
+        p.updatedAt = block.timestamp;
+        profiles[pk] = p;
+    }
+
+    /// Облачный сейв: перезаписать свой blob (JSON игры, лимит 32 КБ).
+    /// Хранится он-чейн и привязан к pubkey; выгрузить можно с любого устройства.
+    function saveGame(string blob) public onlySigned {
+        uint256 pk = msg.pubkey();
+        Profile p = profiles[pk];
+        require(p.exists, 102);
+        require(bytes(blob).length <= 32768, 106);
+        p.saveBlob = blob;
+        p.saveUpdatedAt = block.timestamp;
         p.updatedAt = block.timestamp;
         profiles[pk] = p;
     }
@@ -127,6 +142,12 @@ contract PerimeterProfiles {
         if (offset + limit > total) n = total - offset;
         keys = new uint256[](n);
         for (uint256 i = 0; i < n; i++) keys[i] = playerKeys[offset + i];
+    }
+
+    /// Облачный сейв профиля (blob + время записи).
+    function getSave(uint256 pk) public view returns (string blob, uint32 updatedAt) {
+        Profile p = profiles[pk];
+        return (p.saveBlob, p.saveUpdatedAt);
     }
 
     function getStats() public view returns (uint32 players, uint32 battles) {

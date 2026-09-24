@@ -11,6 +11,8 @@
  *   node sync.mjs bind "hex::hex"     # привязать AN Wallet к профилю
  *   node sync.mjs read                # прочитать свой профиль (бесплатно)
  *   node sync.mjs top [N]             # он-чейн топ игроков
+ *   node sync.mjs save game.json      # записать облачный сейв (JSON из игры)
+ *   node sync.mjs load [out.json]     # скачать облачный сейв
  *
  * Предметы и рынок (контракт PerimeterItems, адрес в RP_ITEMS):
  *   node sync.mjs items ak47          # мой баланс предмета + кредиты
@@ -139,6 +141,20 @@ try {
     rows.sort((a, b) => b.rating - a.rating);
     console.log("🏆 Он-чейн топ:");
     rows.forEach((r, i) => console.log(` ${i + 1}. ${r.nick} — ${r.rating} (W${r.wins}/L${r.losses})${r.wallet ? " · " + r.wallet.slice(0, 12) + "…" : ""}`));
+  } else if (cmd === "save") {
+    const [path] = args;
+    if (!path) { console.error("Использование: node sync.mjs save <game.json> (экспорт из игры: Профиль → Данные)"); process.exit(1); }
+    const blob = readFileSync(path, "utf8");
+    if (blob.length > 32768) { console.error(`Сейв слишком большой: ${blob.length} > 32768 байт`); process.exit(1); }
+    JSON.parse(blob); // проверка валидности
+    await call("saveGame", { blob });
+  } else if (cmd === "load") {
+    const kp = keys();
+    const out = await runGet("getSave", { pk: "0x" + kp.public });
+    if (!out.blob) { console.log("☁️ Облачный сейв пуст — сначала node sync.mjs save"); process.exit(0); }
+    const [outPath] = args;
+    if (outPath) { writeFileSync(outPath, out.blob); console.log(`☁️ Сейв записан в ${outPath} (${out.blob.length} байт). Импорт в игре: Профиль → Данные.`); }
+    else console.log(out.blob);
   } else if (cmd === "items") {
     const kp = keys();
     const [code] = args;
@@ -194,7 +210,7 @@ try {
     const out = await runGet("getBalance", { player: "0x" + kp.public }, ARENA_ADDR, arenaAbi());
     console.log("🎮 Мой баланс в арене:", out);
   } else {
-    console.log("Профиль:  init | profile <ник> | battle <win|lose> <hash> | bind <walletAddr> | read | top [N]");
+    console.log("Профиль:  init | profile <ник> | battle <win|lose> <hash> | bind <walletAddr> | read | top [N] | save <game.json> | load [out.json]");
     console.log("Предметы: items <code> | list <code> <кол-во> <цена> | unlist <lid> | buy <lid> <кол-во> | gift <pubkey> <code> <кол-во> | market");
     console.log("Арена:    room-create <1|2|4> <ставка> <naked> | room-join <id> | room-result <id> <winner> <hash> | room-timeout <id> | rooms | arena-deposit <pubkey> <сумма> | arena-withdraw <сумма> | arena-balance");
   }
