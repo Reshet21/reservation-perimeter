@@ -355,6 +355,7 @@
       <div class="tile" onclick="openShop()"><div class="ico">🛒</div><b>МАГАЗИН</b><div>Оружие, броня, импланты</div></div>
       <div class="tile" onclick="openCraft()"><div class="ico">🔧</div><b>КРАФТ</b><div>Мастерская и материалы</div></div>
       <div class="tile" onclick="openWarehouse()"><div class="ico">📦</div><b>СКЛАД</b><div>Вещи отряда, торговля</div></div>
+      <div class="tile" onclick="openInv()"><div class="ico">🎒</div><b>ИНВЕНТАРЬ</b><div>Что несёт каждый, вес, выкинуть</div></div>
       <div class="tile" onclick="openHire()"><div class="ico">🤝</div><b>НАЁМ</b><div>Новые бойцы в отряд</div></div>
       <div class="tile" onclick="openMarket()"><div class="ico">🏪</div><b>РЫНОК</b><div>Барахолка · мои лоты</div></div>
       <div class="tile" style="grid-column:1/-1;display:flex;align-items:center;gap:12px" onclick="openProfile()">
@@ -406,6 +407,13 @@
   <header class="topbar"><span class="back" onclick="openBarracks()">‹</span><h1 id="eqTitle">ЭКИПИРОВКА</h1>
     <span class="chip">💰 <b class="crview">0</b></span></header>
   <div class="scroll" id="eqBody"></div>
+</div>
+
+<!-- ===================== INV (инвентарь отряда: кто что несёт) ===================== -->
+<div class="screen" id="scr-inv">
+  <header class="topbar"><span class="back" onclick="show('scr-hub')">‹</span><h1>ИНВЕНТАРЬ</h1>
+    <span class="chip">💰 <b class="crview">0</b></span></header>
+  <div class="scroll" id="invBody"></div>
 </div>
 
 <!-- ===================== CRAFT ===================== -->
@@ -1599,6 +1607,9 @@ function togglePick(id){
 }
 function deploySquad(){
   if(!squadSel.length){toast("Выбери хотя бы одного бойца");return;}
+  /* в бой не выпускаем перегруженных */
+  const over=S.roster.filter(m=>squadSel.includes(m.id)&&mercLoad(m)>carryLimit(m));
+  if(over.length){toast(`⚠️ Перегруз: ${over.map(m=>m.name).join(", ")} — разгрузи в инвентаре 🎒`);return;}
   closeModal("mSquad"); startBattle(chosenMission, squadSel);
 }
 
@@ -1648,6 +1659,7 @@ function openBarracks(){
    ========================================================= */
 let eqMercId=null;
 function openEquip(mid){
+  eqBack=null; /* прямой заход из казармы — возврат тоже в экипировку */
   eqMercId=mid;
   const m=S.roster.find(x=>x.id===mid); if(!m)return;
   const c=CLASSES[m.cls], st=mercStats(m);
@@ -1796,6 +1808,9 @@ function listEquippable(m,slot){
   return html;
 }
 function eqM(){ return S.roster.find(x=>x.id===eqMercId); }
+/* возврат после действий с экипировкой: обычная экипировка или вкладка инвентаря */
+let eqBack=null;
+function eqRefresh(mid){ if(eqBack==="inv")openInvSel(mid); else openEquip(mid); }
 function toStore(wid){ if(wid&&!WEAPONS[wid].natural)S.inv.weapons[wid]=(S.inv.weapons[wid]||0)+1; }
 function eqMain(wid){
   const m=eqM(); if(!m)return;
@@ -1807,7 +1822,7 @@ function eqMain(wid){
   m.weapon=old;
   S.inv.weapons[wid]--;
   toStore(m.weapon);
-  m.weapon=wid; save(); openEquip(m.id); toast("Оружие в руках");
+  m.weapon=wid; save(); eqRefresh(m.id); toast("Оружие в руках");
 }
 function eqSecond(wid){
   const m=eqM(); if(!m)return;
@@ -1818,7 +1833,7 @@ function eqSecond(wid){
   m.weapon2=old;
   S.inv.weapons[wid]--;
   toStore(m.weapon2);
-  m.weapon2=wid; save(); openEquip(m.id); toast("Запасное оружие готово");
+  m.weapon2=wid; save(); eqRefresh(m.id); toast("Запасное оружие готово");
 }
 function unequipMain(){
   const m=eqM(); if(!m||(WEAPONS[m.weapon].natural&&m.weapon!=="fists"))return;
@@ -1827,12 +1842,12 @@ function unequipMain(){
   /* можно остаться вообще без оружия — тогда в бой с кулаками */
   if(m.weapon2){ m.weapon=m.weapon2; m.weapon2=null; toast("Снято — в руках запасное"); }
   else { m.weapon="fists"; toast("Снято — боец дерётся кулаками 👊"); }
-  save(); openEquip(m.id);
+  save(); eqRefresh(m.id);
 }
 function unequipSecond(){
   const m=eqM(); if(!m||!m.weapon2)return;
   toStore(m.weapon2); m.weapon2=null;
-  save(); openEquip(m.id); toast("Снято на склад");
+  save(); eqRefresh(m.id); toast("Снято на склад");
 }
 function eqArmor(aid,wantSlot){
   const m=eqM(); if(!m)return;
@@ -1854,7 +1869,7 @@ function eqArmor(aid,wantSlot){
   slots.forEach(s=>{ if(m.gear[s])S.inv.armors[m.gear[s]]=(S.inv.armors[m.gear[s]]||0)+1; });
   S.inv.armors[aid]--;
   slots.forEach(s=>{m.gear[s]=aid;});
-  save(); openEquip(m.id);
+  save(); eqRefresh(m.id);
   toast(a.dog?"Попона надета 🐕":a.slot==="all"?a.name+": всё тело закрыто":"Надето: "+a.name);
 }
 function unequipArmor(slot){
@@ -1864,21 +1879,21 @@ function unequipArmor(slot){
   const slots=a.slot==="all"?["head","body","legs"]:[slot];
   slots.forEach(s=>{m.gear[s]=null;});
   S.inv.armors[id]=(S.inv.armors[id]||0)+1;
-  save(); openEquip(m.id); toast((a.slot==="all"?"Комбез снят: ":"Снято: ")+a.name);
+  save(); eqRefresh(m.id); toast((a.slot==="all"?"Комбез снят: ":"Снято: ")+a.name);
 }
 function eqImp(k){
   const m=eqM(); if(!m||m.implants.length>=2)return;
   if(!(S.inv.implants[k]>0))return;
   m.implants.push(k);
   if(mercLoad(m)>carryLimit(m)){ m.implants.pop(); toast(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level})`); return; }
-  S.inv.implants[k]--; save(); openEquip(m.id); toast("Имплант установлен");
+  S.inv.implants[k]--; save(); eqRefresh(m.id); toast("Имплант установлен");
 }
 function removeImp(i){
   const m=eqM(); if(!m)return;
   const k=m.implants[i]; if(!k)return;
   m.implants.splice(i,1);
   S.inv.implants[k]=(S.inv.implants[k]||0)+1;
-  save(); openEquip(m.id); toast("Имплант снят");
+  save(); eqRefresh(m.id); toast("Имплант снят");
 }
 function beltAdd(k){
   const m=eqM(); if(!m)return;
@@ -1887,12 +1902,161 @@ function beltAdd(k){
   m.belt[k]=(m.belt[k]||0)+1;
   if(mercLoad(m)>carryLimit(m)){ m.belt[k]--; toast(`Перегруз! Лимит ${carryLimit(m)} (ур.${m.level})`); return; }
   S.inv[k]--;
-  save(); openEquip(m.id);
+  save(); eqRefresh(m.id);
 }
 function beltRemove(k){
   const m=eqM(); if(!m||!(m.belt[k]>0))return;
   m.belt[k]--; S.inv[k]++;
-  save(); openEquip(m.id);
+  save(); eqRefresh(m.id);
+}
+
+/* =========================================================
+   ИНВЕНТАРЬ ОТРЯДА: кто что несёт, вес, снять/надеть/выкинуть
+   ========================================================= */
+let invMercId=null;
+function openInv(){
+  if(!S.roster.length){toast("Отряд пуст");return;}
+  if(!S.roster.find(x=>x.id===invMercId))invMercId=S.roster[0].id;
+  renderInv(); show("scr-inv");
+}
+function openInvSel(mid){ invMercId=mid; renderInv(); show("scr-inv"); }
+function invM(){ return S.roster.find(x=>x.id===invMercId); }
+/* строка носимой вещи с действиями */
+function invRow(icon,name,sub,wt,btns){
+  return `<div class="row" style="padding:7px 0;border-bottom:1px solid var(--line)">
+    <div style="font-size:24px;width:30px;text-align:center">${icon}</div>
+    <div class="grow"><b>${esc(name)}</b>
+      <div class="muted" style="font-size:11px">${sub} · ⚖️${wt}</div></div>
+    <div style="display:flex;gap:6px;flex-shrink:0">${btns}</div></div>`;
+}
+function renderInv(){
+  const m=invM(); if(!m)return;
+  eqMercId=m.id; /* модалки подбора работают с текущим бойцом */
+  const c=CLASSES[m.cls], st=mercStats(m);
+  const load=mercLoad(m), lim=carryLimit(m);
+  /* выбор бойца */
+  let chips=S.roster.map(r=>{
+    const l=mercLoad(r), lm=carryLimit(r);
+    const over=l>lm;
+    return `<div class="btn small ${r.id===m.id?"primary":""}" style="${over?"border-color:var(--red);":""}" onclick="openInvSel('${r.id}')"
+      >${c_emoji(r)} ${esc(r.name)} <span class="muted">${l}/${lm}</span></div>`;
+  }).join("");
+  const w=WEAPONS[m.weapon], w2=m.weapon2?WEAPONS[m.weapon2]:null;
+  const natural=!!w.natural && m.weapon!=="fists";
+  let html=`<div class="card"><div class="row" style="gap:6px;flex-wrap:wrap">${chips}</div></div>`;
+  html+=`<div class="card">
+    <div class="row"><div style="font-size:34px">${c.emoji}</div>
+      <div class="grow"><h3>${esc(m.name)} <span class="muted">ур.${m.level}${m.level>=MAX_LEVEL?" (MAX)":""} · ${c.name}</span></h3>
+      <div class="statline"><span class="tag">HP <b>${st.hp}</b></span>
+      <span class="tag">ОД <b>${st.ap}</b></span><span class="tag">Броня <b>-${st.armor}</b></span></div>
+      ${weightBar(load,lim)}
+      ${load>lim?`<div style="color:var(--red);font-size:12px;margin-top:6px">⚠️ Перегруз! Сними или выкини что-нибудь — иначе в бой с таким весом нельзя.</div>`:""}
+      </div></div>
+  </div>`;
+  /* --- оружие --- */
+  html+=`<div class="card"><h3>🔫 Оружие</h3>`;
+  html+=invRow(w.emoji,w.name,
+    `Основное · ${w.dmg[0]}–${w.dmg[1]}${w.shots>1?"×"+w.shots:""} · ${w.ap}ОД`,
+    itemWt("weapon",m.weapon),
+    (natural?`<span class="muted" style="font-size:11px">естественное</span>`
+      :`<div class="btn small" onclick="eqBack='inv';pickWeaponModal('main')">🔁</div>
+        ${m.weapon!=="fists"?`<div class="btn small" onclick="unequipMain()">📦</div>
+        <div class="btn small danger" onclick="invDropMain()">🗑</div>`:""}`));
+  if(m.cls==="human"){
+    html+=w2?invRow(w2.emoji,w2.name,
+      `Запасное · ${w2.dmg[0]}–${w2.dmg[1]}${w2.shots>1?"×"+w2.shots:""} · ${w2.ap}ОД`,
+      itemWt("weapon",m.weapon2),
+      `<div class="btn small" onclick="eqBack='inv';pickWeaponModal('second')">🔁</div>
+       <div class="btn small" onclick="unequipSecond()">📦</div>
+       <div class="btn small danger" onclick="invDropSecond()">🗑</div>`)
+    :`<div class="muted" style="font-size:12px;margin-top:4px">Запасное: — пусто —
+      <span class="btn small" style="margin-left:6px" onclick="eqBack='inv';pickWeaponModal('second')">Взять со склада</span></div>`;
+  }
+  html+=`</div>`;
+  /* --- броня --- */
+  html+=`<div class="card"><h3>🦺 Броня</h3>`;
+  const slots=m.cls==="dog"?["body"]:["head","body","legs"];
+  const seen=new Set(); let anyArmor=false;
+  slots.forEach(s=>{
+    const id=m.gear[s];
+    if(!id||seen.has(id))return; seen.add(id); anyArmor=true;
+    const a=ARMORS[id];
+    html+=invRow("🛡️",a.name,
+      `${(SLOTS[s]?SLOTS[s].name:"")} · защита −${a.red}${a.slot==="all"?" · комбез":""}`,
+      itemWt("armor",id),
+      `<div class="btn small" onclick="eqBack='inv';pickArmorModal('${s}')">🔁</div>
+       <div class="btn small" onclick="unequipArmor('${s}')">📦</div>
+       <div class="btn small danger" onclick="invDropArmor('${s}')">🗑</div>`);
+  });
+  if(!anyArmor)html+=`<div class="muted">Без брони.
+    <span class="btn small" style="margin-left:6px" onclick="eqBack='inv';pickArmorModal('${slots[0]}')">Надеть со склада</span></div>`;
+  html+=`</div>`;
+  /* --- импланты --- */
+  html+=`<div class="card"><h3>🧠 Импланты <span class="muted">(${m.implants.length}/2)</span></h3>`;
+  if(!m.implants.length)html+=`<div class="muted">Не установлены.</div>`;
+  m.implants.forEach((k,i)=>{
+    html+=invRow("🧬",IMPLANTS[k].name,IMPLANTS[k].desc,itemWt("implant",k),
+      `<div class="btn small" onclick="removeImp(${i})">📦</div>
+       <div class="btn small danger" onclick="invDropImp(${i})">🗑</div>`);
+  });
+  html+=`</div>`;
+  /* --- пояс --- */
+  if(m.cls!=="dog"){
+    html+=`<div class="card"><h3>🧰 Пояс <span class="muted">(в бой идёт только пояс)</span></h3>`;
+    [["medkit","💉","Аптечка"],["grenade","💣","Граната"]].forEach(([k,em,nm])=>{
+      const on=(m.belt[k]||0), store=S.inv[k]||0;
+      html+=`<div class="row" style="padding:7px 0;border-bottom:1px solid var(--line)">
+        <div style="font-size:24px;width:30px;text-align:center">${em}</div>
+        <div class="grow"><b>${nm} ×${on}</b>
+          <div class="muted" style="font-size:11px">на поясе · склад ×${store} · ⚖️${itemWt("cons",k)}/шт</div></div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          ${store>0?`<div class="btn small primary" onclick="beltAdd('${k}')">＋</div>`:""}
+          ${on>0?`<div class="btn small" onclick="beltRemove('${k}')">−</div>
+          <div class="btn small danger" onclick="invDropBelt('${k}')">🗑</div>`:""}
+        </div></div>`;
+    });
+    html+=`</div>`;
+  }else{
+    html+=`<div class="card"><div class="muted">🐕 Пёс пояс не носит — аптечку съедает сразу в бою.</div></div>`;
+  }
+  html+=`<div class="muted" style="margin:4px 2px;font-size:11px">📦 — снять на склад · 🗑 — выкинуть навсегда · 🔁 — заменить со склада</div>`;
+  document.getElementById("invBody").innerHTML=html;
+  document.querySelectorAll(".crview").forEach(e=>e.textContent=S.credits);
+}
+function c_emoji(r){ return (CLASSES[r.cls]||{}).emoji||"🪖"; }
+/* --- выкидывание (уничтожение) носимого --- */
+function invDropMain(){
+  const m=invM(); if(!m)return;
+  if(m.weapon==="fists"){toast("Уже безоружен");return;}
+  if(WEAPONS[m.weapon].natural&&m.weapon!=="fists"){toast("Естественное оружие не выкинуть");return;}
+  if(!confirm(`Выкинуть ${WEAPONS[m.weapon].name} навсегда?`))return;
+  if(m.weapon2){ m.weapon=m.weapon2; m.weapon2=null; }
+  else m.weapon="fists";
+  save(); renderInv(); toast("Выкинуто");
+}
+function invDropSecond(){
+  const m=invM(); if(!m||!m.weapon2)return;
+  if(!confirm(`Выкинуть ${WEAPONS[m.weapon2].name} навсегда?`))return;
+  m.weapon2=null; save(); renderInv(); toast("Выкинуто");
+}
+function invDropArmor(slot){
+  const m=invM(); if(!m)return;
+  const id=m.gear[slot]; if(!id||!ARMORS[id])return;
+  const a=ARMORS[id];
+  if(!confirm(`Выкинуть ${a.name} навсегда?`))return;
+  const slots=a.slot==="all"?["head","body","legs"]:[slot];
+  slots.forEach(s=>{m.gear[s]=null;});
+  save(); renderInv(); toast("Выкинуто");
+}
+function invDropImp(i){
+  const m=invM(); if(!m)return;
+  const k=m.implants[i]; if(!k)return;
+  if(!confirm(`Выкинуть ${IMPLANTS[k].name} навсегда?`))return;
+  m.implants.splice(i,1); save(); renderInv(); toast("Выкинуто");
+}
+function invDropBelt(k){
+  const m=invM(); if(!m||!(m.belt[k]>0))return;
+  m.belt[k]--; save(); renderInv(); toast("Выкинуто");
 }
 
 /* =========================================================
@@ -2141,6 +2305,8 @@ function renderSquadPickPvp(){
 function deployPvp(){
   const md=ROOM_MODES[pvpCtx.mode];
   if(squadSel.length!==md.units){toast("Нужно ровно "+md.units+" бойц(а)");return;}
+  const over=S.roster.filter(m=>squadSel.includes(m.id)&&mercLoad(m)>carryLimit(m));
+  if(over.length){toast(`⚠️ Перегруз: ${over.map(m=>m.name).join(", ")} — разгрузи в инвентаре 🎒`);return;}
   closeModal("mSquad");
   document.getElementById("btnDeploy").setAttribute("onclick","deploySquad()");
   startPvpBattle();
