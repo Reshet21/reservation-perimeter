@@ -93,33 +93,42 @@ jobs:
         id: profiles
         run: |
           P_ACCT=$(echo "${{ steps.addrs.outputs.PROFILES_ADDR }}" | cut -d: -f1)
+          ST=$(./tvm-cli -j -u shellnet.ackinacki.org account "${{ steps.addrs.outputs.PROFILES_ADDR }}" 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin).get('acc_type','')" 2>/dev/null || echo "")
+          if [ "$ST" = "Active" ]; then echo "Profiles already Active — skip redeploy"; else
           ./tvm-cli -u shellnet.ackinacki.org deploy \
             --dst-dapp-id "${P_ACCT}" \
             --abi chain/PerimeterProfiles.abi.json \
             --sign deploy.keys.json \
             chain/PerimeterProfiles.tvc '{"value":0}' 2>&1 | tee deploy_profiles.log
+          fi
           echo "PROFILES_ADDR=${{ steps.addrs.outputs.PROFILES_ADDR }}" >> $GITHUB_OUTPUT
 
       - name: Deploy PerimeterItems
         id: items
         run: |
           I_ACCT=$(echo "${{ steps.addrs.outputs.ITEMS_ADDR }}" | cut -d: -f1)
+          ST=$(./tvm-cli -j -u shellnet.ackinacki.org account "${{ steps.addrs.outputs.ITEMS_ADDR }}" 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin).get('acc_type','')" 2>/dev/null || echo "")
+          if [ "$ST" = "Active" ]; then echo "Items already Active — skip redeploy"; else
           ./tvm-cli -u shellnet.ackinacki.org deploy \
             --dst-dapp-id "${I_ACCT}" \
             --abi chain/PerimeterItems.abi.json \
             --sign deploy.keys.json \
             chain/PerimeterItems.tvc '{"value":0}' 2>&1 | tee deploy_items.log
+          fi
           echo "ITEMS_ADDR=${{ steps.addrs.outputs.ITEMS_ADDR }}" >> $GITHUB_OUTPUT
 
       - name: Deploy PerimeterArena
         id: arena
         run: |
           A_ACCT=$(echo "${{ steps.addrs.outputs.ARENA_ADDR }}" | cut -d: -f1)
+          ST=$(./tvm-cli -j -u shellnet.ackinacki.org account "${{ steps.addrs.outputs.ARENA_ADDR }}" 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin).get('acc_type','')" 2>/dev/null || echo "")
+          if [ "$ST" = "Active" ]; then echo "Arena already Active — skip redeploy"; else
           ./tvm-cli -u shellnet.ackinacki.org deploy \
             --dst-dapp-id "${A_ACCT}" \
             --abi chain/PerimeterArena.abi.json \
             --sign deploy.keys.json \
             chain/PerimeterArena.tvc '{"value":0}' 2>&1 | tee deploy_arena.log
+          fi
           echo "ARENA_ADDR=${{ steps.addrs.outputs.ARENA_ADDR }}" >> $GITHUB_OUTPUT
 
       - name: Verify contracts are Active
