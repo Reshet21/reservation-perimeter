@@ -499,10 +499,13 @@
     <div class="card">
       <h3 data-tr="📋 Ожидающие транзакции|📋 Pending transactions">📋 Ожидающие транзакции</h3>
       <div id="pendingTxsInfo"></div>
+      <textarea id="pendingCmdsBox" style="display:none;margin-top:8px" readonly></textarea>
       <div class="row" style="margin-top:8px">
         <div class="btn small grow" onclick="refreshPendingTxs()" data-tr="🔄 Обновить|🔄 Refresh">🔄 Обновить</div>
+        <div class="btn small grow primary" onclick="copyPendingCmds()" data-tr="📋 Команды|📋 Commands">📋 Команды</div>
         <div class="btn small grow danger" onclick="clearPendingTxs()" data-tr="🗑 Очистить|🗑 Clear">🗑 Очистить</div>
       </div>
+      <div class="muted" style="margin-top:6px;font-size:11px" data-tr="Очередь живёт в телефоне. Отправка — командами выше на компьютере с ключами (chain/keys.json): сначала init и profile, потом battle/bind по очереди.|The queue lives on your phone. Send with the commands above on a computer holding the keys (chain/keys.json): init and profile first, then battle/bind one by one.">Очередь живёт в телефоне. Отправка — командами выше на компьютере с ключами (chain/keys.json): сначала init и profile, потом battle/bind по очереди.</div>
     </div>
 
     <div class="card">
@@ -3486,7 +3489,9 @@ function refreshPendingTxs(){
       <div style="flex:1;font-size:12px">
         <div style="color:var(--sand)">${fn}</div>
         ${detail?`<div class="muted">${detail}</div>`:""}
-        <div class="muted">${tr(`${age} мин назад · отправка: chain/sync.mjs battle`,`${age} min ago · send: chain/sync.mjs battle`)}</div>
+        ${pendingCmd(tx)?`<div style="font-family:monospace;font-size:10px;color:var(--green);margin-top:2px">${esc(pendingCmd(tx))}</div>`
+          :`<div class="muted">${tr("отправка: chain/sync.mjs","send: chain/sync.mjs")}</div>`}
+        <div class="muted">${tr(`${age} мин назад`,`${age} min ago`)}</div>
       </div>
       <div style="font-size:10px;color:var(--dim)">⏳</div>
     </div>`;
@@ -3497,6 +3502,28 @@ function clearPendingTxs(){
   window.anWallet.clearPendingTxs();
   refreshPendingTxs();
   toast(tr("🗑 Очищено","🗑 Cleared"));
+}
+/* точная CLI-команда для транзакции из очереди */
+function pendingCmd(tx){
+  const fn = tx.fn || tx.function;
+  const inp = tx.input || {};
+  if(fn==='reportBattle'){
+    const win = inp.win===true||inp.win==='true'||inp.win===1;
+    const hash = inp.battleHash ?? inp.hash ?? '0x0';
+    return `node sync.mjs battle ${win?'win':'lose'} ${hash}`;
+  }
+  if(fn==='bindWallet' && inp.walletAddr) return `node sync.mjs bind ${inp.walletAddr}`;
+  return null;
+}
+function copyPendingCmds(){
+  const txs = window.anWallet.getPendingTxs();
+  const cmds = txs.map(pendingCmd).filter(Boolean);
+  if(!cmds.length){ toast(tr("Нечего копировать","Nothing to copy")); return; }
+  const txt = "cd chain\n" + cmds.join("\n");
+  if(navigator.clipboard){ navigator.clipboard.writeText(txt).catch(()=>{}); }
+  const box=document.getElementById("pendingCmdsBox");
+  if(box){ box.style.display="block"; box.value=txt; }
+  toast(tr("📋 Команды скопированы","📋 Commands copied"));
 }
 
 /* =========================================================
