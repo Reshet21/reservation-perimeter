@@ -8,7 +8,9 @@
  *   node sync.mjs init                # сгенерировать ключи игрока (keys.json)
  *   node sync.mjs profile "Ник"       # создать профиль (рейтинг 1000) / переименоваться
  *   node sync.mjs battle win 0x1a2b3c4d        # записать результат (рейтинг считает контракт)
+ *   node sync.mjs bind "hex::hex"     # привязать AN Wallet к профилю
  *   node sync.mjs read                # прочитать свой профиль (бесплатно)
+ *   node sync.mjs top [N]             # он-чейн топ игроков
  *
  * Предметы и рынок (контракт PerimeterItems, адрес в RP_ITEMS):
  *   node sync.mjs items ak47          # мой баланс предмета + кредиты
@@ -120,6 +122,23 @@ try {
     console.log("📜 Профиль он-чейн:", out);
     const stats = await runGet("getStats", {});
     console.log("🌍 Всего в игре:", stats);
+  } else if (cmd === "bind") {
+    const [addr] = args;
+    if (!addr || addr.length < 8) { console.error("Использование: node sync.mjs bind <multifactor-address>"); process.exit(1); }
+    await call("bindWallet", { walletAddr: addr });
+  } else if (cmd === "top") {
+    const n = Math.min(Number(args[0] || 10), 50);
+    const keys = await runGet("getPlayers", { offset: 0, limit: n });
+    const rows = [];
+    for (const pk of (keys.keys || keys)) {
+      try {
+        const p = await runGet("getProfile", { pk });
+        rows.push({ nick: p.nick, rating: Number(p.rating), wins: Number(p.wins), losses: Number(p.losses), wallet: p.walletAddr || "" });
+      } catch (e) { /* профиль без данных */ }
+    }
+    rows.sort((a, b) => b.rating - a.rating);
+    console.log("🏆 Он-чейн топ:");
+    rows.forEach((r, i) => console.log(` ${i + 1}. ${r.nick} — ${r.rating} (W${r.wins}/L${r.losses})${r.wallet ? " · " + r.wallet.slice(0, 12) + "…" : ""}`));
   } else if (cmd === "items") {
     const kp = keys();
     const [code] = args;
@@ -175,7 +194,7 @@ try {
     const out = await runGet("getBalance", { player: "0x" + kp.public }, ARENA_ADDR, arenaAbi());
     console.log("🎮 Мой баланс в арене:", out);
   } else {
-    console.log("Профиль:  init | profile <ник> | battle <win|lose> <hash> | read");
+    console.log("Профиль:  init | profile <ник> | battle <win|lose> <hash> | bind <walletAddr> | read | top [N]");
     console.log("Предметы: items <code> | list <code> <кол-во> <цена> | unlist <lid> | buy <lid> <кол-во> | gift <pubkey> <code> <кол-во> | market");
     console.log("Арена:    room-create <1|2|4> <ставка> <naked> | room-join <id> | room-result <id> <winner> <hash> | room-timeout <id> | rooms | arena-deposit <pubkey> <сумма> | arena-withdraw <сумма> | arena-balance");
   }

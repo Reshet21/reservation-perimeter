@@ -3238,10 +3238,15 @@ async function chainSync(){
   }
   st.textContent=tr("Статус: читаю состояние контракта…","Status: reading contract state…");
   try{
-    const q=`query{blockchain{account(address:"${S.chain.addr}"){info{balance acc_type_name last_trans_lt}}}}`;
+    /* v3-ноды: account(account_id, dapp_id) — обе части из hex64::hex64 */
+    const parts=(S.chain.addr||"").split("::");
+    const aid=parts.length===2?parts[0]:(S.chain.addr||"").replace(/^0:/,"");
+    const did=parts.length===2?parts[1]:aid;
+    const q=`query{blockchain{account(account_id:"${aid}",dapp_id:"${did}"){info{balance acc_type_name}}}}`;
     const r=await fetch(S.chain.endpoint,{method:"POST",
       headers:{"Content-Type":"application/json"},body:JSON.stringify({query:q})});
     const j=await r.json();
+    if(j.errors) throw new Error(j.errors.map(e=>e.message).join("; "));
     const info=j.data&&j.data.blockchain&&j.data.blockchain.account&&j.data.blockchain.account.info;
     if(!info){ st.textContent=tr("Статус: контракт не найден по адресу. Проверь адрес/сеть.","Status: contract not found at address. Check address/network."); return; }
     const pend = window.anWallet.getPendingTxs().length;
@@ -3298,6 +3303,7 @@ function renderWalletInfo(){
       </div>
       <div class="row" style="margin-top:6px">
         <div class="btn small grow" onclick="walletRefreshBalance()">${tr("🔄 Обновить","🔄 Refresh")}</div>
+        <div class="btn small grow" onclick="queueBindWallet()">${tr("⛓ Привязать к профилю","⛓ Link to profile")}</div>
         <div class="btn small grow danger" onclick="walletDisconnect()">${tr("Отключить","Disconnect")}</div>
       </div>`;
   }
@@ -3311,6 +3317,16 @@ function walletReconnect(){
   show("scr-splash");
 }
 
+/* Привязка кошелёк↔профиль: кладёт bindWallet(walletAddr) в очередь.
+   Отправка — подписанным сообщением: node sync.mjs bind <адрес> */
+function queueBindWallet(){
+  const conn = window.anWallet.getSession();
+  if(!conn || !conn.walletAddress){ toast(tr("Кошелёк не подключён","Wallet not connected")); return; }
+  if(!conn.verified){ toast(tr("Сначала подтверди вход в AN Wallet","Confirm login in AN Wallet first")); return; }
+  window.anWallet.queueMarketTx("bindWallet", { walletAddr: conn.walletAddress });
+  refreshPendingTxs();
+  toast(tr("⛓ Привязка в очереди — отправь: sync.mjs bind","⛓ Link queued — send: sync.mjs bind"));
+}
 async function walletDisconnect(){
   if(!confirm(tr("Отключить кошелёк?","Disconnect wallet?")))return;
   save();
@@ -3393,6 +3409,7 @@ function refreshPendingTxs(){
     try{
       const inp = tx.input || tx.payload?.input || {};
       if(fn==='reportBattle') detail = (inp.win===true||inp.win==='true'||inp.win===1 ? '🏆 победа' : '💀 поражение') + ' · hash ' + esc(inp.battleHash ?? inp.hash ?? '');
+      else if(fn==='bindWallet') detail = '⛓ ' + esc(inp.walletAddr ?? '');
       else detail = esc(JSON.stringify(inp)).slice(0,120);
     }catch(e){}
     return `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)">
@@ -6841,7 +6858,10 @@ window.anWallet = {
   async chainAccount(address, endpoint){
     const ep = endpoint || RP_DEFAULTS.ENDPOINT;
     if(!isAddrLike(address)) throw new Error('Некорректный адрес');
-    const q = `query{blockchain{account(address:"${address}"){info{balance acc_type_name}}}}`;
+    const parts=(address||"").split("::");
+    const aid=parts.length===2?parts[0]:address.replace(/^0:/,"");
+    const did=parts.length===2?parts[1]:aid;
+    const q = `query{blockchain{account(account_id:"${aid}",dapp_id:"${did}"){info{balance acc_type_name}}}}`;
     const r = await fetch(ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})});
     const j = await r.json();
     if(j.errors) throw new Error(j.errors.map(e=>e.message).join('; '));

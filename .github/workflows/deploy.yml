@@ -64,6 +64,11 @@ jobs:
         run: |
           for A in "${{ steps.addrs.outputs.PROFILES_ADDR }}" "${{ steps.addrs.outputs.ITEMS_ADDR }}" "${{ steps.addrs.outputs.ARENA_ADDR }}"; do
             ACC=$(echo "$A" | cut -d: -f1)
+            BAL=$(./tvm-cli -j -u shellnet.ackinacki.org account "$A" 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin).get('balance','0'))" 2>/dev/null || echo 0)
+            if [ "$BAL" != "0" ] && [ -n "$BAL" ]; then
+              echo "Already funded: $A ($BAL)"
+              continue
+            fi
             echo "Funding 0:${ACC}"
             ./tvm-cli -u shellnet.ackinacki.org callx \
               --abi chain/Multisig.abi.json \
@@ -71,6 +76,17 @@ jobs:
               --addr "${{ env.MSIG }}" \
               -m sendTransaction "{\"dest\":\"0:${ACC}\",\"value\":1000000000,\"cc\":{\"2\":500000000000},\"bounce\":false,\"flags\":16,\"payload\":\"\"}" 2>&1 | tail -4
             sleep 5
+          done
+
+      - name: Wait for funding to finalize
+        run: |
+          for A in "${{ steps.addrs.outputs.PROFILES_ADDR }}" "${{ steps.addrs.outputs.ITEMS_ADDR }}" "${{ steps.addrs.outputs.ARENA_ADDR }}"; do
+            echo "Waiting for funds at $A"
+            for i in $(seq 1 30); do
+              BAL=$(./tvm-cli -j -u shellnet.ackinacki.org account "$A" 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin).get('balance','0'))" 2>/dev/null || echo 0)
+              if [ "$BAL" != "0" ] && [ -n "$BAL" ]; then echo "Funded: $BAL"; break; fi
+              echo "  attempt $i/30 — not yet"; sleep 10
+            done
           done
 
       - name: Deploy PerimeterProfiles
@@ -113,6 +129,11 @@ jobs:
           ./tvm-cli -u shellnet.ackinacki.org account "${{ steps.profiles.outputs.PROFILES_ADDR }}" | grep -E "acc_type|balance" | head -3
           ./tvm-cli -u shellnet.ackinacki.org account "${{ steps.items.outputs.ITEMS_ADDR }}" | grep -E "acc_type|balance" | head -3
           ./tvm-cli -u shellnet.ackinacki.org account "${{ steps.arena.outputs.ARENA_ADDR }}" | grep -E "acc_type|balance" | head -3
+          for A in "${{ steps.profiles.outputs.PROFILES_ADDR }}" "${{ steps.items.outputs.ITEMS_ADDR }}" "${{ steps.arena.outputs.ARENA_ADDR }}"; do
+            T=$(./tvm-cli -u shellnet.ackinacki.org account "$A" | grep acc_type)
+            echo "$A -> $T"
+            echo "$T" | grep -q Active || (echo "NOT ACTIVE: $A" && exit 1)
+          done
           ./tvm-cli -u shellnet.ackinacki.org run "${{ steps.profiles.outputs.PROFILES_ADDR }}" getStats {} --abi chain/PerimeterProfiles.abi.json
 
       - name: Set NPC Prices (PerimeterItems)
