@@ -1052,23 +1052,38 @@ function svgIcon(kind, id){
       ${id==="vest2"?'<path d="M17 14 l4 4 m6 0 l4 -4 M24 18 l0 4" stroke="rgba(0,0,0,.35)" stroke-width="1.4"/>':""}
       <path d="M14 30 l20 0" stroke="rgba(0,0,0,.3)" stroke-width="1.6"/>`);
   }
-  if(kind==="implant")
+  if(kind==="implant"){
+    const glyph=id==="imp_hp"
+      ? `<circle cx="24" cy="24" r="8" fill="#e8f4e4" stroke="#2e7d46" stroke-width="1.6"/>
+         <rect x="21.4" y="18.5" width="5.2" height="11" rx="1.4" fill="#c0392b"/>
+         <rect x="18.5" y="21.4" width="11" height="5.2" rx="1.4" fill="#c0392b"/>`
+      :id==="imp_acc"
+      ? `<circle cx="24" cy="24" r="8.5" fill="#101418" stroke="#3d4c56" stroke-width="1.8"/>
+         <circle cx="24" cy="24" r="5.6" fill="#1d3a4d" stroke="#9fd8ff" stroke-width="1.4"/>
+         <circle cx="24" cy="24" r="2.6" fill="#9fd8ff"/>
+         <circle cx="22.4" cy="22.2" r="1" fill="#fff"/>`
+      : `<path d="M26.5 12 l-7.5 13.5 5 0 -2.5 10.5 8 -14 -5.2 0 z" fill="#ffd27f" stroke="#8a6a1e" stroke-width="1.4" stroke-linejoin="round"/>
+         <circle cx="24" cy="24" r="11" fill="none" stroke="#8a6a1e" stroke-width="1" stroke-dasharray="3 3"/>`;
     return wrap(`<path d="M24 6 q11 0 12 11 q5 2 3 8 q3 8 -6 11 q-3 6 -9 4 q-6 2 -9 -4 q-9 -3 -6 -11 q-2 -6 3 -8 q1 -11 12 -11 z"
         fill="#d8a6c0" stroke="#7e4a66" stroke-width="1.6"/>
-      <path d="M24 12 l0 24 M16 18 l16 12 M32 18 l-16 12" stroke="#7e4a66" stroke-width="1.4"/>
-      <circle cx="24" cy="24" r="4.5" fill="${id==="imp_ap"?"#ffd27f":id==="imp_acc"?"#9fd8ff":"#a8e87f"}" stroke="#403040" stroke-width="1.4"/>`);
+      <path d="M24 12 l0 24 M16 18 l16 12 M32 18 l-16 12" stroke="rgba(126,74,102,.35)" stroke-width="1.2"/>
+      ${glyph}`);
+  }
   if(kind==="cons"){
     if(id==="medkit")
-      return wrap(`<rect x="8" y="14" width="32" height="24" rx="4" fill="#b8b4ac" stroke="#6e6a62" stroke-width="1.5"/>
-        <rect x="8" y="14" width="32" height="7" rx="3.5" fill="#9c9890"/>
-        <rect x="20.5" y="22" width="7" height="13" rx="1.5" fill="#c0392b"/>
-        <rect x="17.5" y="25" width="13" height="7" rx="1.5" fill="#c0392b"/>
-        <rect x="21" y="11.5" width="6" height="4" rx="1.5" fill="#6e6a62"/>`);
-    return wrap(`<ellipse cx="24" cy="28" rx="11" ry="13" fill="#39452c" stroke="#1c2316" stroke-width="1.6"/>
-      <path d="M18 18 q6 -3 12 0 l0 4 q-6 2 -12 0 z" fill="#55555e"/>
-      <rect x="21.5" y="11" width="5" height="6" rx="1.4" fill="${Mh}"/>
-      <path d="M28 11 q5 -4 8 1" stroke="${Mh}" stroke-width="2" fill="none"/>
-      <path d="M18 24 l12 0 M17 29 l14 0 M18 34 l12 0" stroke="rgba(0,0,0,.3)" stroke-width="1.4"/>`);
+      return wrap(`<rect x="7" y="15" width="34" height="23" rx="4" fill="#e8e4da" stroke="#5e5a52" stroke-width="1.6"/>
+        <rect x="7" y="15" width="34" height="7" rx="3.5" fill="#cfc9bc"/>
+        <rect x="20" y="10.5" width="8" height="5" rx="2" fill="#5e5a52"/>
+        <rect x="21" y="24" width="6" height="14" rx="1.5" fill="#c0392b"/>
+        <rect x="17" y="27" width="14" height="6" rx="1.5" fill="#c0392b"/>
+        <path d="M10 18 l4 -1.6" stroke="rgba(255,255,255,.7)" stroke-width="1.6"/>`);
+    return wrap(`<ellipse cx="24" cy="29" rx="10.5" ry="12.5" fill="#3d4a2e" stroke="#1c2316" stroke-width="1.6"/>
+      <path d="M16.5 24.5 l15 0 M15.5 29.5 l17 0 M16.5 34.5 l15 0" stroke="rgba(0,0,0,.35)" stroke-width="1.6"/>
+      <path d="M18 19 q6 -3.4 12 0 l0 4 q-6 2.4 -12 0 z" fill="#5c5c64" stroke="#2a2a30" stroke-width="1.2"/>
+      <rect x="21.6" y="11.5" width="4.8" height="6" rx="1.4" fill="#8a8a94" stroke="#2a2a30" stroke-width="1.2"/>
+      <circle cx="34" cy="12" r="3.4" fill="none" stroke="#8a8a94" stroke-width="1.8"/>
+      <path d="M28 11.5 q4 -3.4 6.5 -1" stroke="#8a8a94" stroke-width="1.8" fill="none"/>
+      <ellipse cx="20" cy="26" rx="2.4" ry="4" fill="rgba(255,255,255,.14)"/>`);
   }
   if(kind==="mat"){
     switch(id){
@@ -1089,31 +1104,47 @@ function svgIcon(kind, id){
           <circle cx="21" cy="14" r="1.4" fill="#fff" opacity=".8"/>`);
     }
   }
-  if(kind==="ammo")
-    return wrap(`<rect x="10" y="20" width="28" height="18" rx="2" fill="#5a4a2e" stroke="#2e2517" stroke-width="1.6"/>
-      <rect x="14" y="8" width="4" height="14" fill="#b8964a"/><rect x="14" y="8" width="4" height="4" fill="#d8b95e"/>
-      <rect x="22" y="8" width="4" height="14" fill="#b8964a"/><rect x="22" y="8" width="4" height="4" fill="#d8b95e"/>
-      <rect x="30" y="8" width="4" height="14" fill="#b8964a"/><rect x="30" y="8" width="4" height="4" fill="#d8b95e"/>
-      <rect x="10" y="26" width="28" height="3" fill="rgba(0,0,0,.25)"/>`);
+  if(kind==="ammo"){
+    /* выстрел РПГ — отдельная иконка-ракета */
+    if(id==="rpg")
+      return wrap(`<g transform="rotate(-24 24 24)">
+        <rect x="10" y="21" width="20" height="7" rx="3.5" fill="#4a5560" stroke="#222b36" stroke-width="1.4"/>
+        <path d="M30 21 l8 3.5 -8 3.5 z" fill="#c0392b" stroke="#7e2a20" stroke-width="1.2"/>
+        <rect x="13" y="28" width="3" height="7" fill="#39424c"/>
+        <rect x="22" y="28" width="3" height="7" fill="#39424c"/>
+        <circle cx="15" cy="24.5" r="1.4" fill="#ffd27f"/></g>`);
+    /* цвет наконечника по калибру */
+    const tip=id==="s762"?"#c0392b":id==="b50"?"#c0c8d0":id==="g12"?"#c0392b":
+                id==="r556"?"#3f7d44":id==="acp"?"#b0722e":"#d8b95e";
+    const bw=id==="b50"?6:4;
+    return wrap(`<rect x="9" y="21" width="30" height="17" rx="2" fill="#4a3d24" stroke="#241c0e" stroke-width="1.6"/>
+      <rect x="9" y="21" width="30" height="5" rx="2" fill="#5d4c2d"/>
+      <rect x="13" y="9" width="${bw}" height="14" fill="#8a6f3a"/><rect x="13" y="9" width="${bw}" height="4.5" fill="${tip}"/>
+      <rect x="22" y="9" width="${bw}" height="14" fill="#8a6f3a"/><rect x="22" y="9" width="${bw}" height="4.5" fill="${tip}"/>
+      <rect x="31" y="9" width="${bw}" height="14" fill="#8a6f3a"/><rect x="31" y="9" width="${bw}" height="4.5" fill="${tip}"/>
+      <rect x="9" y="27" width="30" height="2.6" fill="rgba(0,0,0,.3)"/>
+      <rect x="12" y="31" width="14" height="3.4" fill="rgba(216,185,94,.5)"/>`);
+  }
   return wrap(`<circle cx="24" cy="24" r="14" fill="${D}"/>`);
 }
 /* карточка предмета с тиром */
 function itemCard(kind,id,opts){
   opts=opts||{};
-  let name,tier;
-  if(kind==="weapon"){const w=WEAPONS[id];name=w.name;tier=weaponTier(w);}
-  else if(kind==="armor"){const a=ARMORS[id];name=a.name;tier=a.tier||1;}
-  else if(kind==="implant"){name=IMPLANTS[id].name.replace("Имплант ","");tier=3;}
-  else if(kind==="cons"){name=CONSUMABLES[id].name;tier=1;}
+  let name,tier,wt=null;
+  if(kind==="weapon"){const w=WEAPONS[id];name=w.name;tier=weaponTier(w);wt=itemWt("weapon",id);}
+  else if(kind==="armor"){const a=ARMORS[id];name=a.name;tier=a.tier||1;wt=itemWt("armor",id);}
+  else if(kind==="implant"){name=IMPLANTS[id].name.replace("Имплант ","");tier=3;wt=itemWt("implant",id);}
+  else if(kind==="cons"){name=CONSUMABLES[id].name;tier=1;wt=itemWt("cons",id);}
   else if(kind==="mat"){name=MATERIALS[id].name;tier=MATERIALS[id].tier;}
-  else if(kind==="ammo"){name=(AMMO[id]||{}).name||id;tier=2;}
+  else if(kind==="ammo"){name=(AMMO[id]||{}).name||id;tier=2;wt=((AMMO[id]||{}).wpr||1)+"/шт";}
   const[bc,glow]=TIERS[tier]||TIERS[1];
   return `<div class="icard" style="--tier:${bc};--tierglow:${glow}" ${opts.onclick?`onclick="${opts.onclick}"`:""}>
     <div class="iglow"></div>
     ${opts.listed?`<span class="ilist">🏷️</span>`:""}
     ${svgIcon(kind,id)}
     ${opts.count!==undefined?`<span class="icnt">×${opts.count}</span>`:""}
-    <div class="inm">${name}</div></div>`;
+    <div class="inm">${name}</div>
+    ${wt!==null?`<div style="font-size:10px;color:var(--dim);margin-top:1px">⚖️${wt}</div>`:""}</div>`;
 }
 const IMPLANTS = {
   imp_hp: {name:"Имплант «Регенератор»", desc:"+25 макс. HP", price:500},
@@ -1753,7 +1784,7 @@ function openEquip(mid){
       ${id?svgIcon("armor",id):emptySlotSvg(s)}
       <div><div class="sl">${isDog?"Попона 🐕":sd.emoji+" "+sd.name}</div>
       <div class="sn">${a?a.name:"— пусто —"}</div>
-      <div class="sd">${a?"Защита -"+a.red+(a.slot==="all"?" · комбез":""):"не защищён"}</div></div>
+      <div class="sd">${a?"Защита -"+a.red+(a.slot==="all"?" · комбез":"")+` · ⚖️${itemWt("armor",id)}`:"не защищён"}</div></div>
     </div>`;
   });
   html+=`<div class="card"><h3>⚙️ Снаряжение</h3>
@@ -1761,13 +1792,13 @@ function openEquip(mid){
       <div class="slot" ${natural?"":`onclick="pickWeaponModal('main')"`}>
         ${svgIcon("weapon",m.weapon)}
         <div><div class="sl">Основное</div><div class="sn">${w.name}</div>
-        <div class="sd">${w.dmg[0]}–${w.dmg[1]}${w.shots>1?"×"+w.shots:""} · ${w.ap}ОД</div></div>
+        <div class="sd">${w.dmg[0]}–${w.dmg[1]}${w.shots>1?"×"+w.shots:""} · ${w.ap}ОД · ⚖️${itemWt("weapon",m.weapon)}</div></div>
       </div>
       ${(m.cls!=="dog"&&m.cls!=="mutant")?`
       <div class="slot" onclick="pickWeaponModal('second')">
         ${w2?svgIcon("weapon",m.weapon2):`<svg viewBox="0 0 48 48" style="opacity:.3"><rect x="9" y="14" width="30" height="20" rx="4" fill="none" stroke="#8a7a5c" stroke-width="2" stroke-dasharray="5 4"/><text x="24" y="29" text-anchor="middle" font-size="14" fill="#8a7a5c">+</text></svg>`}
         <div><div class="sl">Запасное · 🔁2ОД</div><div class="sn">${w2?w2.name:"— пусто —"}</div>
-        ${w2?`<div class="sd">${w2.dmg[0]}–${w2.dmg[1]}${w2.shots>1?"×"+w2.shots:""} · ${w2.ap}ОД</div>`:""}</div>
+        ${w2?`<div class="sd">${w2.dmg[0]}–${w2.dmg[1]}${w2.shots>1?"×"+w2.shots:""} · ${w2.ap}ОД · ⚖️${itemWt("weapon",m.weapon2)}</div>`:""}</div>
       </div>`:""}
     </div>
     <div class="slotrow">
@@ -1781,7 +1812,7 @@ function openEquip(mid){
   html+=`<div class="card"><h3>🧠 Импланты <span class="muted">(${m.implants.length}/2)</span></h3>`;
   m.implants.forEach((k,i)=>{
     html+=`<div class="row" style="margin-top:6px"><div style="width:30px">${svgIcon("implant",k)}</div>
-      <div class="grow">${IMPLANTS[k].name} <span class="muted">${IMPLANTS[k].desc}</span></div>
+      <div class="grow">${IMPLANTS[k].name} <span class="muted">${IMPLANTS[k].desc} · ⚖️${itemWt("implant",k)}</span></div>
       <div class="btn small" onclick="removeImp(${i})">📦</div></div>`;
   });
   Object.keys(IMPLANTS).forEach(k=>{
@@ -1802,7 +1833,7 @@ function openEquip(mid){
       const onBelt=m.belt[k]||0, store=S.inv[k]||0;
       html+=`<div class="row" style="margin-top:8px">
         <div style="width:30px">${svgIcon("cons",k)}</div>
-        <div class="grow">${n} <span class="muted">на поясе ×${onBelt} (макс ${BELT_MAX[k]}) · склад ×${store}</span></div>
+        <div class="grow">${n} <span class="muted">на поясе ×${onBelt} (макс ${BELT_MAX[k]}) · склад ×${store} · ⚖️${itemWt("cons",k)}/шт</span></div>
         <div class="btn small ${store>0&&onBelt<BELT_MAX[k]?"primary":""}" onclick="beltAdd('${k}')">+</div>
         <div class="btn small" onclick="beltRemove('${k}')">−</div>
       </div>`;
@@ -2654,10 +2685,10 @@ function itemMenu(type,id,listIdx){
   const free=(invBucket(type)[id]||0)-listedCount(type,id);
   const kind=type==="implant"?"implant":type;
   let desc="";
-  if(type==="weapon")desc=weaponDesc(it)+" · ветка «"+SKILLS[it.skill].name+"»";
+  if(type==="weapon")desc=weaponDesc(it,id)+" · ветка «"+SKILLS[it.skill].name+"»";
   else if(type==="armor")desc=(it.slot==="all"?"🧵 комбез, всё тело":SLOTS[it.slot].emoji+" "+SLOTS[it.slot].name.toLowerCase())+
-    " · Защита -"+it.red+(it.dog?" · 🐕 только для пса":"")+(it.craft?" · крафтовая":"");
-  else desc=it.desc;
+    " · Защита -"+it.red+(it.dog?" · 🐕 только для пса":"")+(it.craft?" · крафтовая":"")+` · ⚖️${itemWt("armor",id)}`;
+  else desc=it.desc+` · ⚖️${itemWt(type==="implant"?"implant":"cons",id)}`;
   genericModal(`<div style="display:flex;gap:12px;align-items:center">
       <div style="width:60px">${svgIcon(kind,id)}</div>
       <div><h2 style="margin:0">${it.name}</h2><div class="muted">${desc}</div>
@@ -2825,10 +2856,10 @@ function renderMarketList(){
       const it=getItemDef(o.type,o.id);
       const icon=svgIcon(o.type,o.id);
       let desc="";
-      if(o.type==="weapon")desc=weaponDesc(it);
+      if(o.type==="weapon")desc=weaponDesc(it,o.id);
       else if(o.type==="armor")desc=(it.slot==="all"?"🧵 комбез, всё тело":(SLOTS[it.slot].emoji+" "+SLOTS[it.slot].name.toLowerCase()))+
-        " · Защита -"+it.red+(it.dog?" · 🐕 для пса":"")+(it.craft?" · крафт":"");
-      else desc=it.desc||"";
+        " · Защита -"+it.red+(it.dog?" · 🐕 для пса":"")+(it.craft?" · крафт":"")+` · ⚖️${itemWt("armor",o.id)}`;
+      else desc=(it.desc||"")+` · ⚖️${itemWt(o.type==="implant"?"implant":"cons",o.id)}`;
       const off=Math.round((1-o.price/o.base)*100);
       const tags=(off>=10?`<span class="tag" style="border-color:rgba(74,222,128,.4);color:#86efac">🔥 Скидка −${off}%</span>`:"")+
                  `<span class="tag">В магазине: <b>${o.base}💰</b></span>`;
@@ -2898,6 +2929,7 @@ function weaponDesc(w,id){
   let d=`Урон ${w.dmg[0]}–${w.dmg[1]}${w.shots>1?" ×"+w.shots:""} · ${w.ap} ОД`;
   const g=id?gunSpec(id):null;
   if(g)d+=` · 🔸${g.mag} · ${ammoName(g.ammo)}`;
+  if(id)d+=` · ⚖️${itemWt("weapon",id)}`;
   if(w.melee)d+=" · ближний бой";
   else{
     d+=` · дальн. ${(w.min||1)>1?w.min+"–":""}${w.max}`;
@@ -2945,9 +2977,17 @@ function openShop(){
   el.innerHTML=html; show("scr-shop");
 }
 function shopCard(kind,id,n,d,p,fn,have){
+  let wt=null;
+  try{
+    if(kind==="weapon")wt=itemWt("weapon",id);
+    else if(kind==="armor")wt=itemWt("armor",id);
+    else if(kind==="implant")wt=itemWt("implant",id);
+    else if(kind==="cons")wt=itemWt("cons",id);
+    else if(kind==="ammo")wt=wtFmt(((AMMO[id]||{}).box||0)*((AMMO[id]||{}).wpr||1))+" за коробку";
+  }catch(e){}
   return `<div class="card"><div class="row">
     <div style="width:44px;flex-shrink:0">${svgIcon(kind,id)}</div>
-    <div class="grow"><h3>${n}</h3><div class="muted">${d}</div>
+    <div class="grow"><h3>${n}</h3><div class="muted">${d}${wt!==null?` · ⚖️${wt}`:""}</div>
       ${have?`<div class="muted">На складе: ${have}</div>`:""}</div>
     <div class="btn small ${S.credits>=p?"primary":""}" onclick="${fn}">💰${p}</div>
   </div></div>`;
