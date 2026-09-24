@@ -28,6 +28,14 @@
 			]
 		},
 		{
+			"name": "saveGame",
+			"inputs": [
+				{"name":"blob","type":"string"}
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "reportBattle",
 			"inputs": [
 				{"name":"win","type":"bool"},
@@ -72,6 +80,16 @@
 			]
 		},
 		{
+			"name": "getSave",
+			"inputs": [
+				{"name":"pk","type":"uint256"}
+			],
+			"outputs": [
+				{"name":"blob","type":"string"},
+				{"name":"updatedAt","type":"uint32"}
+			]
+		},
+		{
 			"name": "getStats",
 			"inputs": [
 			],
@@ -85,7 +103,7 @@
 			"inputs": [
 			],
 			"outputs": [
-				{"components":[{"name":"nick","type":"string"},{"name":"rating","type":"uint32"},{"name":"wins","type":"uint32"},{"name":"losses","type":"uint32"},{"name":"battles","type":"uint32"},{"name":"lastBattleHash","type":"uint64"},{"name":"updatedAt","type":"uint32"},{"name":"exists","type":"bool"},{"name":"walletAddr","type":"string"}],"name":"profiles","type":"map(uint256,tuple)"}
+				{"components":[{"name":"nick","type":"string"},{"name":"rating","type":"uint32"},{"name":"wins","type":"uint32"},{"name":"losses","type":"uint32"},{"name":"battles","type":"uint32"},{"name":"lastBattleHash","type":"uint64"},{"name":"updatedAt","type":"uint32"},{"name":"exists","type":"bool"},{"name":"walletAddr","type":"string"},{"name":"saveBlob","type":"string"},{"name":"saveUpdatedAt","type":"uint32"}],"name":"profiles","type":"map(uint256,tuple)"}
 			]
 		},
 		{
@@ -119,7 +137,7 @@
 		{"init":true,"name":"_pubkey","type":"uint256"},
 		{"init":false,"name":"_timestamp","type":"uint64"},
 		{"init":false,"name":"_constructorFlag","type":"bool"},
-		{"components":[{"name":"nick","type":"string"},{"name":"rating","type":"uint32"},{"name":"wins","type":"uint32"},{"name":"losses","type":"uint32"},{"name":"battles","type":"uint32"},{"name":"lastBattleHash","type":"uint64"},{"name":"updatedAt","type":"uint32"},{"name":"exists","type":"bool"},{"name":"walletAddr","type":"string"}],"init":false,"name":"profiles","type":"map(uint256,tuple)"},
+		{"components":[{"name":"nick","type":"string"},{"name":"rating","type":"uint32"},{"name":"wins","type":"uint32"},{"name":"losses","type":"uint32"},{"name":"battles","type":"uint32"},{"name":"lastBattleHash","type":"uint64"},{"name":"updatedAt","type":"uint32"},{"name":"exists","type":"bool"},{"name":"walletAddr","type":"string"},{"name":"saveBlob","type":"string"},{"name":"saveUpdatedAt","type":"uint32"}],"init":false,"name":"profiles","type":"map(uint256,tuple)"},
 		{"init":false,"name":"playerKeys","type":"uint256[]"},
 		{"init":false,"name":"totalPlayers","type":"uint32"},
 		{"init":false,"name":"totalBattles","type":"uint32"}

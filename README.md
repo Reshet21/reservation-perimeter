@@ -78,7 +78,7 @@ tvm-cli -u shellnet.ackinacki.org deploy PerimeterProfiles.tvc '{"value":1000000
 
 | Контракт | Адрес (новый формат: dapp_id::account_id) | Legacy (0:...) |
 |----------|-------------------------------------------|----------------|
-| **PerimeterProfiles** | `390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a::390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a` | `0:390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a` |
+| **PerimeterProfiles** | `0bce2fd11a67dedada3c2a38a182b640c4252132bc8171f1b17bf3dc4ae3aca9::0bce2fd11a67dedada3c2a38a182b640c4252132bc8171f1b17bf3dc4ae3aca9` | `0:390146e4e421bd97bc8e674801cec5c93ac922d93b1e6477a19242c5f026941a` |
 | **PerimeterItems** | `0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775::0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775` | `0:0886a98c82f7a54e046da4799e9b232623da8b599819031d037e109ee850d775` |
 | **PerimeterArena** | `06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd::06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd` | `0:06b6069183815f1150c8783842bc5900ab2df6e836cf9cb7bbc29fb9a6a3fdfd` |
 
